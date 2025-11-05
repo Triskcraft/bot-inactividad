@@ -1,4 +1,4 @@
-import { PermissionsBitField } from 'discord.js';
+import { EmbedBuilder, PermissionsBitField } from 'discord.js';
 import { DateTime } from 'luxon';
 import { buildInactivityModal, buildInactivityPanel } from '../interactions/inactivityPanel.js';
 import { parseUserTime, formatForUser } from '../utils/time.js';
@@ -24,10 +24,11 @@ export function registerInteractionHandlers(client, inactivityService, roleServi
       logger.error({ err: error, interaction: interaction.id }, 'Error procesando interacción');
       if (interaction.isRepliable()) {
         const replyContent = 'Ocurrió un error inesperado al procesar tu solicitud.';
+        const ephemeral = !(interaction.isChatInputCommand() && interaction.commandName === 'inactividad');
         if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content: replyContent, ephemeral: true });
+          await interaction.followUp({ content: replyContent, ephemeral });
         } else {
-          await interaction.reply({ content: replyContent, ephemeral: true });
+          await interaction.reply({ content: replyContent, ephemeral });
         }
       }
     }
@@ -120,7 +121,7 @@ async function handleModal(interaction, inactivityService) {
 async function handleCommand(interaction, inactivityService, roleService, config) {
   if (interaction.commandName !== 'inactividad') return;
   if (!interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
-    await interaction.reply({ content: 'Solo administradores pueden usar estos comandos.', ephemeral: true });
+    await interaction.reply({ content: 'Solo administradores pueden usar estos comandos.' });
     return;
   }
 
@@ -134,7 +135,7 @@ async function handleCommand(interaction, inactivityService, roleService, config
         await handleStats(interaction, inactivityService, roleService);
         return;
       default:
-        await interaction.reply({ content: 'Comando desconocido.', ephemeral: true });
+        await interaction.reply({ content: 'Comando desconocido.' });
         return;
     }
   }
@@ -151,18 +152,18 @@ async function handleCommand(interaction, inactivityService, roleService, config
         await handleRoleList(interaction, roleService);
         return;
       default:
-        await interaction.reply({ content: 'Subcomando desconocido.', ephemeral: true });
+        await interaction.reply({ content: 'Subcomando desconocido.' });
         return;
     }
   }
 
-  await interaction.reply({ content: 'Comando desconocido.', ephemeral: true });
+  await interaction.reply({ content: 'Comando desconocido.' });
 }
 
 async function handleList(interaction, inactivityService) {
   const records = inactivityService.listInactivities(interaction.guildId);
   if (!records.length) {
-    await interaction.reply({ content: 'No hay miembros inactivos actualmente.', ephemeral: true });
+    await interaction.reply({ content: 'No hay miembros inactivos actualmente.' });
     return;
   }
 
@@ -173,61 +174,95 @@ async function handleList(interaction, inactivityService) {
     }),
   );
 
-  await interaction.reply({ content: descriptions.join('\n'), ephemeral: true });
+  await interaction.reply({ content: descriptions.join('\n') });
 }
 
 async function handleStats(interaction, inactivityService, roleService) {
   const records = inactivityService.listInactivities(interaction.guildId);
   const tracked = roleService.listRoles(interaction.guildId);
   if (!tracked.length) {
-    await interaction.reply({ content: 'No hay roles configurados. Usa `/inactividad roles agregar`.', ephemeral: true });
+    await interaction.reply({ content: 'No hay roles configurados. Usa `/inactividad roles agregar`.' });
     return;
   }
 
-  const lines = [];
+  const summaries = [];
+  let totalMembers = 0;
+  let totalInactive = 0;
   for (const roleId of tracked) {
     const role = await interaction.guild.roles.fetch(roleId).catch(() => null);
     if (!role) continue;
     const members = role.members;
     const inactive = members.filter((member) => records.some((record) => record.userId === member.id));
     const activeCount = members.size - inactive.size;
-    lines.push(`**${role.name}** — Inactivos: ${inactive.size} | Activos: ${activeCount}`);
+    totalMembers += members.size;
+    totalInactive += inactive.size;
+    summaries.push({
+      role,
+      total: members.size,
+      inactive: inactive.size,
+      active: activeCount,
+    });
+  }
+
+  if (!summaries.length) {
+    await interaction.reply({ content: 'No se encontraron roles monitoreados disponibles.' });
+    return;
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle('Estadísticas de inactividad')
+    .setColor(0x5865f2)
+    .setTimestamp(new Date())
+    .setDescription('Resumen actualizado de los roles monitoreados.');
+
+  const totalActive = Math.max(totalMembers - totalInactive, 0);
+  const totalPercentage = totalMembers ? (totalInactive / totalMembers) * 100 : 0;
+  embed.addFields({
+    name: 'Visión general',
+    value: `Miembros analizados: **${totalMembers}**\nInactivos: **${totalInactive}** (${totalPercentage.toFixed(1)}%)\nActivos: **${totalActive}**`,
+  });
+
+  for (const summary of summaries) {
+    const percentage = summary.total ? (summary.inactive / summary.total) * 100 : 0;
+    embed.addFields({
+      name: summary.role.name,
+      value: `${buildBar(percentage)} ${percentage.toFixed(1)}% inactivos\nInactivos: **${summary.inactive}** | Activos: **${summary.active}**`,
+      inline: summaries.length > 1,
+    });
   }
 
   const snapshots = roleService.getSnapshots(interaction.guildId);
-  if (snapshots.length) {
-    lines.push('\nHistorial (últimos 30 días):');
-    for (const snapshot of snapshots.slice(0, 10)) {
-      lines.push(`• <t:${snapshot.capturedAt.toSeconds()}:F> — <@&${snapshot.roleId}> → Inactivos ${snapshot.inactiveCount}, Activos ${snapshot.activeCount}`);
-    }
+  const historyField = buildHistoryField(snapshots, summaries);
+  if (historyField) {
+    embed.addFields(historyField);
   }
 
-  await interaction.reply({ content: lines.join('\n'), ephemeral: true });
+  await interaction.reply({ embeds: [embed] });
 }
 
 async function handleRoleAdd(interaction, roleService, config) {
   const role = interaction.options.getRole('rol', true);
   roleService.addRole(interaction.guildId, role.id);
-  await interaction.reply({ content: `Seguiremos el rol ${role}.`, ephemeral: true });
+  await interaction.reply({ content: `Seguiremos el rol ${role}.` });
   await logAdminAction(interaction, config, `${interaction.user} agregó el rol ${role} al seguimiento.`);
 }
 
 async function handleRoleRemove(interaction, roleService, config) {
   const role = interaction.options.getRole('rol', true);
   roleService.removeRole(interaction.guildId, role.id);
-  await interaction.reply({ content: `Eliminamos el rol ${role} del seguimiento.`, ephemeral: true });
+  await interaction.reply({ content: `Eliminamos el rol ${role} del seguimiento.` });
   await logAdminAction(interaction, config, `${interaction.user} eliminó el rol ${role} del seguimiento.`);
 }
 
 async function handleRoleList(interaction, roleService) {
   const roles = roleService.listRoles(interaction.guildId);
   if (!roles.length) {
-    await interaction.reply({ content: 'No hay roles monitoreados.', ephemeral: true });
+    await interaction.reply({ content: 'No hay roles monitoreados.' });
     return;
   }
 
   const mentions = roles.map((roleId) => `<@&${roleId}>`);
-  await interaction.reply({ content: `Roles monitoreados: ${mentions.join(', ')}`, ephemeral: true });
+  await interaction.reply({ content: `Roles monitoreados: ${mentions.join(', ')}` });
 }
 
 async function logAdminAction(interaction, config, message) {
@@ -240,4 +275,60 @@ async function logAdminAction(interaction, config, message) {
   } catch (error) {
     logger.warn({ err: error }, 'No se pudo enviar mensaje al canal de auditoría');
   }
+}
+
+function buildBar(percentage) {
+  const width = 12;
+  const filled = Math.round((percentage / 100) * width);
+  const clampedFilled = Math.min(width, Math.max(0, filled));
+  const empty = width - clampedFilled;
+  return `${'█'.repeat(clampedFilled)}${'░'.repeat(empty)}`;
+}
+
+function buildHistoryField(snapshots, summaries) {
+  if (!snapshots.length) return null;
+
+  const grouped = new Map();
+  for (const snapshot of snapshots) {
+    if (!grouped.has(snapshot.roleId)) {
+      grouped.set(snapshot.roleId, []);
+    }
+    grouped.get(snapshot.roleId).push(snapshot);
+  }
+
+  const lines = [];
+  for (const summary of summaries) {
+    const roleSnapshots = grouped.get(summary.role.id);
+    if (!roleSnapshots?.length) continue;
+    const sorted = [...roleSnapshots].sort((a, b) => a.capturedAt.toMillis() - b.capturedAt.toMillis());
+    const recent = sorted.slice(-10);
+    const sparkline = buildSparkline(recent.map((item) => percentageInactive(item.inactiveCount, item.activeCount)));
+    const last = recent.at(-1);
+    const percentage = last ? percentageInactive(last.inactiveCount, last.activeCount).toFixed(1) : '0.0';
+    lines.push(`${summary.role} ${sparkline} (${percentage}%)`);
+  }
+
+  if (!lines.length) return null;
+
+  return {
+    name: 'Historial reciente',
+    value: lines.join('\n'),
+  };
+}
+
+function buildSparkline(percentages) {
+  if (!percentages.length) return 'sin datos';
+  const blocks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+  return percentages
+    .map((percentage) => {
+      const index = Math.min(blocks.length - 1, Math.max(0, Math.round((percentage / 100) * (blocks.length - 1))));
+      return blocks[index];
+    })
+    .join('');
+}
+
+function percentageInactive(inactive, active) {
+  const total = inactive + active;
+  if (!total) return 0;
+  return (inactive / total) * 100;
 }

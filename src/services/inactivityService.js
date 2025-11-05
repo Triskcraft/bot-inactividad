@@ -25,7 +25,6 @@ export class InactivityService {
     this.findStmt = db.prepare('SELECT * FROM inactivity_periods WHERE user_id = ?');
     this.listStmt = db.prepare('SELECT * FROM inactivity_periods WHERE guild_id = ? ORDER BY ends_at ASC');
     this.pendingStmt = db.prepare('SELECT * FROM inactivity_periods WHERE notified = 0 AND ends_at <= ? AND guild_id = ?');
-    this.markNotifiedStmt = db.prepare('UPDATE inactivity_periods SET notified = 1 WHERE user_id = ?');
   }
 
   /**
@@ -81,10 +80,6 @@ export class InactivityService {
    */
   getExpired(guildId) {
     return this.pendingStmt.all(DateTime.utc().toSeconds(), guildId).map(mapRow);
-  }
-
-  markNotified(userId) {
-    this.markNotifiedStmt.run(userId);
   }
 
   /**
