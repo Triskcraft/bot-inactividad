@@ -1,0 +1,30 @@
+module.exports = {
+  root: true,
+  env: {
+    node: true,
+    es2022: true,
+  },
+  extends: [
+    'eslint:recommended',
+    'plugin:import/recommended',
+    'prettier',
+  ],
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  },
+  rules: {
+    'import/no-unresolved': 'off',
+    'import/extensions': ['error', 'always', {
+      js: 'always',
+    }],
+    'no-console': 'off',
+  },
+  settings: {
+    'import/resolver': {
+      node: {
+        extensions: ['.js'],
+      },
+    },
+  },
+};
