@@ -58,11 +58,15 @@ export class Scheduler {
     for (const record of expired) {
       try {
         const member = await guild.members.fetch(record.userId);
-        await channel.send({ content: `${member}, tu periodo de inactividad ha finalizado.` });
-        this.inactivityService.markNotified(record.userId);
+        await channel.send({ content: `${member}, tu periodo de inactividad ha finalizado. Te hemos marcado como activo nuevamente.` });
+        await member
+          .send(`¡Hola! Tu periodo de inactividad en **${guild.name}** ha finalizado y ya puedes volver a participar.`)
+          .catch(() => null);
+        this.inactivityService.clearInactivity(record.userId);
         logger.info({ userId: record.userId }, 'Notificación de finalización enviada');
       } catch (error) {
         logger.error({ err: error, userId: record.userId }, 'No se pudo notificar a un miembro');
+        this.inactivityService.clearInactivity(record.userId);
       }
     }
   }
