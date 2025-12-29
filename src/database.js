@@ -36,6 +36,19 @@ export function initialiseDatabase(databasePath) {
       active_count INTEGER NOT NULL,
       captured_at INTEGER NOT NULL
     );
+    
+    CREATE TABLE IF NOT EXISTS links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mc_id TEXT UNIQUE NOT NULL,
+      discord_id TEXT UNIQUE NOT NULL
+    );
+    
+    CREATE TABLE IF NOT EXISTS link_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL,
+      discord_id TEXT NOT NULL,
+      discord_nickname TEXT NOT NULL
+    );
   `);
   return db;
 }

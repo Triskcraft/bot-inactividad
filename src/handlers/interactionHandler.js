@@ -9,8 +9,9 @@ import { logger } from '../logger.js';
  * @param {import('../services/inactivityService.js').InactivityService} inactivityService
  * @param {import('../services/roleService.js').RoleService} roleService
  * @param {import('../config.js').BotConfig} config
+ * @param {import('better-sqlite3').Database} db
  */
-export function registerInteractionHandlers(client, inactivityService, roleService, config) {
+export function registerInteractionHandlers(client, inactivityService, roleService, config, db) {
   client.on('interactionCreate', async (interaction) => {
     try {
       if (interaction.isButton()) {
@@ -18,7 +19,7 @@ export function registerInteractionHandlers(client, inactivityService, roleServi
       } else if (interaction.isModalSubmit()) {
         await handleModal(interaction, inactivityService);
       } else if (interaction.isChatInputCommand()) {
-        await handleCommand(interaction, inactivityService, roleService, config);
+        await handleCommand(interaction, inactivityService, roleService, config, db);
       }
     } catch (error) {
       logger.error({ err: error, interaction: interaction.id }, 'Error procesando interacción');
@@ -118,7 +119,19 @@ async function handleModal(interaction, inactivityService) {
   }
 }
 
-async function handleCommand(interaction, inactivityService, roleService, config) {
+async function handleCommand(interaction, inactivityService, roleService, config, db) {
+  if (interaction.commandName === 'inactividad') return inactividadCommand(interaction, inactivityService, roleService, config);
+  if (interaction.commandName === 'dis-session') return disSessionnCommand(interaction, db);
+  if (interaction.commandName === 'code') return handleCodeDB(interaction, db);
+  await interaction.reply({ content: 'Comando desconocido.' });
+}
+
+async function disSessionnCommand(interaction, db) {
+  if (interaction.commandName !== 'dis-session') return;
+  await handleCodeDB(interaction, db);
+}
+
+async function inactividadCommand(interaction, inactivityService, roleService, config) {
   if (interaction.commandName !== 'inactividad') return;
   if (!interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.reply({ content: 'Solo administradores pueden usar estos comandos.' });
@@ -129,7 +142,7 @@ async function handleCommand(interaction, inactivityService, roleService, config
   if (!group) {
     switch (interaction.options.getSubcommand()) {
       case 'listar':
-        await handleList(interaction, inactivityService);
+        await handleList(interaction, inactivityService, roleService);
         return;
       case 'estadisticas':
         await handleStats(interaction, inactivityService, roleService);
@@ -160,21 +173,156 @@ async function handleCommand(interaction, inactivityService, roleService, config
   await interaction.reply({ content: 'Comando desconocido.' });
 }
 
-async function handleList(interaction, inactivityService) {
-  const records = inactivityService.listInactivities(interaction.guildId);
-  if (!records.length) {
-    await interaction.reply({ content: 'No hay miembros inactivos actualmente.' });
+async function handleCodeDB(interaction, db) {
+  const code = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+  const userId = interaction.user.id;
+  const username = interaction.user.username;
+  const displayName = interaction.member?.displayName || username;
+
+  try {
+    // Insertar en la base de datos
+    const stmt = db.prepare(`
+      INSERT INTO link_codes (code, discord_id, discord_nickname)
+      VALUES (?, ?, ?)
+    `);
+    stmt.run(code, userId, displayName);
+    
+    logger.info({ code, userId, displayName }, 'Código registrado en BD');
+  } catch (error) {
+    logger.error({ err: error, userId }, 'Error al guardar código en BD');
+    await interaction.reply({ 
+      content: 'Ocurrió un error al generar el código. Intenta nuevamente.', 
+      ephemeral: true 
+    });
     return;
   }
 
-  const descriptions = await Promise.all(
-    records.map(async (record) => {
-      const member = await interaction.guild.members.fetch(record.userId).catch(() => null);
-      return `${member ?? record.userId} → ${formatForUser(record.endsAt)}`;
-    }),
-  );
+  try {
+    await interaction.user.send({ 
+      content: `Tu código es: **${code}**` 
+    });
+  } catch (error) {
+    logger.warn({ err: error, userId: interaction.user.id }, 'No se pudo enviar DM');
+  }
+  
+  await interaction.reply({ 
+    content: `Tu código es: **${code}**`, 
+    ephemeral: true 
+  });
+}
 
-  await interaction.reply({ content: descriptions.join('\n') });
+async function handleList(interaction, inactivityService, roleService) {
+  const records = inactivityService.listInactivities(interaction.guildId);
+  const trackedRoles = roleService.listRoles(interaction.guildId);
+
+  if (!trackedRoles.length) {
+    await interaction.reply({ content: 'No hay roles configurados. Usa `/inactividad roles agregar`.' });
+    return;
+  }
+
+  // Obtener todos los miembros del servidor (incluyendo offline)
+  await interaction.deferReply();
+  let allServerMembers = await interaction.guild.members.fetch().catch(() => null);
+
+  // Si no se pueden obtener todos, usar role.members como fallback
+  if (!allServerMembers || allServerMembers.size === 0) {
+    allServerMembers = new Map();
+    for (const roleId of trackedRoles) {
+      const role = await interaction.guild.roles.fetch(roleId).catch(() => null);
+      if (!role) continue;
+      for (const [memberId, member] of role.members) {
+        if (!allServerMembers.has(memberId)) {
+          allServerMembers.set(memberId, member);
+        }
+      }
+    }
+  }
+
+  // Validar que hay miembros
+  if (allServerMembers.size === 0) {
+    await interaction.editReply({ content: 'No se encontraron miembros con los roles monitoreados.' });
+    return;
+  }
+
+  // Filtrar miembros que tienen los roles monitoreados
+  const allMembers = new Map();
+  for (const [memberId, member] of allServerMembers) {
+    for (const roleId of trackedRoles) {
+      if (member.roles.cache.has(roleId)) {
+        allMembers.set(memberId, member);
+        break;
+      }
+    }
+  }
+
+  // Separar inactivos y activos
+  const inactiveMembers = [];
+  const activeMembers = [];
+  const inactiveIds = new Set(records.map((r) => r.userId));
+
+  for (const [memberId, member] of allMembers) {
+    if (inactiveIds.has(memberId)) {
+      const record = records.find((r) => r.userId === memberId);
+      inactiveMembers.push({ member, endsAt: record.endsAt });
+    } else {
+      activeMembers.push(member);
+    }
+  }
+
+  // Crear embed
+  const embed = new EmbedBuilder()
+    .setTitle('Estado de miembros monitoreados')
+    .setColor(0x5865f2)
+    .setTimestamp(new Date())
+    .setDescription(`Total: **${allMembers.size}** | Inactivos: **${inactiveMembers.length}** | Activos: **${activeMembers.length}**`);
+
+  // Agregar campo de inactivos (máximo 50 caracteres por línea, máximo 1024 caracteres totales)
+  if (inactiveMembers.length > 0) {
+    const maxLines = 20;
+    const inactiveList = inactiveMembers
+      .slice(0, maxLines)
+      .map((item) => {
+        const memberStr = item.member.user.username;
+        const endStr = formatForUser(item.endsAt).substring(0, 30);
+        return `${memberStr} → ${endStr}`;
+      })
+      .join('\n');
+    const displayText = inactiveMembers.length > maxLines
+      ? `${inactiveList}\n... y ${inactiveMembers.length - maxLines} más`
+      : inactiveList;
+    embed.addFields({
+      name: `❌ Inactivos (${inactiveMembers.length})`,
+      value: displayText || 'Sin datos',
+    });
+  } else {
+    embed.addFields({
+      name: `❌ Inactivos (0)`,
+      value: 'No hay miembros inactivos.',
+    });
+  }
+
+  // Agregar campo de activos (máximo 50 caracteres por línea, máximo 1024 caracteres totales)
+  if (activeMembers.length > 0) {
+    const maxLines = 20;
+    const activeList = activeMembers
+      .slice(0, maxLines)
+      .map((member) => member.user.username)
+      .join('\n');
+    const displayText = activeMembers.length > maxLines
+      ? `${activeList}\n... y ${activeMembers.length - maxLines} más`
+      : activeList;
+    embed.addFields({
+      name: `✅ Activos (${activeMembers.length})`,
+      value: displayText || 'Sin datos',
+    });
+  } else {
+    embed.addFields({
+      name: `✅ Activos (0)`,
+      value: 'No hay miembros activos.',
+    });
+  }
+
+  await interaction.editReply({ embeds: [embed] });
 }
 
 async function handleStats(interaction, inactivityService, roleService) {
@@ -185,13 +333,26 @@ async function handleStats(interaction, inactivityService, roleService) {
     return;
   }
 
+  // Obtener todos los miembros del servidor (incluyendo offline)
+  let allServerMembers = await interaction.guild.members.fetch().catch(() => null);
+
   const summaries = [];
   let totalMembers = 0;
   let totalInactive = 0;
   for (const roleId of tracked) {
     const role = await interaction.guild.roles.fetch(roleId).catch(() => null);
     if (!role) continue;
-    const members = role.members;
+
+    // Filtrar miembros que tienen este rol
+    let members;
+    if (allServerMembers && allServerMembers.size > 0) {
+      // Si tenemos todos los miembros, usar eso
+      members = allServerMembers.filter((member) => member.roles.cache.has(roleId));
+    } else {
+      // Si no, usar role.members como fallback
+      members = role.members;
+    }
+
     const inactive = members.filter((member) => records.some((record) => record.userId === member.id));
     const activeCount = members.size - inactive.size;
     totalMembers += members.size;

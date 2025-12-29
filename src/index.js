@@ -26,7 +26,7 @@ async function bootstrap() {
   const roleService = new RoleService(db);
   const scheduler = new Scheduler(inactivityService, roleService, client, config);
 
-  registerInteractionHandlers(client, inactivityService, roleService, config);
+  registerInteractionHandlers(client, inactivityService, roleService, config, db);
 
   client.once('ready', async () => {
     logger.info({ tag: client.user.tag }, 'Bot conectado');
