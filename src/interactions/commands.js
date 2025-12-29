@@ -1,4 +1,4 @@
-import { Routes } from 'discord-api-types/v10.js';
+import { Routes } from 'discord-api-types/v10';
 import { REST } from '@discordjs/rest';
 import { PermissionsBitField } from 'discord.js';
 
