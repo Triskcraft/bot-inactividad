@@ -182,7 +182,7 @@ async function handleCodeDB(interaction: CommandInteraction<"cached">) {
     await db.$transaction(async db => {
       await db.linkCode.delete({
         where: { discord_id }
-      })
+      }).catch(() => { /* ignore if not found */ });
       db.linkCode.create({
         data: { discord_id, discord_nickname, code }
       })
