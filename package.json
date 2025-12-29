@@ -13,6 +13,7 @@
     "@discordjs/rest": "^1.7.1",
     "@js-temporal/polyfill": "^0.5.1",
     "@prisma/adapter-better-sqlite3": "^7.2.0",
+    "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "better-sqlite3": "^9.0.0",
     "discord-api-types": "^0.37.61",
@@ -20,6 +21,7 @@
     "dotenv": "^16.3.1",
     "luxon": "^3.4.4",
     "node.js": "^0.0.1-security",
+    "pg": "^8.16.3",
     "pino": "^8.15.0"
   },
   "devDependencies": {
