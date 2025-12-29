@@ -1,0 +1,63 @@
+datasource db {
+    provider = "sqlite"
+}
+
+generator client {
+    provider               = "prisma-client"
+    engineType             = "client"
+    output                 = "./generated"
+    runtime                = "nodejs"
+    moduleFormat           = "esm"
+    generatedFileExtension = "ts"
+    importFileExtension    = "js"
+    previewFeatures        = ["typedSql"]
+}
+
+model InactivityPeriod {
+    user_id       String   @id
+    guild_id      String
+    role_snapshot String
+    started_at    DateTime @default(now())
+    ends_at       DateTime
+    source        String
+    notified      Boolean
+
+    @@map("inactivity_periods")
+}
+
+model TrackedRole {
+    guild_id   String
+    role_id    String
+    created_at DateTime @default(now())
+
+    @@id([guild_id, role_id])
+    @@map("tracked_roles")
+}
+
+model RoleStatistic {
+    id             Int      @id @default(autoincrement())
+    guild_id       String
+    role_id        String
+    inactive_count Int
+    active_count   Int
+    captured_at    DateTime @default(now())
+
+    @@map("role_statistics")
+}
+
+model Link {
+    id         Int    @id @default(autoincrement())
+    discord_id String @unique
+    mc_id      String @unique
+
+    @@map("links")
+}
+
+model LinkCode {
+    id               Int    @id @default(autoincrement())
+    discord_id       String @unique
+    discord_nickname String
+    code             String @unique
+
+    @@map("link_codes")
+}

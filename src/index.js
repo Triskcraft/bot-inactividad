@@ -1,6 +1,5 @@
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { loadConfig } from './config.js';
-import { initialiseDatabase } from './database.js';
 import { InactivityService } from './services/inactivityService.js';
 import { RoleService } from './services/roleService.js';
 import { Scheduler } from './services/scheduler.js';
@@ -10,7 +9,6 @@ import { logger } from './logger.js';
 
 async function bootstrap() {
   const config = loadConfig();
-  const db = initialiseDatabase(config.databasePath);
 
   const client = new Client({
     intents: [
@@ -22,11 +20,11 @@ async function bootstrap() {
     partials: [Partials.GuildMember, Partials.Message, Partials.Channel, Partials.Reaction],
   });
 
-  const inactivityService = new InactivityService(db);
-  const roleService = new RoleService(db);
+  const inactivityService = new InactivityService();
+  const roleService = new RoleService();
   const scheduler = new Scheduler(inactivityService, roleService, client, config);
 
-  registerInteractionHandlers(client, inactivityService, roleService, config, db);
+  registerInteractionHandlers({ client, inactivityService, roleService, config });
 
   client.once('ready', async () => {
     logger.info({ tag: client.user.tag }, 'Bot conectado');

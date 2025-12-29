@@ -1,0 +1,27 @@
+{
+    "WillLuke.nextjs.addTypesOnSave": true,
+    "WillLuke.nextjs.hasPrompted": true,
+    "editor.defaultFormatter": "prettier.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "css.lint.unknownAtRules": "ignore",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "always"
+    },
+    "[prisma]": {
+        "editor.defaultFormatter": "Prisma.prisma"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "prettier.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "prettier.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "ms-vsliveshare.vsliveshare"
+    },
+    "typescript.tsdk": "node_modules\\typescript\\lib",
+    "[javascript]": {
+        "editor.defaultFormatter": "ms-vsliveshare.vsliveshare"
+    }
+}

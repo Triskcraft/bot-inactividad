@@ -3,3 +3,10 @@ node_modules/
 npm-debug.log*
 .DS_Store
 data/
+database/
+src/prisma/generated
+build
+dist
+*.db
+*.db-shm
+*.db-wal

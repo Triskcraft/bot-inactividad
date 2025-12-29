@@ -46,7 +46,7 @@ export class Scheduler {
 
   async runReminders() {
     const guild = await this.client.guilds.fetch(this.config.guildId);
-    const expired = this.inactivityService.getExpired(guild.id);
+    const expired = await this.inactivityService.getExpired(guild.id);
     if (!expired.length) return;
 
     const channel = await guild.channels.fetch(this.config.inactivityChannelId);
@@ -57,23 +57,23 @@ export class Scheduler {
 
     for (const record of expired) {
       try {
-        const member = await guild.members.fetch(record.userId);
+        const member = await guild.members.fetch(record.user_id);
         await channel.send({ content: `${member}, tu periodo de inactividad ha finalizado. Te hemos marcado como activo nuevamente.` });
         await member
           .send(`¡Hola! Tu periodo de inactividad en **${guild.name}** ha finalizado y ya puedes volver a participar.`)
           .catch(() => null);
-        this.inactivityService.clearInactivity(record.userId);
-        logger.info({ userId: record.userId }, 'Notificación de finalización enviada');
+        this.inactivityService.clearInactivity(record.user_id);
+        logger.info({ userId: record.user_id }, 'Notificación de finalización enviada');
       } catch (error) {
-        logger.error({ err: error, userId: record.userId }, 'No se pudo notificar a un miembro');
-        this.inactivityService.clearInactivity(record.userId);
+        logger.error({ err: error, userId: record.user_id }, 'No se pudo notificar a un miembro');
+        this.inactivityService.clearInactivity(record.user_id);
       }
     }
   }
 
   async captureSnapshots() {
     const guild = await this.client.guilds.fetch(this.config.guildId);
-    const trackedRoles = this.roleService.listRoles(guild.id);
+    const trackedRoles = await this.roleService.listRoles(guild.id);
     const now = DateTime.utc();
     const inactivityRecords = this.inactivityService.listInactivities(guild.id);
 

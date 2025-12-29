@@ -1,17 +1,15 @@
-import { EmbedBuilder, PermissionsBitField } from 'discord.js';
+import { ButtonInteraction, Client, CommandInteraction, EmbedBuilder, GuildMember, ModalSubmitInteraction, PermissionsBitField, Role } from 'discord.js';
 import { DateTime } from 'luxon';
 import { buildInactivityModal, buildInactivityPanel } from '../interactions/inactivityPanel.js';
 import { parseUserTime, formatForUser } from '../utils/time.js';
 import { logger } from '../logger.js';
+import type { InactivityService } from '../services/inactivityService.js';
+import type { RoleService } from '../services/roleService.js';
+import type { BotConfig } from '../config.js';
+import { db } from '../prisma/database.js';
+import type { RoleStatistic } from '../prisma/generated/client.js';
 
-/**
- * @param {import('discord.js').Client} client
- * @param {import('../services/inactivityService.js').InactivityService} inactivityService
- * @param {import('../services/roleService.js').RoleService} roleService
- * @param {import('../config.js').BotConfig} config
- * @param {import('better-sqlite3').Database} db
- */
-export function registerInteractionHandlers(client, inactivityService, roleService, config, db) {
+export function registerInteractionHandlers({ client, config, inactivityService, roleService }: { client: Client, inactivityService: InactivityService, roleService: RoleService, config: BotConfig }) {
   client.on('interactionCreate', async (interaction) => {
     try {
       if (interaction.isButton()) {
@@ -19,7 +17,7 @@ export function registerInteractionHandlers(client, inactivityService, roleServi
       } else if (interaction.isModalSubmit()) {
         await handleModal(interaction, inactivityService);
       } else if (interaction.isChatInputCommand()) {
-        await handleCommand(interaction, inactivityService, roleService, config, db);
+        await handleCommand(interaction as CommandInteraction<"cached">, inactivityService, roleService, config);
       }
     } catch (error) {
       logger.error({ err: error, interaction: interaction.id }, 'Error procesando interacción');
@@ -37,32 +35,38 @@ export function registerInteractionHandlers(client, inactivityService, roleServi
 
   client.once('ready', async () => {
     const channel = await client.channels.fetch(config.inactivityChannelId);
-    if (!channel?.isTextBased()) {
+    if (!channel) {
+      return logger.warn('Canal no encontrado');
+    }
+    if (!channel.isTextBased()) {
       logger.warn('El canal de interacciones no está disponible');
       return;
     }
 
     const existing = await channel.messages.fetch({ limit: 10 });
-    const anchor = existing.find((message) => message.author.id === client.user.id && message.components.length > 0);
+    const anchor = existing.find((message) => message.author.id === client.user?.id && message.components.length > 0);
     const { embed, components } = buildInactivityPanel();
 
     if (anchor) {
       await anchor.edit({ embeds: [embed], components });
     } else {
-      await channel.send({ embeds: [embed], components });
+      if (channel.isTextBased()) {
+        await channel.send({ embeds: [embed], components });
+        return;
+      }
     }
 
     logger.info('Panel de inactividad desplegado.');
   });
 }
 
-async function handleButton(interaction, inactivityService) {
+async function handleButton(interaction: ButtonInteraction, inactivityService: InactivityService) {
   if (!interaction.inGuild()) {
     await interaction.reply({ content: 'Solo disponible dentro del servidor.', ephemeral: true });
     return;
   }
 
-  const member = interaction.member;
+  const member = interaction.member as GuildMember;
 
   switch (interaction.customId) {
     case 'inactivity:set':
@@ -76,14 +80,14 @@ async function handleButton(interaction, inactivityService) {
       break;
     }
     case 'inactivity:show': {
-      const record = inactivityService.getInactivity(member.id);
+      const record = await inactivityService.getInactivity(member.id);
       if (!record) {
         await interaction.reply({ content: 'No tienes inactividad registrada.', ephemeral: true });
         return;
       }
 
       await interaction.reply({
-        content: `Estarás inactivo hasta ${formatForUser(record.endsAt)}.`,
+        content: `Estarás inactivo hasta ${formatForUser(record.ends_at)}.`,
         ephemeral: true,
       });
       break;
@@ -93,7 +97,7 @@ async function handleButton(interaction, inactivityService) {
   }
 }
 
-async function handleModal(interaction, inactivityService) {
+async function handleModal(interaction: ModalSubmitInteraction, inactivityService: InactivityService) {
   const duration = interaction.fields.getTextInputValue('duration');
   const until = interaction.fields.getTextInputValue('until');
 
@@ -109,29 +113,24 @@ async function handleModal(interaction, inactivityService) {
       await interaction.reply({ content: 'La fecha indicada ya pasó. Por favor ingresa un valor en el futuro.', ephemeral: true });
       return;
     }
-    inactivityService.markInactivity(interaction.guildId, interaction.member, untilDate, interaction.customId);
+    inactivityService.markInactivity(interaction.guildId!, interaction.member as GuildMember, untilDate.toJSDate(), interaction.customId);
     await interaction.reply({
-      content: `Registramos tu inactividad hasta ${formatForUser(untilDate)}.`,
+      content: `Registramos tu inactividad hasta ${formatForUser(untilDate.toJSDate())}.`,
       ephemeral: true,
     });
   } catch (error) {
-    await interaction.reply({ content: error.message, ephemeral: true });
+    await interaction.reply({ content: (error as Error).message, ephemeral: true });
   }
 }
 
-async function handleCommand(interaction, inactivityService, roleService, config, db) {
+async function handleCommand(interaction: CommandInteraction<"cached">, inactivityService: InactivityService, roleService: RoleService, config: BotConfig) {
   if (interaction.commandName === 'inactividad') return inactividadCommand(interaction, inactivityService, roleService, config);
-  if (interaction.commandName === 'dis-session') return disSessionnCommand(interaction, db);
-  if (interaction.commandName === 'code') return handleCodeDB(interaction, db);
+  if (interaction.commandName === 'dis-session') return handleCodeDB(interaction);
   await interaction.reply({ content: 'Comando desconocido.' });
 }
 
-async function disSessionnCommand(interaction, db) {
-  if (interaction.commandName !== 'dis-session') return;
-  await handleCodeDB(interaction, db);
-}
 
-async function inactividadCommand(interaction, inactivityService, roleService, config) {
+async function inactividadCommand(interaction: CommandInteraction<"cached">, inactivityService: InactivityService, roleService: RoleService, config: BotConfig) {
   if (interaction.commandName !== 'inactividad') return;
   if (!interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.reply({ content: 'Solo administradores pueden usar estos comandos.' });
@@ -173,47 +172,49 @@ async function inactividadCommand(interaction, inactivityService, roleService, c
   await interaction.reply({ content: 'Comando desconocido.' });
 }
 
-async function handleCodeDB(interaction, db) {
+async function handleCodeDB(interaction: CommandInteraction<"cached">) {
   const code = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-  const userId = interaction.user.id;
+  const discord_id = interaction.user.id;
   const username = interaction.user.username;
-  const displayName = interaction.member?.displayName || username;
+  const discord_nickname = interaction.member?.displayName || username;
 
   try {
-    // Insertar en la base de datos
-    const stmt = db.prepare(`
-      INSERT INTO link_codes (code, discord_id, discord_nickname)
-      VALUES (?, ?, ?)
-    `);
-    stmt.run(code, userId, displayName);
-    
-    logger.info({ code, userId, displayName }, 'Código registrado en BD');
+    await db.$transaction(async db => {
+      await db.linkCode.delete({
+        where: { discord_id }
+      })
+      db.linkCode.create({
+        data: { discord_id, discord_nickname, code }
+      })
+    })
+
+    logger.info({ code, discord_id, discord_nickname }, 'Código registrado en BD');
   } catch (error) {
-    logger.error({ err: error, userId }, 'Error al guardar código en BD');
-    await interaction.reply({ 
-      content: 'Ocurrió un error al generar el código. Intenta nuevamente.', 
-      ephemeral: true 
+    logger.error({ err: error, discord_id }, 'Error al guardar código en BD');
+    await interaction.reply({
+      content: 'Ocurrió un error al generar el código. Intenta nuevamente.',
+      ephemeral: true
     });
     return;
   }
 
   try {
-    await interaction.user.send({ 
-      content: `Tu código es: **${code}**` 
+    await interaction.user.send({
+      content: `Tu código es: **${code}**`
     });
   } catch (error) {
     logger.warn({ err: error, userId: interaction.user.id }, 'No se pudo enviar DM');
   }
-  
-  await interaction.reply({ 
-    content: `Tu código es: **${code}**`, 
-    ephemeral: true 
+
+  await interaction.reply({
+    content: `Tu código es: **${code}**`,
+    ephemeral: true
   });
 }
 
-async function handleList(interaction, inactivityService, roleService) {
-  const records = inactivityService.listInactivities(interaction.guildId);
-  const trackedRoles = roleService.listRoles(interaction.guildId);
+async function handleList(interaction: CommandInteraction<"cached">, inactivityService: InactivityService, roleService: RoleService) {
+  const records = await inactivityService.listInactivities(interaction.guildId);
+  const trackedRoles = await roleService.listRoles(interaction.guildId);
 
   if (!trackedRoles.length) {
     await interaction.reply({ content: 'No hay roles configurados. Usa `/inactividad roles agregar`.' });
@@ -222,11 +223,10 @@ async function handleList(interaction, inactivityService, roleService) {
 
   // Obtener todos los miembros del servidor (incluyendo offline)
   await interaction.deferReply();
-  let allServerMembers = await interaction.guild.members.fetch().catch(() => null);
+  let allServerMembers = await interaction.guild.members.fetch();
 
   // Si no se pueden obtener todos, usar role.members como fallback
   if (!allServerMembers || allServerMembers.size === 0) {
-    allServerMembers = new Map();
     for (const roleId of trackedRoles) {
       const role = await interaction.guild.roles.fetch(roleId).catch(() => null);
       if (!role) continue;
@@ -239,7 +239,7 @@ async function handleList(interaction, inactivityService, roleService) {
   }
 
   // Validar que hay miembros
-  if (allServerMembers.size === 0) {
+  if (!allServerMembers || allServerMembers.size === 0) {
     await interaction.editReply({ content: 'No se encontraron miembros con los roles monitoreados.' });
     return;
   }
@@ -258,12 +258,12 @@ async function handleList(interaction, inactivityService, roleService) {
   // Separar inactivos y activos
   const inactiveMembers = [];
   const activeMembers = [];
-  const inactiveIds = new Set(records.map((r) => r.userId));
+  const inactiveIds = new Set(records.map((r) => r.user_id));
 
   for (const [memberId, member] of allMembers) {
     if (inactiveIds.has(memberId)) {
-      const record = records.find((r) => r.userId === memberId);
-      inactiveMembers.push({ member, endsAt: record.endsAt });
+      const record = records.find((r) => r.user_id === memberId);
+      inactiveMembers.push({ member, endsAt: record?.ends_at });
     } else {
       activeMembers.push(member);
     }
@@ -325,9 +325,9 @@ async function handleList(interaction, inactivityService, roleService) {
   await interaction.editReply({ embeds: [embed] });
 }
 
-async function handleStats(interaction, inactivityService, roleService) {
-  const records = inactivityService.listInactivities(interaction.guildId);
-  const tracked = roleService.listRoles(interaction.guildId);
+async function handleStats(interaction: CommandInteraction<"cached">, inactivityService: InactivityService, roleService: RoleService) {
+  const records = await inactivityService.listInactivities(interaction.guildId);
+  const tracked = await roleService.listRoles(interaction.guildId);
   if (!tracked.length) {
     await interaction.reply({ content: 'No hay roles configurados. Usa `/inactividad roles agregar`.' });
     return;
@@ -353,7 +353,7 @@ async function handleStats(interaction, inactivityService, roleService) {
       members = role.members;
     }
 
-    const inactive = members.filter((member) => records.some((record) => record.userId === member.id));
+    const inactive = members.filter((member) => records.some((record) => record.user_id === member.id));
     const activeCount = members.size - inactive.size;
     totalMembers += members.size;
     totalInactive += inactive.size;
@@ -392,7 +392,7 @@ async function handleStats(interaction, inactivityService, roleService) {
     });
   }
 
-  const snapshots = roleService.getSnapshots(interaction.guildId);
+  const snapshots = await roleService.getSnapshots(interaction.guildId);
   const historyField = buildHistoryField(snapshots, summaries);
   if (historyField) {
     embed.addFields(historyField);
@@ -401,22 +401,22 @@ async function handleStats(interaction, inactivityService, roleService) {
   await interaction.reply({ embeds: [embed] });
 }
 
-async function handleRoleAdd(interaction, roleService, config) {
+async function handleRoleAdd(interaction: CommandInteraction<"cached">, roleService: RoleService, config: BotConfig) {
   const role = interaction.options.getRole('rol', true);
   roleService.addRole(interaction.guildId, role.id);
   await interaction.reply({ content: `Seguiremos el rol ${role}.` });
   await logAdminAction(interaction, config, `${interaction.user} agregó el rol ${role} al seguimiento.`);
 }
 
-async function handleRoleRemove(interaction, roleService, config) {
+async function handleRoleRemove(interaction: CommandInteraction<"cached">, roleService: RoleService, config: BotConfig) {
   const role = interaction.options.getRole('rol', true);
   roleService.removeRole(interaction.guildId, role.id);
   await interaction.reply({ content: `Eliminamos el rol ${role} del seguimiento.` });
   await logAdminAction(interaction, config, `${interaction.user} eliminó el rol ${role} del seguimiento.`);
 }
 
-async function handleRoleList(interaction, roleService) {
-  const roles = roleService.listRoles(interaction.guildId);
+async function handleRoleList(interaction: CommandInteraction<"cached">, roleService: RoleService) {
+  const roles = await roleService.listRoles(interaction.guildId);
   if (!roles.length) {
     await interaction.reply({ content: 'No hay roles monitoreados.' });
     return;
@@ -426,7 +426,7 @@ async function handleRoleList(interaction, roleService) {
   await interaction.reply({ content: `Roles monitoreados: ${mentions.join(', ')}` });
 }
 
-async function logAdminAction(interaction, config, message) {
+async function logAdminAction(interaction: CommandInteraction<"cached">, config: BotConfig, message: String) {
   if (!config.adminLogChannelId) return;
   try {
     const channel = await interaction.client.channels.fetch(config.adminLogChannelId);
@@ -438,7 +438,7 @@ async function logAdminAction(interaction, config, message) {
   }
 }
 
-function buildBar(percentage) {
+function buildBar(percentage: number) {
   const width = 12;
   const filled = Math.round((percentage / 100) * width);
   const clampedFilled = Math.min(width, Math.max(0, filled));
@@ -446,26 +446,31 @@ function buildBar(percentage) {
   return `${'█'.repeat(clampedFilled)}${'░'.repeat(empty)}`;
 }
 
-function buildHistoryField(snapshots, summaries) {
+function buildHistoryField(snapshots: RoleStatistic[], summaries: Array<{
+  role: Role,
+  total: number,
+  inactive: number,
+  active: number,
+}>) {
   if (!snapshots.length) return null;
 
   const grouped = new Map();
   for (const snapshot of snapshots) {
-    if (!grouped.has(snapshot.roleId)) {
-      grouped.set(snapshot.roleId, []);
+    if (!grouped.has(snapshot.role_id)) {
+      grouped.set(snapshot.role_id, []);
     }
-    grouped.get(snapshot.roleId).push(snapshot);
+    grouped.get(snapshot.role_id).push(snapshot);
   }
 
   const lines = [];
   for (const summary of summaries) {
     const roleSnapshots = grouped.get(summary.role.id);
     if (!roleSnapshots?.length) continue;
-    const sorted = [...roleSnapshots].sort((a, b) => a.capturedAt.toMillis() - b.capturedAt.toMillis());
+    const sorted = [...roleSnapshots].sort((a, b) => a.captured_at.toMillis() - b.captured_at.toMillis());
     const recent = sorted.slice(-10);
-    const sparkline = buildSparkline(recent.map((item) => percentageInactive(item.inactiveCount, item.activeCount)));
+    const sparkline = buildSparkline(recent.map((item) => percentageInactive(item.inactive_count, item.active_count)));
     const last = recent.at(-1);
-    const percentage = last ? percentageInactive(last.inactiveCount, last.activeCount).toFixed(1) : '0.0';
+    const percentage = last ? percentageInactive(last.inactive_count, last.active_count).toFixed(1) : '0.0';
     lines.push(`${summary.role} ${sparkline} (${percentage}%)`);
   }
 
@@ -477,7 +482,7 @@ function buildHistoryField(snapshots, summaries) {
   };
 }
 
-function buildSparkline(percentages) {
+function buildSparkline(percentages: Array<number>) {
   if (!percentages.length) return 'sin datos';
   const blocks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
   return percentages
@@ -488,7 +493,7 @@ function buildSparkline(percentages) {
     .join('');
 }
 
-function percentageInactive(inactive, active) {
+function percentageInactive(inactive: number, active: number) {
   const total = inactive + active;
   if (!total) return 0;
   return (inactive / total) * 100;

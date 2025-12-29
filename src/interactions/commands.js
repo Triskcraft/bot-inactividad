@@ -1,4 +1,4 @@
-import { Routes } from 'discord-api-types/v10';
+import { Routes } from 'discord-api-types/v10.js';
 import { REST } from '@discordjs/rest';
 import { PermissionsBitField } from 'discord.js';
 
@@ -66,6 +66,11 @@ export async function registerCommands(config) {
         },
       ],
     },
+    {
+      name: 'dis-session',
+      description: 'Genera una sesión de desconexión con código',
+      dm_permission: false,
+    }
   ];
 
   await rest.put(Routes.applicationGuildCommands(config.clientId, config.guildId), { body: commands });

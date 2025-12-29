@@ -64,9 +64,10 @@ function parseAbsolute(value, zone) {
 
 /**
  * Formatea una fecha para presentar al usuario en su huso horario.
- * @param {DateTime} until
+ * @param {Date} until
  * @returns {string}
  */
 export function formatForUser(until) {
-  return `<t:${Math.floor(until.toSeconds())}:F> (restan <t:${Math.floor(until.toSeconds())}:R>)`;
+  const secconds = Math.floor(until.getTime() / 1000)
+  return `<t:${secconds}:F> (restan <t:${secconds}:R>)`;
 }
