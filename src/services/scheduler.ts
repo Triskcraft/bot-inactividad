@@ -1,6 +1,9 @@
 import { DateTime } from 'luxon';
-import { Collection } from 'discord.js';
+import { Client, Collection, TextChannel } from 'discord.js';
 import { logger } from '../logger.js';
+import type { InactivityService } from './inactivityService.js';
+import type { RoleService } from './roleService.js';
+import type { BotConfig } from '../config.js';
 
 /**
  * Administra tareas recurrentes del bot.
@@ -12,7 +15,14 @@ export class Scheduler {
    * @param {import('discord.js').Client} client
    * @param {import('../config.js').BotConfig} config
    */
-  constructor(inactivityService, roleService, client, config) {
+
+  inactivityService: InactivityService;
+  roleService: RoleService;
+  client: Client;
+  config: BotConfig;
+  intervals: Collection<string, NodeJS.Timeout>;
+
+  constructor(inactivityService: InactivityService, roleService: RoleService, client: Client, config: BotConfig) {
     this.inactivityService = inactivityService;
     this.roleService = roleService;
     this.client = client;
@@ -45,11 +55,9 @@ export class Scheduler {
   }
 
   async runReminders() {
-    const guild = await this.client.guilds.fetch(this.config.guildId);
-    const expired = await this.inactivityService.getExpired(guild.id);
+    const channel = (await this.client.channels.fetch(this.config.inactivityChannelId)) as TextChannel;
+    const expired = await this.inactivityService.getExpired(channel.guild.id);
     if (!expired.length) return;
-
-    const channel = await guild.channels.fetch(this.config.inactivityChannelId);
     if (!channel || !channel.isTextBased()) {
       logger.warn('No se encontró canal de inactividad o no es de texto');
       return;
@@ -57,10 +65,10 @@ export class Scheduler {
 
     for (const record of expired) {
       try {
-        const member = await guild.members.fetch(record.user_id);
+        const member = await channel.guild.members.fetch(record.user_id);
         await channel.send({ content: `${member}, tu periodo de inactividad ha finalizado. Te hemos marcado como activo nuevamente.` });
         await member
-          .send(`¡Hola! Tu periodo de inactividad en **${guild.name}** ha finalizado y ya puedes volver a participar.`)
+          .send(`¡Hola! Tu periodo de inactividad en **TriskCraftSMP** ha finalizado y ya puedes volver a participar.`)
           .catch(() => null);
         this.inactivityService.clearInactivity(record.user_id);
         logger.info({ userId: record.user_id }, 'Notificación de finalización enviada');
@@ -72,10 +80,10 @@ export class Scheduler {
   }
 
   async captureSnapshots() {
-    const guild = await this.client.guilds.fetch(this.config.guildId);
+    const guild = await this.client.guilds.fetch(this.config.guildId as string);
     const trackedRoles = await this.roleService.listRoles(guild.id);
     const now = DateTime.utc();
-    const inactivityRecords = this.inactivityService.listInactivities(guild.id);
+    const inactivityRecords = await this.inactivityService.listInactivities(guild.id);
 
     for (const roleId of trackedRoles) {
       try {
@@ -83,7 +91,7 @@ export class Scheduler {
         if (!role) continue;
 
         const members = role.members;
-        const inactive = members.filter((member) => inactivityRecords.some((record) => record.userId === member.id));
+        const inactive = members.filter((member) => inactivityRecords.some((record) => record.user_id === member.id));
         const activeCount = members.size - inactive.size;
         this.roleService.persistSnapshot(guild.id, roleId, inactive.size, activeCount);
         logger.debug({ roleId, inactive: inactive.size, active: activeCount, capturedAt: now.toISO() }, 'Snapshot capturado');

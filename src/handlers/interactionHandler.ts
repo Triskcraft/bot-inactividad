@@ -1,4 +1,4 @@
-import { ButtonInteraction, Client, CommandInteraction, EmbedBuilder, GuildMember, ModalSubmitInteraction, PermissionsBitField, Role } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, Client, CommandInteraction, EmbedBuilder, GuildMember, ModalSubmitInteraction, PermissionsBitField, Role } from 'discord.js';
 import { DateTime } from 'luxon';
 import { buildInactivityModal, buildInactivityPanel } from '../interactions/inactivityPanel.js';
 import { parseUserTime, formatForUser } from '../utils/time.js';
@@ -9,7 +9,7 @@ import type { BotConfig } from '../config.js';
 import { db } from '../prisma/database.js';
 import type { RoleStatistic } from '../prisma/generated/client.js';
 
-export function registerInteractionHandlers({ client, config, inactivityService, roleService }: { client: Client, inactivityService: InactivityService, roleService: RoleService, config: BotConfig }) {
+export function registerInteractionHandlers({ client, config, inactivityService, roleService }: { client: Client, config: BotConfig, inactivityService: InactivityService, roleService: RoleService }) {
   client.on('interactionCreate', async (interaction) => {
     try {
       if (interaction.isButton()) {
@@ -17,7 +17,7 @@ export function registerInteractionHandlers({ client, config, inactivityService,
       } else if (interaction.isModalSubmit()) {
         await handleModal(interaction, inactivityService);
       } else if (interaction.isChatInputCommand()) {
-        await handleCommand(interaction as CommandInteraction<"cached">, inactivityService, roleService, config);
+        await handleCommand(interaction as ChatInputCommandInteraction<"cached">, inactivityService, roleService, config);
       }
     } catch (error) {
       logger.error({ err: error, interaction: interaction.id }, 'Error procesando interacción');
@@ -50,7 +50,7 @@ export function registerInteractionHandlers({ client, config, inactivityService,
     if (anchor) {
       await anchor.edit({ embeds: [embed], components });
     } else {
-      if (channel.isTextBased()) {
+      if (channel.isTextBased() && 'send' in channel) {
         await channel.send({ embeds: [embed], components });
         return;
       }
@@ -123,14 +123,14 @@ async function handleModal(interaction: ModalSubmitInteraction, inactivityServic
   }
 }
 
-async function handleCommand(interaction: CommandInteraction<"cached">, inactivityService: InactivityService, roleService: RoleService, config: BotConfig) {
+async function handleCommand(interaction: ChatInputCommandInteraction<"cached">, inactivityService: InactivityService, roleService: RoleService, config: BotConfig) {
   if (interaction.commandName === 'inactividad') return inactividadCommand(interaction, inactivityService, roleService, config);
   if (interaction.commandName === 'dis-session') return handleCodeDB(interaction);
   await interaction.reply({ content: 'Comando desconocido.' });
 }
 
 
-async function inactividadCommand(interaction: CommandInteraction<"cached">, inactivityService: InactivityService, roleService: RoleService, config: BotConfig) {
+async function inactividadCommand(interaction: ChatInputCommandInteraction<"cached">, inactivityService: InactivityService, roleService: RoleService, config: BotConfig) {
   if (interaction.commandName !== 'inactividad') return;
   if (!interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.reply({ content: 'Solo administradores pueden usar estos comandos.' });
@@ -283,7 +283,7 @@ async function handleList(interaction: CommandInteraction<"cached">, inactivityS
       .slice(0, maxLines)
       .map((item) => {
         const memberStr = item.member.user.username;
-        const endStr = formatForUser(item.endsAt).substring(0, 30);
+        const endStr = item.endsAt ? formatForUser(item.endsAt).substring(0, 30) : 'Sin fecha';
         return `${memberStr} → ${endStr}`;
       })
       .join('\n');
@@ -401,14 +401,14 @@ async function handleStats(interaction: CommandInteraction<"cached">, inactivity
   await interaction.reply({ embeds: [embed] });
 }
 
-async function handleRoleAdd(interaction: CommandInteraction<"cached">, roleService: RoleService, config: BotConfig) {
+async function handleRoleAdd(interaction: ChatInputCommandInteraction<"cached">, roleService: RoleService, config: BotConfig) {
   const role = interaction.options.getRole('rol', true);
   roleService.addRole(interaction.guildId, role.id);
   await interaction.reply({ content: `Seguiremos el rol ${role}.` });
   await logAdminAction(interaction, config, `${interaction.user} agregó el rol ${role} al seguimiento.`);
 }
 
-async function handleRoleRemove(interaction: CommandInteraction<"cached">, roleService: RoleService, config: BotConfig) {
+async function handleRoleRemove(interaction: ChatInputCommandInteraction<"cached">, roleService: RoleService, config: BotConfig) {
   const role = interaction.options.getRole('rol', true);
   roleService.removeRole(interaction.guildId, role.id);
   await interaction.reply({ content: `Eliminamos el rol ${role} del seguimiento.` });
@@ -426,11 +426,11 @@ async function handleRoleList(interaction: CommandInteraction<"cached">, roleSer
   await interaction.reply({ content: `Roles monitoreados: ${mentions.join(', ')}` });
 }
 
-async function logAdminAction(interaction: CommandInteraction<"cached">, config: BotConfig, message: String) {
+async function logAdminAction(interaction: CommandInteraction<"cached">, config: BotConfig, message: string) {
   if (!config.adminLogChannelId) return;
   try {
     const channel = await interaction.client.channels.fetch(config.adminLogChannelId);
-    if (channel?.isTextBased()) {
+    if (channel?.isTextBased() && 'send' in channel) {
       await channel.send({ content: message });
     }
   } catch (error) {

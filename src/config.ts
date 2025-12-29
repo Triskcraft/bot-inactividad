@@ -13,20 +13,18 @@ function defineConfigDefaults() {
   process.env.NODE_ENV = process.env.NODE_ENV ?? 'development';
 }
 
-/**
- * @typedef {Object} BotConfig
- * @property {string} token
- * @property {string} clientId
- * @property {string} guildId
- * @property {string} inactivityChannelId
- * @property {string} adminLogChannelId
- * @property {string} databasePath
- * @property {number} reminderIntervalMinutes
- */
+export interface BotConfig {
+  token: string,
+  clientId: string,
+  guildId: string,
+  inactivityChannelId: string,
+  adminLogChannelId: string,
+  databasePath: string,
+  reminderIntervalMinutes: number
+}
 
 /**
  * Loads bot configuration from environment variables.
- * @returns {BotConfig}
  */
 export function loadConfig() {
   const required = [
@@ -43,11 +41,11 @@ export function loadConfig() {
   }
 
   return {
-    token: process.env.DISCORD_TOKEN,
-    clientId: process.env.DISCORD_CLIENT_ID,
-    guildId: process.env.DISCORD_GUILD_ID,
-    inactivityChannelId: process.env.DISCORD_INACTIVITY_CHANNEL_ID,
-    adminLogChannelId: process.env.DISCORD_ADMIN_LOG_CHANNEL_ID,
+    token: process.env.DISCORD_TOKEN!,
+    clientId: process.env.DISCORD_CLIENT_ID!,
+    guildId: process.env.DISCORD_GUILD_ID!,
+    inactivityChannelId: process.env.DISCORD_INACTIVITY_CHANNEL_ID!,
+    adminLogChannelId: process.env.DISCORD_ADMIN_LOG_CHANNEL_ID!,
     databasePath: process.env.DATABASE_PATH ?? path.resolve(__dirname, '..', 'data', 'inactividad.db'),
     reminderIntervalMinutes: Number.parseInt(process.env.REMINDER_INTERVAL_MINUTES ?? '5', 10),
   };

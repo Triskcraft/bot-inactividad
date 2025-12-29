@@ -6,6 +6,7 @@ import { Scheduler } from './services/scheduler.js';
 import { registerCommands } from './interactions/commands.js';
 import { registerInteractionHandlers } from './handlers/interactionHandler.js';
 import { logger } from './logger.js';
+import { db } from './prisma/database.js';
 
 async function bootstrap() {
   const config = loadConfig();
@@ -26,7 +27,7 @@ async function bootstrap() {
 
   registerInteractionHandlers({ client, inactivityService, roleService, config });
 
-  client.once('ready', async () => {
+  client.once('ready', async (client) => {
     logger.info({ tag: client.user.tag }, 'Bot conectado');
     scheduler.start();
   });
@@ -37,11 +38,11 @@ async function bootstrap() {
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-  async function shutdown(signal) {
+  async function shutdown(signal: string) {
     logger.info({ signal }, 'Cerrando bot');
     scheduler.stop();
     await client.destroy();
-    db.close();
+    db.$disconnect();
     process.exit(0);
   }
 

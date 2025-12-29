@@ -5,9 +5,10 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node build/index.js",
     "lint": "eslint .",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "build": "prisma generate && tsc"
   },
   "dependencies": {
     "@discordjs/rest": "^1.7.1",
