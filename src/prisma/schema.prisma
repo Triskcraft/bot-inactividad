@@ -93,6 +93,7 @@ model Medias {
 
     minecraft_user MinecraftUser @relation(fields: [mc_user_id], references: [id])
 
+    @@unique([mc_user_id, media_type])
     @@map("medias")
 }
 
