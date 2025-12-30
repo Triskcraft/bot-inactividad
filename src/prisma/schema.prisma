@@ -50,6 +50,9 @@ model Link {
     discord_id String @unique
     mc_id      String @unique
 
+    discord_user DiscordUser?   @relation(fields: [id], references: [id])
+    mc_user      MinecraftUser? @relation(fields: [mc_id], references: [id])
+
     @@map("links")
 }
 
@@ -60,4 +63,58 @@ model LinkCode {
     code             String @unique
 
     @@map("link_codes")
+}
+
+model Role {
+    id   String @id @default(dbgenerated("snowflake()"))
+    name String
+
+    linked_roles LinkedRole[]
+
+    @@map("roles")
+}
+
+model LinkedRole {
+    mc_user_id String
+    role_id    String
+
+    role           Role          @relation(fields: [role_id], references: [id])
+    minecraft_user MinecraftUser @relation(fields: [mc_user_id], references: [id])
+
+    @@id([mc_user_id, role_id])
+    @@map("linked_roles")
+}
+
+model Medias {
+    id         String @id @default(dbgenerated("snowflake()"))
+    mc_user_id String
+    media_type String
+    media_url  String
+
+    minecraft_user MinecraftUser @relation(fields: [mc_user_id], references: [id])
+
+    @@map("medias")
+}
+
+model MinecraftUser {
+    id          String @id
+    nickname    String
+    digs        Int    @default(0)
+    role        String
+    description String
+
+    linked_roles LinkedRole[]
+    link         Link?
+    medias       Medias[]
+
+    @@map("minecraft_users")
+}
+
+model DiscordUser {
+    id   String @id
+    rank String
+
+    link Link?
+
+    @@map("discord_users")
 }

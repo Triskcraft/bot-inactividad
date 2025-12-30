@@ -1,12 +1,13 @@
 import { Routes } from 'discord-api-types/v10';
 import { REST } from '@discordjs/rest';
 import { PermissionsBitField } from 'discord.js';
+import type { BotConfig } from '../config.js';
 
 /**
  * Registra los slash commands del bot.
  * @param {import('../config.js').BotConfig} config
  */
-export async function registerCommands(config) {
+export async function registerCommands(config: BotConfig) {
   const rest = new REST({ version: '10' }).setToken(config.token);
 
   const commands = [
