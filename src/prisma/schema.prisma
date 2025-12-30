@@ -35,7 +35,7 @@ model TrackedRole {
 }
 
 model RoleStatistic {
-    id             Int      @id @default(autoincrement())
+    id             String   @id @default(dbgenerated("snowflake()"))
     guild_id       String
     role_id        String
     inactive_count Int
@@ -46,7 +46,7 @@ model RoleStatistic {
 }
 
 model Link {
-    id         Int    @id @default(autoincrement())
+    id         String @id @default(dbgenerated("snowflake()"))
     discord_id String @unique
     mc_id      String @unique
 
@@ -54,7 +54,7 @@ model Link {
 }
 
 model LinkCode {
-    id               Int    @id @default(autoincrement())
+    id               String @id @default(dbgenerated("snowflake()"))
     discord_id       String @unique
     discord_nickname String
     code             String @unique
