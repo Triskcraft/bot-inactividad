@@ -1,16 +1,14 @@
-import type { Request, Response } from "express";
-import { readFile } from "fs/promises";
-import { envs } from "../../config.js";
-import { db } from "../../prisma/database.js";
+import type { Request, Response } from 'express'
+import { readFile } from 'fs/promises'
+import { envs } from '../../config.js'
+import { db } from '../../prisma/database.js'
 
 type McName = string
 
 export async function getMembers(req: Request, res: Response) {
-    const whitelist: McName[] = JSON.parse(
-        await readFile(envs.WHITELIST_ROUTE, {
-            encoding: 'utf-8',
-        }),
-    )
+    const file = await readFile(envs.WHITELIST_ROUTE, { encoding: 'utf-8' })
+    const whitelist: McName[] = JSON.parse(file)
+    res.set('Cache-Control', 'public, max-age=86400')
     res.json(await pooblateUsers(whitelist))
 }
 
@@ -22,19 +20,22 @@ interface Member {
     digs: number
     roles: string[]
     medias: {
-        type: string,
+        type: string
         url: string
     }[]
 }
-async function getInfoUser(mc_name: McName, links: Awaited<ReturnType<typeof getLinks>>) {
+async function getInfoUser(
+    mc_name: McName,
+    links: Awaited<ReturnType<typeof getLinks>>,
+) {
     const link = links.find(l => l.nickname === mc_name)
 
     if (!link) return null
 
     const rank = link.discord_user.rank
-    const description = link.description ?? ""
+    const description = link.description ?? ''
     const digs = link.digs ?? 0
-    const roles = link.linked_roles.map(lr => lr.role.name) ?? ["Digger"]
+    const roles = link.linked_roles.map(lr => lr.role.name) ?? ['Digger']
     const medias = link.medias.map(({ type, url }) => ({ type, url })) ?? []
 
     return {
@@ -61,11 +62,11 @@ async function getLinks() {
             discord_user: true,
             linked_roles: {
                 include: {
-                    role: true
-                }
+                    role: true,
+                },
             },
-            medias: true
-        }
+            medias: true,
+        },
     })
     return link
 }

@@ -5,6 +5,13 @@
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
     "css.lint.unknownAtRules": "ignore",
+    "eslint.useFlatConfig": true,
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact"
+    ],
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "always"
     },
@@ -18,7 +25,7 @@
         "editor.defaultFormatter": "prettier.prettier-vscode"
     },
     "[typescript]": {
-        "editor.defaultFormatter": "vscode.typescript-language-features"
+        "editor.defaultFormatter": "prettier.prettier-vscode"
     },
     "typescript.tsdk": "node_modules\\typescript\\lib",
     "[javascript]": {
