@@ -16,7 +16,12 @@ export class InactivityService {
         user_id: member.id,
       },
       create: {
-        user_id: member.id,
+        discord_user: {
+          connectOrCreate: {
+            create: { id: member.id },
+            where: { id: member.id }
+          }
+        },
         guild_id,
         role_snapshot: JSON.stringify(member.roles.cache.map((role) => role.id)),
         started_at: new Date(),

@@ -18,7 +18,7 @@
         "editor.defaultFormatter": "prettier.prettier-vscode"
     },
     "[typescript]": {
-        "editor.defaultFormatter": "ms-vsliveshare.vsliveshare"
+        "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "typescript.tsdk": "node_modules\\typescript\\lib",
     "[javascript]": {

@@ -41,7 +41,6 @@ export function loadConfig() {
     'DISCORD_ADMIN_LOG_CHANNEL_ID',
     "API_PORT",
     'WHITELIST_ROUTE',
-    'PLAYER_LIST_ROUTE',
     'DEPLOY_COMMAND'
   ];
 
@@ -50,7 +49,7 @@ export function loadConfig() {
     throw new Error(`Faltan variables de entorno: ${missing.join(', ')}`);
   }
 
-  const { API_PORT = "", WHITELIST_ROUTE = "", PLAYER_LIST_ROUTE = "", DEPLOY_COMMAND = false } = process.env
+  const { API_PORT = "", WHITELIST_ROUTE = "", DEPLOY_COMMAND = false } = process.env
 
   return {
     token: process.env.DISCORD_TOKEN!,
@@ -62,9 +61,12 @@ export function loadConfig() {
     reminderIntervalMinutes: Number.parseInt(process.env.REMINDER_INTERVAL_MINUTES ?? '5', 10),
     API_PORT,
     WHITELIST_ROUTE,
-    PLAYER_LIST_ROUTE,
     DEPLOY_COMMAND: DEPLOY_COMMAND === "true"
   };
 }
 
 export const envs = loadConfig()
+
+
+//                             owner                    admin                   staff                   dev                     miembro                 member test
+export const RANK_ROLES: Readonly<string[]> = ["1202733002195734538", "1237979602153115728", "1355617895480164472", "1453448897136427251", "1202775128006459453", "1202775706912948264"] 

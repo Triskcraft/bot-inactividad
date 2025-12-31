@@ -5,7 +5,7 @@ import { envs } from "../config.js";
 import { client } from "../client.js"
 import { db } from "../prisma/database.js";
 import type { GuildMember } from "discord.js";
-import type { Link } from "../prisma/generated/client.js";
+// import type { Link } from "../prisma/generated/client.js";
 import { getMembers } from "./members/get.js";
 
 const app = Express();

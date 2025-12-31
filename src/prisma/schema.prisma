@@ -20,7 +20,9 @@ model InactivityPeriod {
     started_at    DateTime @default(now())
     ends_at       DateTime
     source        String
-    notified      Boolean
+    notified      Boolean  @default(false)
+
+    discord_user DiscordUser @relation(fields: [user_id], references: [id])
 
     @@map("inactivity_periods")
 }
@@ -38,22 +40,11 @@ model RoleStatistic {
     id             String   @id @default(dbgenerated("snowflake()"))
     guild_id       String
     role_id        String
-    inactive_count Int
-    active_count   Int
+    inactive_count Int      @default(0)
+    active_count   Int      @default(0)
     captured_at    DateTime @default(now())
 
     @@map("role_statistics")
-}
-
-model Link {
-    id         String @id @default(dbgenerated("snowflake()"))
-    discord_id String @unique
-    mc_id      String @unique
-
-    discord_user DiscordUser?   @relation(fields: [id], references: [id])
-    mc_user      MinecraftUser? @relation(fields: [mc_id], references: [id])
-
-    @@map("links")
 }
 
 model LinkCode {
@@ -62,12 +53,14 @@ model LinkCode {
     discord_nickname String
     code             String @unique
 
+    discord_user DiscordUser @relation(fields: [discord_id], references: [id])
+
     @@map("link_codes")
 }
 
 model Role {
     id   String @id @default(dbgenerated("snowflake()"))
-    name String
+    name String @unique
 
     linked_roles LinkedRole[]
 
@@ -75,47 +68,49 @@ model Role {
 }
 
 model LinkedRole {
-    mc_user_id String
-    role_id    String
+    mc_user_uuid String
+    role_id      String
 
     role           Role          @relation(fields: [role_id], references: [id])
-    minecraft_user MinecraftUser @relation(fields: [mc_user_id], references: [id])
+    minecraft_user MinecraftUser @relation(fields: [mc_user_uuid], references: [uuid])
 
-    @@id([mc_user_id, role_id])
+    @@id([mc_user_uuid, role_id])
     @@map("linked_roles")
 }
 
-model Medias {
-    id         String @id @default(dbgenerated("snowflake()"))
-    mc_user_id String
-    media_type String
-    media_url  String
+model Media {
+    id           String @id @default(dbgenerated("snowflake()"))
+    mc_user_uuid String
+    type         String
+    url          String
 
-    minecraft_user MinecraftUser @relation(fields: [mc_user_id], references: [id])
+    minecraft_user MinecraftUser @relation(fields: [mc_user_uuid], references: [uuid])
 
-    @@unique([mc_user_id, media_type])
+    @@unique([mc_user_uuid, type])
     @@map("medias")
 }
 
 model MinecraftUser {
-    id          String @id
-    nickname    String
-    digs        Int    @default(0)
-    role        String
-    description String
+    uuid            String @id
+    nickname        String
+    digs            Int    @default(0)
+    description     String @default("")
+    discord_user_id String @unique
 
+    discord_user DiscordUser  @relation(fields: [discord_user_id], references: [id])
     linked_roles LinkedRole[]
-    link         Link?
-    medias       Medias[]
+    medias       Media[]
 
     @@map("minecraft_users")
 }
 
 model DiscordUser {
     id   String @id
-    rank String
+    rank String @default("Miembro")
 
-    link Link?
+    inactivityPeriods InactivityPeriod[]
+    minecraftUser     MinecraftUser?
+    linkCode          LinkCode?
 
     @@map("discord_users")
 }
