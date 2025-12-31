@@ -15,7 +15,7 @@ export async function getMembers(req: Request, res: Response) {
 }
 
 interface Member {
-    mc_uudi: string
+    mc_uuid: string
     mc_name: string
     rank: string
     description: string
@@ -38,7 +38,7 @@ async function getInfoUser(mc_name: McName, links: Awaited<ReturnType<typeof get
     const medias = link.medias.map(({ type, url }) => ({ type, url })) ?? []
 
     return {
-        mc_uudi: link.uuid,
+        mc_uuid: link.uuid,
         mc_name: mc_name,
         rank,
         description,
