@@ -22,9 +22,9 @@
         "resolveJsonModule": true,
 
         // Other Outputs
-        "sourceMap": true,
-        "declaration": true,
-        "declarationMap": true,
+        // "sourceMap": true,
+        // "declaration": true,
+        // "declarationMap": true,
 
         // Stricter Typechecking Options
         "noUncheckedIndexedAccess": true,
