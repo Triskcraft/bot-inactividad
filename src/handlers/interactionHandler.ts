@@ -4,6 +4,7 @@ import {
     CommandInteraction,
     EmbedBuilder,
     GuildMember,
+    MessageFlags,
     ModalSubmitInteraction,
     PermissionsBitField,
     Role,
@@ -107,7 +108,7 @@ async function handleButton(
     if (!interaction.inGuild()) {
         await interaction.reply({
             content: 'Solo disponible dentro del servidor.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
         return
     }
@@ -130,7 +131,7 @@ async function handleButton(
             inactivityService.clearInactivity(member.id)
             await interaction.reply({
                 content: 'Tu inactividad fue eliminada. ¡Bienvenido de vuelta!',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             })
             break
         }
@@ -139,21 +140,21 @@ async function handleButton(
             if (!record) {
                 await interaction.reply({
                     content: 'No tienes inactividad registrada.',
-                    ephemeral: true,
+                    flags: MessageFlags.Ephemeral,
                 })
                 return
             }
 
             await interaction.reply({
                 content: `Estarás inactivo hasta ${formatForUser(record.ends_at)}.`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             })
             break
         }
         default:
             await interaction.reply({
                 content: 'Acción desconocida.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             })
     }
 }
@@ -168,7 +169,7 @@ async function handleModal(
     if (!duration && !until) {
         await interaction.reply({
             content: 'Debes completar al menos uno de los campos.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
         return
     }
@@ -180,7 +181,7 @@ async function handleModal(
             await interaction.reply({
                 content:
                     'La fecha indicada ya pasó. Por favor ingresa un valor en el futuro.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             })
             return
         }
@@ -192,12 +193,12 @@ async function handleModal(
         )
         await interaction.reply({
             content: `Registramos tu inactividad hasta ${formatForUser(untilDate.toJSDate())}.`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
     } catch (error) {
         await interaction.reply({
             content: (error as Error).message,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
     }
 }

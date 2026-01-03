@@ -1,4 +1,4 @@
-import type { CommandInteraction } from 'discord.js'
+import { MessageFlags, type CommandInteraction } from 'discord.js'
 import { db } from '../prisma/database.ts'
 import { logger } from '../logger.ts'
 import { RANK_ROLES } from '../config.ts'
@@ -60,7 +60,7 @@ export async function handleCodeDB(interaction: CommandInteraction<'cached'>) {
         await interaction.reply({
             content:
                 'Ocurrió un error al generar el código. Intenta nuevamente.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
         return
     }
@@ -78,6 +78,6 @@ export async function handleCodeDB(interaction: CommandInteraction<'cached'>) {
 
     await interaction.reply({
         content: `Tu código es: **${code}**`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     })
 }
