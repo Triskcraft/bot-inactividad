@@ -3,9 +3,9 @@
     "version": "1.0.0",
     "description": "Discord bot para gestionar periodos de inactividad y estadisticas de roles.",
     "type": "module",
-    "main": "src/index.js",
+    "main": "src/index.ts",
     "scripts": {
-        "start": "node build/index.js",
+        "start": "node src/index.ts",
         "lint": "eslint .",
         "build": "prisma generate && tsc"
     },

@@ -1,16 +1,14 @@
 import pino from 'pino'
 
-const pinoConfig =
-    process.env.NODE_ENV === 'development' ?
-        {
-            level: process.env.LOG_LEVEL ?? 'info',
-            transport: {
-                target: 'pino-pretty',
-                options: { colorize: true, translateTime: 'SYS:standard' },
-            },
-        }
-    :   {
-            level: process.env.LOG_LEVEL ?? 'info',
-        }
+const pinoConfig: Parameters<typeof pino>[0] = {
+    level: process.env.LOG_LEVEL ?? 'info',
+}
+
+if (process.env.NODE_ENV === 'development') {
+    pinoConfig.transport = {
+        target: 'pino-pretty',
+        options: { colorize: true, translateTime: 'SYS:standard' },
+    }
+}
 
 export const logger = pino(pinoConfig)
