@@ -1,4 +1,4 @@
-import { app } from './api/server.js' // este carga el client y el cliente carga los servicios
+import { app } from './api/server.js'
 import { client } from './client.js'
 import { envs } from './config.js'
 import { registerInteractionHandlers } from './handlers/interactionHandler.js'
@@ -16,7 +16,7 @@ async function shutdown(signal: string) {
     logger.info({ signal }, 'Cerrando bot')
     scheduler.stop()
     await client.destroy()
-    db.$disconnect()
+    await db.$disconnect()
     process.exit(0)
 }
 
@@ -28,4 +28,3 @@ const roleService = new RoleService()
 const scheduler = new Scheduler(inactivityService, roleService)
 registerInteractionHandlers({ inactivityService, roleService })
 scheduler.start()
-console.log(client.isReady())
