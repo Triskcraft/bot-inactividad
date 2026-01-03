@@ -2,9 +2,7 @@ import { DateTime, Duration } from 'luxon'
 
 /**
  * Intenta interpretar un texto como duracion o fecha absoluta.
- * @param {string} input Texto ingresado por el usuario.
- * @param {Date} [now]
- * @returns {{ until: DateTime, isDuration: boolean }}
+ * @param input Texto ingresado por el usuario.
  */
 export function parseUserTime(input: string, now = new Date()) {
     const trimmed = input.trim()
@@ -69,8 +67,6 @@ function parseAbsolute(value: string, zone: DateTime['zone']) {
 
 /**
  * Formatea una fecha para presentar al usuario en su huso horario.
- * @param {Date} until
- * @returns {string}
  */
 export function formatForUser(until: Date) {
     const secconds = Math.floor(until.getTime() / 1000)

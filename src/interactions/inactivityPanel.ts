@@ -3,6 +3,7 @@ import {
     ButtonBuilder,
     ButtonStyle,
     EmbedBuilder,
+    LabelBuilder,
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
@@ -43,29 +44,28 @@ export function buildInactivityPanel() {
 
 /**
  * Crea un modal para solicitar información de inactividad.
- * @param {string} customId
  */
 export function buildInactivityModal(customId: string) {
-    const modal = new ModalBuilder()
+    const durationInput = new LabelBuilder()
+        .setLabel('Fecha exacta (ej: 2024-05-31 18:00)')
+        .setTextInputComponent(
+            new TextInputBuilder()
+                .setCustomId('duration')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(false),
+        )
+
+    const untilInput = new LabelBuilder()
+        .setLabel('Fecha exacta (ej: 2024-05-31 18:00)')
+        .setTextInputComponent(
+            new TextInputBuilder()
+                .setCustomId('until')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(false),
+        )
+
+    return new ModalBuilder()
         .setCustomId(customId)
         .setTitle('Configurar inactividad')
-
-    const durationInput = new TextInputBuilder()
-        .setCustomId('duration')
-        .setLabel('Duración (ej: 3d, 12h)')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(false)
-
-    const untilInput = new TextInputBuilder()
-        .setCustomId('until')
-        .setLabel('Fecha exacta (ej: 2024-05-31 18:00)')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(false)
-
-    modal.addComponents(
-        new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput),
-        new ActionRowBuilder<TextInputBuilder>().addComponents(untilInput),
-    )
-
-    return modal
+        .addLabelComponents([durationInput, untilInput])
 }
