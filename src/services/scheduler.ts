@@ -1,10 +1,10 @@
 import { DateTime } from 'luxon'
 import { Collection, TextChannel } from 'discord.js'
-import { logger } from '../logger.js'
-import type { InactivityService } from './inactivityService.js'
-import type { RoleService } from './roleService.js'
-import { envs } from '../config.js'
-import { client } from '../client.js'
+import { logger } from '../logger.ts'
+import type { InactivityService } from './inactivityService.ts'
+import type { RoleService } from './roleService.ts'
+import { envs } from '../config.ts'
+import { client } from '../client.ts'
 
 /**
  * Administra tareas recurrentes del bot.

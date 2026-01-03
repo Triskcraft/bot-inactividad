@@ -1,4 +1,4 @@
-import { db } from '../prisma/database.js'
+import { db } from '../prisma/database.ts'
 import { Temporal } from '@js-temporal/polyfill'
 
 /**

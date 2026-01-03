@@ -12,15 +12,15 @@ import { DateTime } from 'luxon'
 import {
     buildInactivityModal,
     buildInactivityPanel,
-} from '../interactions/inactivityPanel.js'
-import { parseUserTime, formatForUser } from '../utils/time.js'
-import { logger } from '../logger.js'
-import type { InactivityService } from '../services/inactivityService.js'
-import type { RoleService } from '../services/roleService.js'
-import { envs } from '../config.js'
-import type { RoleStatistic } from '../prisma/generated/client.js'
-import { handleCodeDB } from '../commands/dis-session.command.js'
-import { client } from '../client.js'
+} from '../interactions/inactivityPanel.ts'
+import { parseUserTime, formatForUser } from '../utils/time.ts'
+import { logger } from '../logger.ts'
+import type { InactivityService } from '../services/inactivityService.ts'
+import type { RoleService } from '../services/roleService.ts'
+import { envs } from '../config.ts'
+import type { RoleStatistic } from '../prisma/generated/client.ts'
+import { handleCodeDB } from '../commands/dis-session.command.ts'
+import { client } from '../client.ts'
 
 export function registerInteractionHandlers({
     inactivityService,

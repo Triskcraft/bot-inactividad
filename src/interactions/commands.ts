@@ -1,7 +1,7 @@
 import { Routes } from 'discord-api-types/v10'
 import { REST } from '@discordjs/rest'
 import { PermissionsBitField } from 'discord.js'
-import { envs } from '../config.js'
+import { envs } from '../config.ts'
 
 /**
  * Registra los slash commands del bot.

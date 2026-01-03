@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js'
-import { envs } from './config.js'
-import { registerCommands } from './interactions/commands.js'
-import { logger } from './logger.js'
+import { envs } from './config.ts'
+import { registerCommands } from './interactions/commands.ts'
+import { logger } from './logger.ts'
 
 // async function bootstrap() {
 const client = new Client<true>({
