@@ -29,5 +29,7 @@ const scheduler = new Scheduler(inactivityService, roleService)
 registerInteractionHandlers({ inactivityService, roleService })
 if (envs.DEPLOY_INACTIVITY_PANEL) {
     await inactivityService.deployInactivityPanel()
+} else {
+    logger.info('Saltando el despliegue del panel de inactividad')
 }
 scheduler.start()
