@@ -1,49 +1,49 @@
 {
-  "name": "bot-inactividad",
-  "version": "1.0.0",
-  "description": "Discord bot para gestionar periodos de inactividad y estadisticas de roles.",
-  "type": "module",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node build/index.js",
-    "lint": "eslint .",
-    "build": "prisma generate && tsc"
-  },
-  "dependencies": {
-    "@discordjs/rest": "^1.7.1",
-    "@js-temporal/polyfill": "^0.5.1",
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
-    "cors": "2.8.5",
-    "discord-api-types": "^0.37.61",
-    "discord.js": "^14.24.2",
-    "dotenv": "^16.3.1",
-    "express": "5.2.1",
-    "luxon": "^3.4.4",
-    "node.js": "^0.0.1-security",
-    "pg": "^8.16.3",
-    "pino": "^8.15.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/luxon": "^3.7.1",
-    "@types/node": "^25.0.3",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^9.1.2",
-    "eslint-plugin-import": "^2.29.0",
-    "globals": "^15.15.0",
-    "lint-staged": "^15.1.0",
-    "pino-pretty": "^10.2.0",
-    "prisma": "^7.2.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.51.0"
-  },
-  "lint-staged": {
-    "src/**/*.js": "eslint --fix"
-  },
-  "engines": {
-    "node": ">=18.17"
-  }
+    "name": "bot-inactividad",
+    "version": "1.0.0",
+    "description": "Discord bot para gestionar periodos de inactividad y estadisticas de roles.",
+    "type": "module",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node build/index.js",
+        "lint": "eslint .",
+        "build": "prisma generate && tsc"
+    },
+    "dependencies": {
+        "@discordjs/rest": "2.6.0",
+        "@js-temporal/polyfill": "0.5.1",
+        "@prisma/adapter-pg": "7.2.0",
+        "@prisma/client": "7.2.0",
+        "cors": "2.8.5",
+        "discord-api-types": "0.38.37",
+        "discord.js": "14.25.1",
+        "dotenv": "17.2.3",
+        "express": "5.2.1",
+        "luxon": "3.7.2",
+        "node.js": "^0.0.1-security",
+        "pg": "^8.16.3",
+        "pino": "10.1.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.2",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/luxon": "^3.7.1",
+        "@types/node": "^25.0.3",
+        "eslint": "^9.39.2",
+        "eslint-config-prettier": "^9.1.2",
+        "eslint-plugin-import": "^2.29.0",
+        "globals": "^15.15.0",
+        "lint-staged": "^15.1.0",
+        "pino-pretty": "^10.2.0",
+        "prisma": "^7.2.0",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.51.0"
+    },
+    "lint-staged": {
+        "src/**/*.js": "eslint --fix"
+    },
+    "engines": {
+        "node": ">=18.17"
+    }
 }

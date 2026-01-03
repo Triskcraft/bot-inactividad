@@ -7,23 +7,18 @@ export default [
     {
         files: ['**/*.{js,mjs,cjs,ts}'],
     },
-
     js.configs.recommended,
-
     ...tseslint.configs.recommended,
-
     {
         languageOptions: {
             globals: globals.node,
         },
     },
-
     prettier,
-
     {
         rules: {
+            'no-console': 'error',
             'no-unused-expressions': 'off',
-
             '@typescript-eslint/no-unused-expressions': [
                 'error',
                 {
