@@ -129,7 +129,6 @@ export class InactivityService {
         } else {
             if (channel.isTextBased() && 'send' in channel) {
                 await channel.send({ embeds: [embed], components })
-                return
             }
         }
 
