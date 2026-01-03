@@ -1,23 +1,13 @@
-import dotenv from 'dotenv'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { logger } from './logger.ts'
 
 try {
     process.loadEnvFile()
 } catch {
-    logger.error('No existe .env')
+    console.error('No existe .env')
 }
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') })
-
-defineConfigDefaults()
-
-function defineConfigDefaults() {
-    process.env.NODE_ENV = process.env.NODE_ENV ?? 'development'
-}
 
 export interface BotConfig {
     token: string
@@ -42,6 +32,7 @@ export function loadConfig() {
         'API_PORT',
         'WHITELIST_ROUTE',
         'DEPLOY_COMMAND',
+        'NODE_ENV',
     ]
 
     const missing = required.filter(key => !process.env[key])
@@ -53,6 +44,7 @@ export function loadConfig() {
         API_PORT = '',
         WHITELIST_ROUTE = '',
         DEPLOY_COMMAND = false,
+        NODE_ENV = 'development',
     } = process.env
 
     return {
@@ -71,17 +63,17 @@ export function loadConfig() {
         API_PORT,
         WHITELIST_ROUTE,
         DEPLOY_COMMAND: DEPLOY_COMMAND === 'true',
+        NODE_ENV,
     }
 }
 
 export const envs = loadConfig()
 
-//                             owner                    admin                   staff                   dev                     miembro                 member test
 export const RANK_ROLES: Readonly<string[]> = [
-    '1202733002195734538',
-    '1237979602153115728',
-    '1355617895480164472',
-    '1453448897136427251',
-    '1202775128006459453',
-    '1202775706912948264',
+    '1202733002195734538', // owner
+    '1237979602153115728', // admin
+    '1355617895480164472', // staff
+    '1453448897136427251', // dev
+    '1202775128006459453', // miembro
+    '1202775706912948264', // member test
 ]
