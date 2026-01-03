@@ -2,6 +2,10 @@ import { formatForUser } from '../utils/time.ts'
 import type { InactivityPeriod } from '../prisma/generated/client.ts'
 import type { GuildMember } from 'discord.js'
 import { db } from '../prisma/database.ts'
+import { envs } from '../config.ts'
+import { client } from '../client.ts'
+import { logger } from '../logger.ts'
+import { buildInactivityPanel } from '../interactions/inactivityPanel.ts'
 
 /**
  * Servicio encargado de persistir y exponer los estados de inactividad.
@@ -100,6 +104,36 @@ export class InactivityService {
         }
 
         return `${member} permanecerá inactivo hasta ${formatForUser(record.ends_at)}.`
+    }
+
+    async deployInactivityPanel() {
+        const channel = await client.channels.fetch(envs.inactivityChannelId)
+        if (!channel) {
+            return logger.warn('Canal no encontrado')
+        }
+        if (!channel.isTextBased()) {
+            logger.warn('El canal de interacciones no está disponible')
+            return
+        }
+
+        const existing = await channel.messages.fetch({ limit: 10 })
+        const anchor = existing.find(
+            message =>
+                message.author.id === client.user.id &&
+                message.components.length > 0,
+        )
+        const { embed, components } = buildInactivityPanel()
+
+        if (anchor) {
+            await anchor.edit({ embeds: [embed], components })
+        } else {
+            if (channel.isTextBased() && 'send' in channel) {
+                await channel.send({ embeds: [embed], components })
+                return
+            }
+        }
+
+        logger.info('Panel de inactividad desplegado.')
     }
 }
 

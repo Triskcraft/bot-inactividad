@@ -1,13 +1,8 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 try {
     process.loadEnvFile()
 } catch {
     console.error('No existe .env')
 }
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 export interface BotConfig {
     token: string
@@ -15,7 +10,6 @@ export interface BotConfig {
     guildId: string
     inactivityChannelId: string
     adminLogChannelId: string
-    databasePath: string
     reminderIntervalMinutes: number
 }
 
@@ -29,22 +23,38 @@ export function loadConfig() {
         'DISCORD_GUILD_ID',
         'DISCORD_INACTIVITY_CHANNEL_ID',
         'DISCORD_ADMIN_LOG_CHANNEL_ID',
-        'API_PORT',
         'WHITELIST_ROUTE',
+    ]
+
+    const recomended = [
         'DEPLOY_COMMAND',
+        'DEPLOY_INACTIVITY_PANEL',
+        'API_PORT',
         'NODE_ENV',
     ]
 
-    const missing = required.filter(key => !process.env[key])
-    if (missing.length > 0) {
-        throw new Error(`Faltan variables de entorno: ${missing.join(', ')}`)
+    const requiredMissing = required.filter(key => !process.env[key])
+    if (requiredMissing.length > 0) {
+        throw new Error(
+            `Faltan variables de entorno: ${requiredMissing.join(', ')}`,
+        )
+    }
+
+    const recommendedMissing = recomended.filter(key => !process.env[key])
+    if (recommendedMissing.length > 0) {
+        console.warn(
+            `Variables de entorno recomendadas establecidas a un valor por defecto\nSe recomienda establecer las siguientes variables: ${recommendedMissing.toLocaleString(
+                'es-MX',
+            )}`,
+        )
     }
 
     const {
-        API_PORT = '',
+        API_PORT = '3000',
         WHITELIST_ROUTE = '',
         DEPLOY_COMMAND = false,
         NODE_ENV = 'development',
+        DEPLOY_INACTIVITY_PANEL = false,
     } = process.env
 
     return {
@@ -53,9 +63,6 @@ export function loadConfig() {
         guildId: process.env.DISCORD_GUILD_ID!,
         inactivityChannelId: process.env.DISCORD_INACTIVITY_CHANNEL_ID!,
         adminLogChannelId: process.env.DISCORD_ADMIN_LOG_CHANNEL_ID!,
-        databasePath:
-            process.env.DATABASE_PATH ??
-            path.resolve(__dirname, '..', 'data', 'inactividad.db'),
         reminderIntervalMinutes: Number.parseInt(
             process.env.REMINDER_INTERVAL_MINUTES ?? '5',
             10,
@@ -63,6 +70,7 @@ export function loadConfig() {
         API_PORT,
         WHITELIST_ROUTE,
         DEPLOY_COMMAND: DEPLOY_COMMAND === 'true',
+        DEPLOY_INACTIVITY_PANEL: DEPLOY_INACTIVITY_PANEL === 'true',
         NODE_ENV,
     }
 }

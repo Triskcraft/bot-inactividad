@@ -27,4 +27,7 @@ const inactivityService = new InactivityService()
 const roleService = new RoleService()
 const scheduler = new Scheduler(inactivityService, roleService)
 registerInteractionHandlers({ inactivityService, roleService })
+if (envs.DEPLOY_INACTIVITY_PANEL) {
+    await inactivityService.deployInactivityPanel()
+}
 scheduler.start()

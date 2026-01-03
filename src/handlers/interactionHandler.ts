@@ -10,10 +10,7 @@ import {
     Role,
 } from 'discord.js'
 import { DateTime } from 'luxon'
-import {
-    buildInactivityModal,
-    buildInactivityPanel,
-} from '../interactions/inactivityPanel.ts'
+import { buildInactivityModal } from '../interactions/inactivityPanel.ts'
 import { parseUserTime, formatForUser } from '../utils/time.ts'
 import { logger } from '../logger.ts'
 import type { InactivityService } from '../services/inactivityService.ts'
@@ -23,7 +20,7 @@ import type { RoleStatistic } from '../prisma/generated/client.ts'
 import { handleCodeDB } from '../commands/dis-session.command.ts'
 import { client } from '../client.ts'
 
-export function registerInteractionHandlers({
+export async function registerInteractionHandlers({
     inactivityService,
     roleService,
 }: {
@@ -68,36 +65,6 @@ export function registerInteractionHandlers({
                 }
             }
         }
-    })
-
-    client.once('ready', async () => {
-        const channel = await client.channels.fetch(envs.inactivityChannelId)
-        if (!channel) {
-            return logger.warn('Canal no encontrado')
-        }
-        if (!channel.isTextBased()) {
-            logger.warn('El canal de interacciones no está disponible')
-            return
-        }
-
-        const existing = await channel.messages.fetch({ limit: 10 })
-        const anchor = existing.find(
-            message =>
-                message.author.id === client.user?.id &&
-                message.components.length > 0,
-        )
-        const { embed, components } = buildInactivityPanel()
-
-        if (anchor) {
-            await anchor.edit({ embeds: [embed], components })
-        } else {
-            if (channel.isTextBased() && 'send' in channel) {
-                await channel.send({ embeds: [embed], components })
-                return
-            }
-        }
-
-        logger.info('Panel de inactividad desplegado.')
     })
 }
 
