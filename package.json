@@ -7,7 +7,8 @@
     "scripts": {
         "start": "node src/index.ts",
         "lint": "eslint .",
-        "build": "prisma generate && tsc"
+        "build": "prisma generate && tsc",
+        "dev": "node --watch src/index.ts"
     },
     "dependencies": {
         "@discordjs/rest": "2.6.0",
