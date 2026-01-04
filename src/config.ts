@@ -14,7 +14,8 @@ export interface BotConfig {
 }
 
 /**
- * Loads bot configuration from environment variables.
+ * Carga la configuración del bot desde variables de entorno y valida que las
+ * mínimas requeridas estén presentes antes de continuar con la ejecución.
  */
 export function loadConfig() {
     const required = [
@@ -77,6 +78,10 @@ export function loadConfig() {
 
 export const envs = loadConfig()
 
+/**
+ * Lista ordenada de roles de rango. El orden determina prioridad cuando se
+ * busca la jerarquía más alta que posee un usuario.
+ */
 export const RANK_ROLES: Readonly<string[]> = [
     '1202733002195734538', // owner
     '1237979602153115728', // admin

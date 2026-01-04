@@ -3,6 +3,10 @@ import { db } from '../prisma/database.ts'
 import { logger } from '../logger.ts'
 import { RANK_ROLES } from '../config.ts'
 
+/**
+ * Genera un código de vinculación de sesión y lo persiste en la base de datos.
+ * También intenta enviarlo por DM y responde de forma efímera al usuario.
+ */
 export async function handleCodeDB(interaction: CommandInteraction<'cached'>) {
     const code = Math.floor(Math.random() * 1000000)
         .toString()
@@ -30,6 +34,7 @@ export async function handleCodeDB(interaction: CommandInteraction<'cached'>) {
             .catch(() => {
                 /* ignore if not found */
             })
+        // Se crea un nuevo código asegurando que exista la relación de usuario.
         await db.linkCode.create({
             data: {
                 discord_nickname,
@@ -76,6 +81,7 @@ export async function handleCodeDB(interaction: CommandInteraction<'cached'>) {
         )
     }
 
+    // Respuesta efímera para que solo el solicitante vea el resultado.
     await interaction.reply({
         content: `Tu código es: **${code}**`,
         flags: MessageFlags.Ephemeral,

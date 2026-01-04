@@ -6,6 +6,7 @@ import { Temporal } from '@js-temporal/polyfill'
  */
 export class RoleService {
     async addRole(guild_id: string, role_id: string) {
+        // Se usa upsert implícito manejando colisión mediante catch.
         await db.trackedRole
             .create({
                 data: { guild_id, role_id },
@@ -34,6 +35,7 @@ export class RoleService {
         inactive_count: number,
         active_count: number,
     ) {
+        // Guarda una instantánea simple para alimentar gráficos y tendencias.
         await db.roleStatistic.create({
             data: { guild_id, role_id, inactive_count, active_count },
         })
@@ -44,6 +46,7 @@ export class RoleService {
             Temporal.Now.instant().subtract({ hours: sinceDays * 24 })
                 .epochMilliseconds,
         )
+        // Recupera historial limitado para no saturar consultas de reporte.
         return await db.roleStatistic.findMany({
             where: { guild_id, captured_at: { gte: since } },
             orderBy: { captured_at: 'desc' },
