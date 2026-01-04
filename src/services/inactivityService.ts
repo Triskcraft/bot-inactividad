@@ -20,6 +20,8 @@ export class InactivityService {
         until: Date,
         source: string,
     ) {
+        // Se usa upsert para evitar duplicados y conservar el historial más
+        // reciente del usuario en la tabla de periodos de inactividad.
         const result = await db.inactivityPeriod.upsert({
             where: {
                 user_id: member.id,
@@ -136,6 +138,10 @@ export class InactivityService {
     }
 }
 
+/**
+ * Adapta el registro de Prisma deserializando el snapshot de roles para
+ * devolverlo como estructura utilizable por el resto del código.
+ */
 function mapRow(row: InactivityPeriod) {
     return {
         ...row,

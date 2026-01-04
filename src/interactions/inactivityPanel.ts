@@ -20,6 +20,7 @@ export function buildInactivityPanel() {
         )
         .setColor(0x5865f2)
 
+    // Fila única de botones que abarcan el ciclo completo de autogestión.
     const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
             .setCustomId('inactivity:set')
@@ -46,6 +47,7 @@ export function buildInactivityPanel() {
  * Crea un modal para solicitar información de inactividad.
  */
 export function buildInactivityModal(customId: string) {
+    // Campo para recibir una duración en formato libre (ej. "3d 4h").
     const durationInput = new LabelBuilder()
         .setLabel('Fecha exacta (ej: 2024-05-31 18:00)')
         .setTextInputComponent(
@@ -55,6 +57,7 @@ export function buildInactivityModal(customId: string) {
                 .setRequired(false),
         )
 
+    // Campo alternativo para ingresar una fecha absoluta concreta.
     const untilInput = new LabelBuilder()
         .setLabel('Fecha exacta (ej: 2024-05-31 18:00)')
         .setTextInputComponent(

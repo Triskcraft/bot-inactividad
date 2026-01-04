@@ -34,6 +34,7 @@ export class Scheduler {
                     this.runReminders().catch(error =>
                         logger.error(error, 'Reminder job failed'),
                     ),
+                // Se ejecuta según el intervalo configurable en minutos.
                 envs.reminderIntervalMinutes * 60 * 1000,
             ),
         )
@@ -45,11 +46,15 @@ export class Scheduler {
                     this.captureSnapshots().catch(error =>
                         logger.error(error, 'Snapshot job failed'),
                     ),
+                // Cada 12 horas se toma una fotografía de actividad.
                 12 * 60 * 60 * 1000,
             ),
         )
     }
 
+    /**
+     * Detiene y limpia todos los temporizadores activos para evitar fugas.
+     */
     stop() {
         for (const interval of this.intervals.values()) {
             clearInterval(interval)
@@ -57,6 +62,10 @@ export class Scheduler {
         this.intervals.clear()
     }
 
+    /**
+     * Revisa las inactividades vencidas y notifica tanto en el canal público
+     * como por mensaje directo al miembro correspondiente.
+     */
     async runReminders() {
         const channel = (await client.channels.fetch(
             envs.inactivityChannelId,
@@ -96,6 +105,10 @@ export class Scheduler {
         }
     }
 
+    /**
+     * Captura un snapshot del conteo de miembros activos/inactivos por cada
+     * rol monitoreado, útil para estadísticas y seguimiento histórico.
+     */
     async captureSnapshots() {
         const guild = await client.guilds.fetch(envs.guildId as string)
         const trackedRoles = await this.roleService.listRoles(guild.id)
