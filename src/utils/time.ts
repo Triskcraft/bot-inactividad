@@ -8,11 +8,13 @@ export function parseUserTime(input: string, now = new Date()) {
     const trimmed = input.trim()
     const base = DateTime.fromJSDate(now).toUTC()
 
+    // Primero se intenta interpretar como duración relativa (ej. "3d 4h").
     const duration = parseDuration(trimmed)
     if (duration) {
         return { until: base.plus(duration), isDuration: true }
     }
 
+    // Si no es duración, se prueba con formatos absolutos reconocidos.
     const absolute = parseAbsolute(trimmed, base.zone)
     if (absolute) {
         return { until: absolute, isDuration: false }
@@ -23,6 +25,10 @@ export function parseUserTime(input: string, now = new Date()) {
     )
 }
 
+/**
+ * Interpreta una cadena como duración relativa en días, horas, minutos o
+ * segundos usando un formato flexible (ej. "1d 2h30m").
+ */
 function parseDuration(value: string) {
     const regex =
         /^\s*(?:(\d+)\s*d)?\s*(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?\s*$/i
@@ -31,6 +37,7 @@ function parseDuration(value: string) {
         return null
     }
 
+    // Extrae cada componente temporal y convierte a números.
     const [, days, hours, minutes, seconds] = match.map(segment =>
         segment ? Number.parseInt(segment, 10) : 0,
     )
@@ -41,6 +48,10 @@ function parseDuration(value: string) {
     return Duration.fromObject({ days, hours, minutes, seconds })
 }
 
+/**
+ * Interpreta una cadena como fecha absoluta usando varios formatos comunes
+ * y respeta la zona horaria actual del usuario.
+ */
 function parseAbsolute(value: string, zone: DateTime['zone']) {
     const patterns = [
         'yyyy-MM-dd HH:mm',
@@ -57,6 +68,7 @@ function parseAbsolute(value: string, zone: DateTime['zone']) {
         }
     }
 
+    // Finalmente se intenta interpretar como fecha ISO estándar.
     const iso = DateTime.fromISO(value, { zone })
     if (iso.isValid) {
         return iso.toUTC()

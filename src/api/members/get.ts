@@ -5,6 +5,12 @@ import { db } from '../../prisma/database.ts'
 
 type McName = string
 
+/**
+ * Endpoint que entrega el listado de miembros combinando la whitelist de
+ * Minecraft con los datos complementarios almacenados en la base de datos.
+ * Se aplica caching HTTP para evitar recalcular resultados en llamadas
+ * repetidas.
+ */
 export async function getMembers(req: Request, res: Response) {
     const file = await readFile(envs.WHITELIST_ROUTE, { encoding: 'utf-8' })
     const whitelist: McName[] = JSON.parse(file)
@@ -24,6 +30,11 @@ interface Member {
         url: string
     }[]
 }
+
+/**
+ * Busca la información de un usuario específico a partir del nombre
+ * declarado en la whitelist y el conjunto de enlaces obtenidos desde la BD.
+ */
 async function getInfoUser(
     mc_name: McName,
     links: Awaited<ReturnType<typeof getLinks>>,
@@ -49,6 +60,10 @@ async function getInfoUser(
     } satisfies Member
 }
 
+/**
+ * Combina la whitelist con los datos de la base para devolver solo los
+ * usuarios que tienen información registrada y descarta entradas nulas.
+ */
 async function pooblateUsers(users: McName[]) {
     const links = await getLinks()
     const promises = users.map(async user => await getInfoUser(user, links))
@@ -56,6 +71,10 @@ async function pooblateUsers(users: McName[]) {
     return list.filter(Boolean) as Member[]
 }
 
+/**
+ * Recupera todos los enlaces disponibles desde la base de datos, incluyendo
+ * la información del usuario de Discord, roles vinculados y medios asociados.
+ */
 async function getLinks() {
     const link = await db.minecraftUser.findMany({
         include: {
