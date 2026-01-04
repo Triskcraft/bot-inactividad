@@ -2,6 +2,8 @@ datasource db {
     provider = "postgresql"
 }
 
+/// Configuración del cliente de Prisma orientado a TypeScript con soporte
+/// para ESM y rutas generadas bajo `src/prisma/generated`.
 generator client {
     provider               = "prisma-client"
     engineType             = "client"
@@ -9,10 +11,11 @@ generator client {
     runtime                = "nodejs"
     moduleFormat           = "esm"
     generatedFileExtension = "ts"
-    importFileExtension    = "js"
+    importFileExtension    = "ts"
     previewFeatures        = ["typedSql"]
 }
 
+/// Periodo de inactividad declarado por un usuario de Discord.
 model InactivityPeriod {
     user_id       String   @id
     guild_id      String
@@ -27,6 +30,7 @@ model InactivityPeriod {
     @@map("inactivity_periods")
 }
 
+/// Rol monitoreado dentro de un servidor de Discord.
 model TrackedRole {
     guild_id   String
     role_id    String
@@ -36,6 +40,7 @@ model TrackedRole {
     @@map("tracked_roles")
 }
 
+/// Instantáneas de actividad/inactividad por rol para graficar tendencias.
 model RoleStatistic {
     id             String   @id @default(dbgenerated("snowflake()"))
     guild_id       String
@@ -47,6 +52,7 @@ model RoleStatistic {
     @@map("role_statistics")
 }
 
+/// Código temporal utilizado para vincular cuentas externas con Discord.
 model LinkCode {
     id               String @id @default(dbgenerated("snowflake()"))
     discord_id       String @unique
@@ -58,6 +64,7 @@ model LinkCode {
     @@map("link_codes")
 }
 
+/// Catálogo de roles disponibles para usuarios de Minecraft.
 model Role {
     id   String @id @default(dbgenerated("snowflake()"))
     name String @unique
@@ -67,6 +74,7 @@ model Role {
     @@map("roles")
 }
 
+/// Relación N:M entre usuarios de Minecraft y los roles asignados.
 model LinkedRole {
     mc_user_uuid String
     role_id      String
@@ -78,6 +86,7 @@ model LinkedRole {
     @@map("linked_roles")
 }
 
+/// Medios o enlaces externos asociados a cada jugador de Minecraft.
 model Media {
     id           String @id @default(dbgenerated("snowflake()"))
     mc_user_uuid String
@@ -90,6 +99,7 @@ model Media {
     @@map("medias")
 }
 
+/// Información de jugador de Minecraft enlazada con su usuario de Discord.
 model MinecraftUser {
     uuid            String @id
     nickname        String
@@ -104,6 +114,7 @@ model MinecraftUser {
     @@map("minecraft_users")
 }
 
+/// Representa a un usuario de Discord, incluyendo su rango y relaciones.
 model DiscordUser {
     id   String @id
     rank String @default("Miembro")

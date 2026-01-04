@@ -1,7 +1,7 @@
 import { Routes } from 'discord-api-types/v10'
 import { REST } from '@discordjs/rest'
 import { PermissionsBitField } from 'discord.js'
-import { envs } from '../config.js'
+import { envs } from '../config.ts'
 
 /**
  * Registra los slash commands del bot.
@@ -10,6 +10,7 @@ import { envs } from '../config.js'
 export async function registerCommands() {
     const rest = new REST({ version: '10' }).setToken(envs.token)
 
+    // Definición completa de los comandos disponibles y sus opciones.
     const commands = [
         {
             name: 'inactividad',
@@ -80,6 +81,7 @@ export async function registerCommands() {
         },
     ]
 
+    // Se registran a nivel de servidor para propagar cambios de inmediato.
     await rest.put(
         Routes.applicationGuildCommands(envs.clientId, envs.guildId),
         { body: commands },

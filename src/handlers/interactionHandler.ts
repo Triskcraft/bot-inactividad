@@ -4,25 +4,28 @@ import {
     CommandInteraction,
     EmbedBuilder,
     GuildMember,
+    MessageFlags,
     ModalSubmitInteraction,
     PermissionsBitField,
     Role,
 } from 'discord.js'
 import { DateTime } from 'luxon'
-import {
-    buildInactivityModal,
-    buildInactivityPanel,
-} from '../interactions/inactivityPanel.js'
-import { parseUserTime, formatForUser } from '../utils/time.js'
-import { logger } from '../logger.js'
-import type { InactivityService } from '../services/inactivityService.js'
-import type { RoleService } from '../services/roleService.js'
-import { envs } from '../config.js'
-import type { RoleStatistic } from '../prisma/generated/client.js'
-import { handleCodeDB } from '../commands/dis-session.command.js'
-import { client } from '../client.js'
+import { buildInactivityModal } from '../interactions/inactivityPanel.ts'
+import { parseUserTime, formatForUser } from '../utils/time.ts'
+import { logger } from '../logger.ts'
+import type { InactivityService } from '../services/inactivityService.ts'
+import type { RoleService } from '../services/roleService.ts'
+import { envs } from '../config.ts'
+import type { RoleStatistic } from '../prisma/generated/client.ts'
+import { handleCodeDB } from '../commands/dis-session.command.ts'
+import { client } from '../client.ts'
 
-export function registerInteractionHandlers({
+/**
+ * Registra los manejadores principales de interacciones de Discord
+ * (botones, modales y slash commands) delegando la lógica a los servicios
+ * especializados. Se ejecuta una sola vez durante el arranque del bot.
+ */
+export async function registerInteractionHandlers({
     inactivityService,
     roleService,
 }: {
@@ -36,6 +39,8 @@ export function registerInteractionHandlers({
             } else if (interaction.isModalSubmit()) {
                 await handleModal(interaction, inactivityService)
             } else if (interaction.isChatInputCommand()) {
+                // Los slash commands se tipan como 'cached' para garantizar que
+                // la información de guild está disponible al manejarlos.
                 await handleCommand(
                     interaction as ChatInputCommandInteraction<'cached'>,
                     inactivityService,
@@ -68,46 +73,21 @@ export function registerInteractionHandlers({
             }
         }
     })
-
-    client.once('ready', async () => {
-        const channel = await client.channels.fetch(envs.inactivityChannelId)
-        if (!channel) {
-            return logger.warn('Canal no encontrado')
-        }
-        if (!channel.isTextBased()) {
-            logger.warn('El canal de interacciones no está disponible')
-            return
-        }
-
-        const existing = await channel.messages.fetch({ limit: 10 })
-        const anchor = existing.find(
-            message =>
-                message.author.id === client.user?.id &&
-                message.components.length > 0,
-        )
-        const { embed, components } = buildInactivityPanel()
-
-        if (anchor) {
-            await anchor.edit({ embeds: [embed], components })
-        } else {
-            if (channel.isTextBased() && 'send' in channel) {
-                await channel.send({ embeds: [embed], components })
-                return
-            }
-        }
-
-        logger.info('Panel de inactividad desplegado.')
-    })
 }
 
+/**
+ * Manejador central de botones del panel de inactividad. Cada botón ejecuta
+ * una acción distinta: crear/editar, limpiar o mostrar el estado del usuario.
+ */
 async function handleButton(
     interaction: ButtonInteraction,
     inactivityService: InactivityService,
 ) {
+    // Los botones solo son válidos dentro de un servidor; evita uso en MD.
     if (!interaction.inGuild()) {
         await interaction.reply({
             content: 'Solo disponible dentro del servidor.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
         return
     }
@@ -117,6 +97,7 @@ async function handleButton(
     switch (interaction.customId) {
         case 'inactivity:set':
         case 'inactivity:edit': {
+            // Muestra el modal que permite indicar fecha o duración.
             await interaction.showModal(
                 buildInactivityModal(
                     interaction.customId === 'inactivity:set' ?
@@ -130,7 +111,7 @@ async function handleButton(
             inactivityService.clearInactivity(member.id)
             await interaction.reply({
                 content: 'Tu inactividad fue eliminada. ¡Bienvenido de vuelta!',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             })
             break
         }
@@ -139,25 +120,29 @@ async function handleButton(
             if (!record) {
                 await interaction.reply({
                     content: 'No tienes inactividad registrada.',
-                    ephemeral: true,
+                    flags: MessageFlags.Ephemeral,
                 })
                 return
             }
 
             await interaction.reply({
                 content: `Estarás inactivo hasta ${formatForUser(record.ends_at)}.`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             })
             break
         }
         default:
             await interaction.reply({
                 content: 'Acción desconocida.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             })
     }
 }
 
+/**
+ * Procesa los formularios enviados desde el modal de inactividad validando
+ * que exista al menos un campo y que la fecha indicada sea futura.
+ */
 async function handleModal(
     interaction: ModalSubmitInteraction,
     inactivityService: InactivityService,
@@ -165,10 +150,11 @@ async function handleModal(
     const duration = interaction.fields.getTextInputValue('duration')
     const until = interaction.fields.getTextInputValue('until')
 
+    // Ambos campos son opcionales, pero al menos uno debe contener valor.
     if (!duration && !until) {
         await interaction.reply({
             content: 'Debes completar al menos uno de los campos.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
         return
     }
@@ -180,7 +166,7 @@ async function handleModal(
             await interaction.reply({
                 content:
                     'La fecha indicada ya pasó. Por favor ingresa un valor en el futuro.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             })
             return
         }
@@ -190,18 +176,23 @@ async function handleModal(
             untilDate.toJSDate(),
             interaction.customId,
         )
+        // Respuesta privada para evitar spam en el canal de interacción.
         await interaction.reply({
             content: `Registramos tu inactividad hasta ${formatForUser(untilDate.toJSDate())}.`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
     } catch (error) {
         await interaction.reply({
             content: (error as Error).message,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         })
     }
 }
 
+/**
+ * Enruta los comandos de barra hacia el manejador correspondiente según el
+ * nombre del comando recibido.
+ */
 async function handleCommand(
     interaction: ChatInputCommandInteraction<'cached'>,
     inactivityService: InactivityService,
@@ -214,6 +205,10 @@ async function handleCommand(
     await interaction.reply({ content: 'Comando desconocido.' })
 }
 
+/**
+ * Agrupa la lógica del comando administrativo `/inactividad`, verificando
+ * permisos y delegando en los subcomandos individuales.
+ */
 async function inactividadCommand(
     interaction: ChatInputCommandInteraction<'cached'>,
     inactivityService: InactivityService,
@@ -266,11 +261,17 @@ async function inactividadCommand(
     await interaction.reply({ content: 'Comando desconocido.' })
 }
 
+/**
+ * Genera un resumen inmediato del estado de inactividad de todos los
+ * miembros pertenecientes a los roles monitoreados, utilizando tanto la
+ * caché de Discord como la base de datos.
+ */
 async function handleList(
     interaction: CommandInteraction<'cached'>,
     inactivityService: InactivityService,
     roleService: RoleService,
 ) {
+    // Recupera registros en BD y configuración de roles a monitorear.
     const records = await inactivityService.listInactivities(
         interaction.guildId,
     )
@@ -399,11 +400,16 @@ async function handleList(
     await interaction.editReply({ embeds: [embed] })
 }
 
+/**
+ * Calcula estadísticas de inactividad por rol, incluyendo porcentajes y
+ * tendencias históricas, para su visualización en un embed detallado.
+ */
 async function handleStats(
     interaction: CommandInteraction<'cached'>,
     inactivityService: InactivityService,
     roleService: RoleService,
 ) {
+    // Obtiene registros actuales y roles monitoreados para generar métricas.
     const records = await inactivityService.listInactivities(
         interaction.guildId,
     )
@@ -509,6 +515,10 @@ async function handleRoleAdd(
     )
 }
 
+/**
+ * Quita un rol de la lista de seguimiento y registra la acción en el canal
+ * de auditoría configurado.
+ */
 async function handleRoleRemove(
     interaction: ChatInputCommandInteraction<'cached'>,
     roleService: RoleService,
@@ -524,6 +534,10 @@ async function handleRoleRemove(
     )
 }
 
+/**
+ * Lista los roles actualmente vigilados y los devuelve como menciones para
+ * facilitar su lectura por parte del administrador.
+ */
 async function handleRoleList(
     interaction: CommandInteraction<'cached'>,
     roleService: RoleService,
@@ -540,6 +554,10 @@ async function handleRoleList(
     })
 }
 
+/**
+ * Envía un mensaje al canal de auditoría configurado para dejar constancia
+ * de las acciones administrativas ejecutadas mediante los comandos del bot.
+ */
 async function logAdminAction(
     interaction: CommandInteraction<'cached'>,
     message: string,
@@ -560,6 +578,9 @@ async function logAdminAction(
     }
 }
 
+/**
+ * Construye una barra textual proporcional al porcentaje indicado.
+ */
 function buildBar(percentage: number) {
     const width = 12
     const filled = Math.round((percentage / 100) * width)
@@ -568,6 +589,10 @@ function buildBar(percentage: number) {
     return `${'█'.repeat(clampedFilled)}${'░'.repeat(empty)}`
 }
 
+/**
+ * Construye el campo de historial usando datos de snapshots previos para
+ * representar tendencias de inactividad por rol.
+ */
 function buildHistoryField(
     snapshots: RoleStatistic[],
     summaries: Array<{
@@ -619,6 +644,10 @@ function buildHistoryField(
     }
 }
 
+/**
+ * Genera una mini-gráfica tipo sparkline usando caracteres de bloques para
+ * reflejar variaciones en porcentajes de inactividad.
+ */
 function buildSparkline(percentages: Array<number>) {
     if (!percentages.length) return 'sin datos'
     const blocks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█']
@@ -636,6 +665,9 @@ function buildSparkline(percentages: Array<number>) {
         .join('')
 }
 
+/**
+ * Calcula el porcentaje de inactividad dado el número de inactivos y activos.
+ */
 function percentageInactive(inactive: number, active: number) {
     const total = inactive + active
     if (!total) return 0

@@ -1,136 +1,161 @@
 # Bot de inactividad para Discord (discord.js)
 
-Este repositorio contiene un bot de Discord desarrollado con
-[`discord.js`](https://discord.js.org/) que permite a los miembros informar
-períodos de inactividad, mientras que los administradores disponen de
-herramientas de seguimiento y estadísticas por rol. El objetivo es proporcionar
-una solución modular, extensible y completamente documentada, capaz de operar en
-servidores donde la organización del personal depende de conocer la
-disponibilidad de los integrantes.
+Bot administrativo para servidores de Discord que permite a los miembros
+registrar periodos de inactividad y ofrece a los administradores un panel de
+seguimiento por roles, estadísticas históricas y tareas automatizadas. Está
+construido con [`discord.js`](https://discord.js.org/), usa PostgreSQL a través
+de Prisma y expone una pequeña API HTTP para datos del servidor.
 
-## Características principales
+## Características
 
-- **Panel interactivo dedicado**: el bot publica un embed con botones en el
-  canal designado para que cada usuario marque, modifique, consulte o elimine su
-  inactividad. Todas las respuestas se envían como mensajes efímeros para
-  respetar la privacidad.
-- **Notificaciones automáticas**: cuando finaliza el periodo marcado, el bot
-  menciona al usuario en el canal del panel avisándole que la inactividad concluyó.
-- **Comandos administrativos**: slash commands para listar inactivos, registrar
-  roles a monitorear, eliminar registros y consultar estadísticas con historial
-  de hasta 30 días.
-- **Persistencia local**: se usa SQLite (mediante `better-sqlite3`) para guardar
-  las inactividades, los roles vigilados y los snapshots estadísticos.
-- **Tareas programadas**: un scheduler revisa periódicamente las inactividades
-  vencidas y genera snapshots de actividad dos veces al día.
-- **Arquitectura modular**: servicios de dominio, utilidades de tiempo y
-  manejadores de interacciones separados en archivos autocontenidos.
+- **Panel interactivo**: publica un embed con botones para marcar, editar,
+  eliminar o consultar tu inactividad; las respuestas son efímeras.
+- **Recordatorios automáticos**: cuando expira una inactividad, el bot menciona
+  al usuario en el canal configurado y limpia el registro.
+- **Slash commands para admins**: listar inactivos, consultar estadísticas por
+  rol (con histórico) y administrar los roles monitoreados.
+- **Capturas periódicas**: genera snapshots de actividad por rol dos veces al
+  día para alimentar el historial.
+- **API HTTP**: endpoint `/members` que combina la whitelist de Minecraft con la
+  información persistida en base de datos (roles, medios, descripción, etc.).
+- **Configuración con toggles**: variables para decidir si se publican comandos
+  o el panel en cada arranque, útil para entornos CI/CD.
 
 ## Requisitos
 
-- Node.js 18.17 o superior.
-- Una aplicación/bot registrados en el
+- Node.js **22.21+** (coincide con `engines` en `package.json`).
+- PostgreSQL accesible mediante cadena de conexión.
+- Una aplicación/bot en el
   [Portal de Desarrolladores de Discord](https://discord.com/developers/applications).
 
-Instala las dependencias con:
+Instala dependencias con:
 
 ```bash
 npm install
 ```
 
-## Configuración
+## Variables de entorno
 
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+Crea un archivo `.env` en la raíz con al menos estas claves obligatorias:
 
 | Variable | Descripción |
 | --- | --- |
-| `DISCORD_TOKEN` | Token del bot proporcionado por Discord. |
-| `DISCORD_CLIENT_ID` | ID del cliente de la aplicación. |
-| `DISCORD_GUILD_ID` | ID del servidor principal donde operará el bot. |
-| `DISCORD_INACTIVITY_CHANNEL_ID` | Canal donde se mostrará el panel de inactividad y se enviarán recordatorios. |
-| `DISCORD_ADMIN_LOG_CHANNEL_ID` | Canal de administración para registros y posibles extensiones (reservado). |
-| `DATABASE_PATH` | Ruta al archivo SQLite (opcional, por defecto `./data/inactividad.db`). |
-| `REMINDER_INTERVAL_MINUTES` | Frecuencia para revisar inactividades vencidas (opcional, por defecto `5`). |
+| `DISCORD_TOKEN` | Token del bot de Discord. |
+| `DISCORD_CLIENT_ID` | ID de cliente de la aplicación. |
+| `DISCORD_GUILD_ID` | ID del servidor donde se registrarán comandos. |
+| `DISCORD_INACTIVITY_CHANNEL_ID` | Canal donde se publica el panel y se envían recordatorios. |
+| `DISCORD_ADMIN_LOG_CHANNEL_ID` | Canal opcional para registrar acciones administrativas. |
+| `WHITELIST_ROUTE` | Ruta al archivo JSON de whitelist (lista de usuarios de Minecraft). |
+| `DATABASE_PATH` | Cadena de conexión PostgreSQL para Prisma (ej. `postgresql://user:pass@host:5432/db`). |
+
+Claves recomendadas y su valor por defecto:
+
+| Variable | Descripción | Predeterminado |
+| --- | --- | --- |
+| `DEPLOY_COMMAND` | Si es `true`, registra/actualiza los slash commands en el arranque. | `false` |
+| `DEPLOY_INACTIVITY_PANEL` | Si es `true`, publica/actualiza el panel de inactividad al iniciar. | `false` |
+| `REMINDER_INTERVAL_MINUTES` | Frecuencia con la que se revisan inactividades vencidas. | `5` |
+| `API_PORT` | Puerto para la API HTTP. | `3000` |
+| `FRONT_ORIGIN` | Origen permitido por CORS para la API. | sin restricción |
+| `NODE_ENV` | Entorno (`development`, `production`, etc.). | `development` |
 
 Ejemplo de `.env`:
 
-```
+```dotenv
 DISCORD_TOKEN=tu_token
 DISCORD_CLIENT_ID=123456789012345678
 DISCORD_GUILD_ID=123456789012345678
 DISCORD_INACTIVITY_CHANNEL_ID=123456789012345678
 DISCORD_ADMIN_LOG_CHANNEL_ID=123456789012345678
-DATABASE_PATH=./data/inactividad.db
+DATABASE_PATH=postgresql://user:pass@localhost:5432/bot_inactividad
+WHITELIST_ROUTE=/ruta/whitelist.json
+DEPLOY_COMMAND=true
+DEPLOY_INACTIVITY_PANEL=true
 REMINDER_INTERVAL_MINUTES=5
+API_PORT=3000
 ```
 
 ## Puesta en marcha
 
-1. Instala dependencias con `npm install`.
-2. Configura las variables de entorno en `.env`.
-3. Registra los slash commands y arranca el bot ejecutando:
+1. Instala dependencias: `npm install`.
+2. Genera el cliente de Prisma y aplica las migraciones (hay SQL inicial en
+   `src/prisma/migrations`):
+
+   ```bash
+   npx prisma migrate deploy
+   npx prisma generate
+   ```
+
+3. Arranca el bot (usa las variables `DEPLOY_COMMAND` y `DEPLOY_INACTIVITY_PANEL`
+   según necesites desplegar comandos/panel):
 
    ```bash
    npm start
    ```
 
-Al iniciarse, el bot registrará los comandos en el servidor configurado y
-publicará (o actualizará) automáticamente el panel interactivo en el canal de
-inactividad.
+   La API HTTP quedará escuchando en `API_PORT` y el bot se conectará al
+   servidor de Discord definido por `DISCORD_GUILD_ID`.
 
-## Uso
+## Operación del bot
 
-### Opciones para miembros
+### Panel para miembros
 
-Desde el panel interactivo, cada usuario puede:
+Los usuarios interactúan con botones en el canal configurado:
 
-- **Marcar inactividad**: define una duración (ej. `3d`, `6h30m`) o una fecha
-  exacta (ej. `2024-05-31 18:00`).
-- **Modificar inactividad**: vuelve a abrir el modal para ajustar la duración o
-  fecha final.
-- **Desmarcar inactividad**: borra el registro si el usuario regresa antes de lo
-  previsto.
-- **Mostrar estado**: informa la fecha/hora hasta la que permanece inactivo.
+- **Marcar/Editar inactividad**: abre un modal para definir duración
+  (`3d`, `6h30m`) o fecha exacta (`2024-12-31 18:00`).
+- **Desmarcar inactividad**: elimina el registro si vuelve antes de tiempo.
+- **Mostrar estado**: responde con la fecha/hora hasta la que permanece inactivo.
 
-### Comandos administrativos
+### Comandos administrativos (`/inactividad`)
 
-Todos los comandos se agrupan bajo `/inactividad` y requieren permisos de
-administrador:
+Requieren permisos de administrador:
 
-- `/inactividad listar`: lista a los miembros actualmente inactivos.
-- `/inactividad estadisticas`: calcula inactivos/activos para cada rol vigilado y
-  adjunta un historial (últimos 30 días).
-- `/inactividad roles agregar rol:<rol>`: añade un rol a la lista de seguimiento.
-- `/inactividad roles eliminar rol:<rol>`: deja de monitorear un rol.
-- `/inactividad roles listar`: muestra los roles actualmente registrados.
+- `listar`: lista miembros inactivos vs. activos dentro de los roles vigilados.
+- `estadisticas`: calcula porcentajes por rol e incluye el historial de las
+  últimas capturas.
+- `roles agregar rol:<rol>` / `roles eliminar rol:<rol>` / `roles listar`:
+  administra los roles que serán monitoreados.
 
-## Estructura del proyecto
+Además, `/dis-session` genera y almacena un código de enlace para usuarios de
+Minecraft, enviándolo por DM y respondiendo de forma efímera.
+
+### API HTTP
+
+- `GET /members`: lee la whitelist definida en `WHITELIST_ROUTE`, cruza los
+  usuarios con la base de datos (rango, roles vinculados, medios, descripción) y
+  devuelve la lista enriquecida. Incluye CORS con el origen configurado en
+  `FRONT_ORIGIN`.
+
+### Tareas automáticas
+
+- **Recordatorios**: cada `REMINDER_INTERVAL_MINUTES` se revisan inactividades
+  vencidas, se notifica al usuario y se limpia el registro.
+- **Snapshots**: cada 12 horas se capturan estadísticas de actividad por rol
+  monitoreado para construir el historial mostrado en `/inactividad estadisticas`.
+
+## Estructura del proyecto (resumen)
 
 ```
 src/
-├── config.js              # Lectura de variables de entorno y valores por defecto.
-├── database.js            # Inicialización de SQLite y definición de tablas.
-├── handlers/
-│   └── interactionHandler.js  # Manejo centralizado de botones, modales y slash commands.
-├── index.js               # Punto de entrada: wiring de servicios, cliente y scheduler.
-├── interactions/
-│   ├── commands.js        # Registro de comandos vía REST.
-│   └── inactivityPanel.js # Embed, botones y modales del panel principal.
-├── logger.js              # Configuración de pino para logging estructurado.
-├── services/
-│   ├── inactivityService.js # Persistencia y lógica de inactividad.
-│   ├── roleService.js       # Gestión de roles vigilados y snapshots.
-│   └── scheduler.js         # Recordatorios y snapshots periódicos.
-└── utils/
-    └── time.js             # Utilidades para parsear duraciones/fechas y formatear salidas.
+├── api/                   # API HTTP con Express (`/members`).
+├── client.ts              # Inicializa Discord.js, intents y registro de comandos.
+├── commands/              # Implementación de slash commands (p. ej. dis-session).
+├── config.ts              # Carga y validación de variables de entorno.
+├── handlers/              # Manejo centralizado de interacciones y slash commands.
+├── interactions/          # Definición del panel, modales y registro de comandos.
+├── prisma/                # Schema, migraciones y cliente generado.
+├── services/              # Lógica de dominio: inactividad, roles, scheduler.
+├── utils/                 # Utilidades comunes (tiempo, etc.).
+└── index.ts               # Punto de entrada: API + bot + scheduler.
 ```
 
-## Desarrollo y extensiones sugeridas
+## Desarrollo y recomendaciones
 
-- Añadir pruebas unitarias con Jest para los servicios de dominio.
-- Generar recordatorios proactivos minutos antes de la fecha de retorno.
-- Exponer un panel web o dashboard externo con las estadísticas almacenadas.
-- Integrar webhooks o integraciones con herramientas de gestión del equipo.
+- Ejecuta `npm run lint` para validar estilo y reglas de ESLint.
+- Usa `npm run dev` para recargar automáticamente el bot durante el desarrollo.
+- Ajusta `DEPLOY_COMMAND` y `DEPLOY_INACTIVITY_PANEL` a `false` en local si no
+  quieres sobrescribir comandos/panel en el servidor de producción.
 
 ## Licencia
 
