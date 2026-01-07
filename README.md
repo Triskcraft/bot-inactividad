@@ -157,6 +157,26 @@ src/
 - Ajusta `DEPLOY_COMMAND` y `DEPLOY_INACTIVITY_PANEL` a `false` en local si no
   quieres sobrescribir comandos/panel en el servidor de producción.
 
+## Ejemplos de uso actualizados
+
+### Desplegar comandos y panel en un arranque controlado
+
+```bash
+DEPLOY_COMMAND=true DEPLOY_INACTIVITY_PANEL=true npm start
+```
+
+### Consumir la API v1 desde una herramienta CLI
+
+```bash
+curl -s http://localhost:3000/v1/members | jq
+```
+
+### Consultas de administración en Discord
+
+- `/inactividad listar`
+- `/inactividad estadisticas`
+- `/inactividad roles agregar rol:@Moderadores`
+
 ## Licencia
 
 Este proyecto se distribuye bajo la licencia MIT. Consulta el archivo
