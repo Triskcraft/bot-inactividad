@@ -38,7 +38,7 @@ export default defineConfig([
                 'ignorePackages',
                 {
                     js: 'never',
-                    ts: 'never',
+                    ts: 'always',
                     tsx: 'never',
                 },
             ],

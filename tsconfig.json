@@ -7,6 +7,12 @@
     "compilerOptions": {
         // File Layout
         "rootDir": "./src",
+        "baseUrl": ".",
+        "paths": {
+            "#config": ["src/config.ts"],
+            "#client": ["src/client.ts"],
+            "#database": ["src/prisma/database.ts"]
+        },
         // "outDir": "./build",
 
         // Environment Settings
