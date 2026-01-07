@@ -55,10 +55,6 @@ export async function getMembers(req: Request, res: Response) {
             } satisfies Member
         },
     )
-    // const file = await readFile(join(process.cwd(), envs.WHITELIST_ROUTE), {
-    //     encoding: 'utf-8',
-    // })
-    // const whitelist: McName[] = JSON.parse(file)
     res.set('Cache-Control', 'public, max-age=86400')
     res.json(pobled)
 }
