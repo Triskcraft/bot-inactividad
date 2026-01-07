@@ -10,6 +10,11 @@
         "build": "prisma generate && tsc",
         "dev": "node --watch src/index.ts"
     },
+    "imports": {
+        "#config": "./src/config.ts",
+        "#client": "./src/client.ts",
+        "#database": "./src/prisma/database.ts"
+    },
     "dependencies": {
         "@discordjs/rest": "2.6.0",
         "@js-temporal/polyfill": "0.5.1",

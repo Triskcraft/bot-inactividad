@@ -1,6 +1,6 @@
 import Express from 'express'
 import cors from 'cors'
-import { getMembers } from './members/get.ts'
+import v1 from './v1/route.ts'
 
 /**
  * Servidor HTTP mínimo que expone endpoints de lectura para integraciones
@@ -16,6 +16,6 @@ app.use(
     }),
 )
 
-app.get('/members', getMembers)
+app.use('/v1', Express.json(), v1)
 
 export { app }
