@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import { readFile } from 'fs/promises'
-import { envs } from '../../config.ts'
-import { db } from '../../prisma/database.ts'
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
 
 type McName = string
 

@@ -7,6 +7,10 @@
     "compilerOptions": {
         // File Layout
         "rootDir": "./src",
+        "baseUrl": ".",
+        "paths": {
+            "#/*": ["src/*"]
+        },
         // "outDir": "./build",
 
         // Environment Settings
