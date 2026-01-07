@@ -11,7 +11,9 @@
         "dev": "node --watch src/index.ts"
     },
     "imports": {
-        "#/*": "./src/*"
+        "#config": "./src/config.ts",
+        "#client": "./src/client.ts",
+        "#database": "./src/prisma/database.ts"
     },
     "dependencies": {
         "@discordjs/rest": "2.6.0",

@@ -9,7 +9,9 @@
         "rootDir": "./src",
         "baseUrl": ".",
         "paths": {
-            "#/*": ["src/*"]
+            "#config": ["src/config.ts"],
+            "#client": ["src/client.ts"],
+            "#database": ["src/prisma/database.ts"]
         },
         // "outDir": "./build",
 
