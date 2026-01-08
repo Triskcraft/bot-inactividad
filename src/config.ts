@@ -25,6 +25,9 @@ export function loadConfig() {
         'DISCORD_INACTIVITY_CHANNEL_ID',
         'DISCORD_ADMIN_LOG_CHANNEL_ID',
         'WHITELIST_ROUTE',
+        'PANEL_CHANNEL_ID',
+        'ENCRYPT_KEY',
+        'JWT_SECRERT',
     ]
 
     const recomended = [
@@ -56,6 +59,9 @@ export function loadConfig() {
         DEPLOY_COMMAND = false,
         NODE_ENV = 'development',
         DEPLOY_INACTIVITY_PANEL = false,
+        PANEL_CHANNEL_ID = '',
+        ENCRYPT_KEY = '',
+        JWT_SECRERT = '',
     } = process.env
 
     return {
@@ -73,6 +79,9 @@ export function loadConfig() {
         DEPLOY_COMMAND: DEPLOY_COMMAND === 'true',
         DEPLOY_INACTIVITY_PANEL: DEPLOY_INACTIVITY_PANEL === 'true',
         NODE_ENV,
+        PANEL_CHANNEL_ID,
+        ENCRYPT_KEY: Buffer.from(ENCRYPT_KEY, 'base64'),
+        JWT_SECRERT: new TextEncoder().encode(JWT_SECRERT),
     }
 }
 

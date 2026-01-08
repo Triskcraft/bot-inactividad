@@ -129,6 +129,7 @@ model DiscordUser {
 
 model WebhookToken {
     id              String   @id @default(dbgenerated("snowflake()"))
+    name            String
     discord_user_id String
     secret          String
     permissions     String[]

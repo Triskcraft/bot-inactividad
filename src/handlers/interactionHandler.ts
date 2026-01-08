@@ -1,17 +1,11 @@
 import {
-    ButtonInteraction,
     ChatInputCommandInteraction,
     CommandInteraction,
     EmbedBuilder,
-    GuildMember,
-    MessageFlags,
-    ModalSubmitInteraction,
     PermissionsBitField,
     Role,
 } from 'discord.js'
-import { DateTime } from 'luxon'
-import { buildInactivityModal } from '../interactions/inactivityPanel.ts'
-import { parseUserTime, formatForUser } from '../utils/time.ts'
+import { formatForUser } from '../utils/time.ts'
 import { logger } from '../logger.ts'
 import type { InactivityService } from '../services/inactivityService.ts'
 import type { RoleService } from '../services/roleService.ts'
@@ -19,6 +13,8 @@ import { envs } from '../config.ts'
 import type { RoleStatistic } from '../prisma/generated/client.ts'
 import { handleCodeDB } from '../commands/dis-session.command.ts'
 import { client } from '../client.ts'
+import { handleButton } from './buttons-handler.ts'
+import { handleModal } from './modals-handler.ts'
 
 /**
  * Registra los manejadores principales de interacciones de Discord
@@ -35,9 +31,9 @@ export async function registerInteractionHandlers({
     client.on('interactionCreate', async interaction => {
         try {
             if (interaction.isButton()) {
-                await handleButton(interaction, inactivityService)
+                await handleButton(interaction)
             } else if (interaction.isModalSubmit()) {
-                await handleModal(interaction, inactivityService)
+                await handleModal(interaction)
             } else if (interaction.isChatInputCommand()) {
                 // Los slash commands se tipan como 'cached' para garantizar que
                 // la información de guild está disponible al manejarlos.
@@ -73,120 +69,6 @@ export async function registerInteractionHandlers({
             }
         }
     })
-}
-
-/**
- * Manejador central de botones del panel de inactividad. Cada botón ejecuta
- * una acción distinta: crear/editar, limpiar o mostrar el estado del usuario.
- */
-async function handleButton(
-    interaction: ButtonInteraction,
-    inactivityService: InactivityService,
-) {
-    // Los botones solo son válidos dentro de un servidor; evita uso en MD.
-    if (!interaction.inGuild()) {
-        await interaction.reply({
-            content: 'Solo disponible dentro del servidor.',
-            flags: MessageFlags.Ephemeral,
-        })
-        return
-    }
-
-    const member = interaction.member as GuildMember
-
-    switch (interaction.customId) {
-        case 'inactivity:set':
-        case 'inactivity:edit': {
-            // Muestra el modal que permite indicar fecha o duración.
-            await interaction.showModal(
-                buildInactivityModal(
-                    interaction.customId === 'inactivity:set' ?
-                        'modal:set'
-                    :   'modal:edit',
-                ),
-            )
-            break
-        }
-        case 'inactivity:clear': {
-            inactivityService.clearInactivity(member.id)
-            await interaction.reply({
-                content: 'Tu inactividad fue eliminada. ¡Bienvenido de vuelta!',
-                flags: MessageFlags.Ephemeral,
-            })
-            break
-        }
-        case 'inactivity:show': {
-            const record = await inactivityService.getInactivity(member.id)
-            if (!record) {
-                await interaction.reply({
-                    content: 'No tienes inactividad registrada.',
-                    flags: MessageFlags.Ephemeral,
-                })
-                return
-            }
-
-            await interaction.reply({
-                content: `Estarás inactivo hasta ${formatForUser(record.ends_at)}.`,
-                flags: MessageFlags.Ephemeral,
-            })
-            break
-        }
-        default:
-            await interaction.reply({
-                content: 'Acción desconocida.',
-                flags: MessageFlags.Ephemeral,
-            })
-    }
-}
-
-/**
- * Procesa los formularios enviados desde el modal de inactividad validando
- * que exista al menos un campo y que la fecha indicada sea futura.
- */
-async function handleModal(
-    interaction: ModalSubmitInteraction,
-    inactivityService: InactivityService,
-) {
-    const duration = interaction.fields.getTextInputValue('duration')
-    const until = interaction.fields.getTextInputValue('until')
-
-    // Ambos campos son opcionales, pero al menos uno debe contener valor.
-    if (!duration && !until) {
-        await interaction.reply({
-            content: 'Debes completar al menos uno de los campos.',
-            flags: MessageFlags.Ephemeral,
-        })
-        return
-    }
-
-    try {
-        const reference = until || duration
-        const { until: untilDate } = parseUserTime(reference)
-        if (untilDate.toMillis() <= DateTime.utc().toMillis()) {
-            await interaction.reply({
-                content:
-                    'La fecha indicada ya pasó. Por favor ingresa un valor en el futuro.',
-                flags: MessageFlags.Ephemeral,
-            })
-            return
-        }
-        inactivityService.markInactivity(
-            interaction.guildId!,
-            interaction.member as GuildMember,
-            untilDate.toJSDate(),
-            interaction.customId,
-        )
-        // Respuesta privada para evitar spam en el canal de interacción.
-        await interaction.reply({
-            content: `Registramos tu inactividad hasta ${formatForUser(untilDate.toJSDate())}.`,
-            flags: MessageFlags.Ephemeral,
-        })
-    } catch (error) {
-        await interaction.reply({
-            content: (error as Error).message,
-            flags: MessageFlags.Ephemeral,
-        })
-    }
 }
 
 /**

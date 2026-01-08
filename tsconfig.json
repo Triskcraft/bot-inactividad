@@ -6,7 +6,6 @@
 
     "compilerOptions": {
         // File Layout
-        "rootDir": "./src",
         "baseUrl": ".",
         "paths": {
             "#config": ["src/config.ts"],
@@ -48,6 +47,7 @@
 
         // Recommended Options
         "strict": true,
+        "noImplicitOverride": true,
         "jsx": "react-jsx",
         "verbatimModuleSyntax": true,
         "isolatedModules": true,

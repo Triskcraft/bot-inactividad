@@ -1,10 +1,13 @@
 import { app } from './api/server.ts'
 import { client } from './client.ts'
 import { envs } from './config.ts'
+import { loadButtons } from './handlers/buttons-handler.ts'
 import { registerInteractionHandlers } from './handlers/interactionHandler.ts'
+import { loadModals } from './handlers/modals-handler.ts'
 import { logger } from './logger.ts'
 import { db } from './prisma/database.ts'
-import { InactivityService } from './services/inactivityService.ts'
+import { inactivityService } from './services/inactivityService.ts'
+import { deployAdminPanel } from './services/panel.ts'
 import { RoleService } from './services/roleService.ts'
 import { Scheduler } from './services/scheduler.ts'
 
@@ -36,9 +39,10 @@ process.on('SIGTERM', () => shutdown('SIGTERM'))
  * Los servicios principales se comparten en todo el proyecto para permitir
  * coordinación entre las interacciones de Discord y la API HTTP.
  */
-const inactivityService = new InactivityService()
 const roleService = new RoleService()
 const scheduler = new Scheduler(inactivityService, roleService)
+await loadButtons()
+await loadModals()
 registerInteractionHandlers({ inactivityService, roleService })
 if (envs.DEPLOY_INACTIVITY_PANEL) {
     // Despliega (o actualiza) el panel de botones en el canal configurado.
@@ -46,5 +50,6 @@ if (envs.DEPLOY_INACTIVITY_PANEL) {
 } else {
     logger.info('Saltando el despliegue del panel de inactividad')
 }
+await deployAdminPanel()
 // Activa los jobs programados que mantienen el sistema actualizado.
 scheduler.start()

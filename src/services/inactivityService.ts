@@ -148,3 +148,5 @@ function mapRow(row: InactivityPeriod) {
         role_snapshot: JSON.parse(row.role_snapshot),
     }
 }
+
+export const inactivityService = new InactivityService()
