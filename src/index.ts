@@ -1,24 +1,13 @@
 import { app } from './api/server.ts'
 import { client } from './client.ts'
 import { envs } from './config.ts'
-import { loadButtons } from './handlers/buttons-handler.ts'
-import { registerInteractionHandlers } from './handlers/interactionHandler.ts'
-import { loadModals } from './handlers/modals-handler.ts'
 import { logger } from './logger.ts'
 import { db } from './prisma/database.ts'
-import { inactivityService } from './services/inactivityService.ts'
+import { inactivityService } from './services/inactivity.service.ts'
+import { interactionService } from './services/interactions.service.ts'
 import { deployAdminPanel } from './services/panel.ts'
-import { RoleService } from './services/roleService.ts'
+import { roleService } from './services/role.service.ts'
 import { Scheduler } from './services/scheduler.ts'
-
-/**
- * Punto de entrada principal del bot. Aquí se inicializan los servicios
- * compartidos (API HTTP, cliente de Discord, acceso a base de datos y
- * planificador) y se orquestan las tareas de arranque y apagado seguro.
- */
-app.listen(envs.API_PORT, () => {
-    logger.info(`api listening on port ${envs.API_PORT}`)
-})
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente
@@ -36,14 +25,21 @@ process.on('SIGINT', () => shutdown('SIGINT'))
 process.on('SIGTERM', () => shutdown('SIGTERM'))
 
 /**
+ * Punto de entrada principal del bot. Aquí se inicializan los servicios
+ * compartidos (API HTTP, cliente de Discord, acceso a base de datos y
+ * planificador) y se orquestan las tareas de arranque y apagado seguro.
+ */
+app.listen(envs.API_PORT, () => {
+    logger.info(`api listening on port ${envs.API_PORT}`)
+})
+
+/**
  * Los servicios principales se comparten en todo el proyecto para permitir
  * coordinación entre las interacciones de Discord y la API HTTP.
  */
-const roleService = new RoleService()
 const scheduler = new Scheduler(inactivityService, roleService)
-await loadButtons()
-await loadModals()
-registerInteractionHandlers({ inactivityService, roleService })
+await interactionService.registerInteractionHandlers()
+
 if (envs.DEPLOY_INACTIVITY_PANEL) {
     // Despliega (o actualiza) el panel de botones en el canal configurado.
     await inactivityService.deployInactivityPanel()

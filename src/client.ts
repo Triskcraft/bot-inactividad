@@ -23,16 +23,6 @@ const client = new Client<true>({
     ],
 })
 
-/**
- * Promesa que se resuelve cuando Discord notifica que el bot está listo.
- * Permite encadenar tareas de arranque que dependan del estado conectado.
- */
-const ready = new Promise<true>(res =>
-    client.once(Events.ClientReady, async client => {
-        logger.info({ tag: client.user.tag }, 'Bot conectado')
-        res(true)
-    }),
-)
 client.on(Events.Error, error =>
     logger.error({ err: error }, 'Discord.js error'),
 )
@@ -52,16 +42,15 @@ if (envs.DEPLOY_COMMAND) {
 }
 
 /**
- * El login devuelve un token de sesión. Se espera a que el cliente quede
- * completamente listo antes de exportarlo para evitar condiciones de carrera.
+ * Promesa que se resuelve cuando Discord notifica que el bot está listo.
+ * Permite encadenar tareas de arranque que dependan del estado conectado.
  */
-await client.login(envs.token)
-await ready // ensures ready
+const ready = await new Promise<true>(res => {
+    client.once(Events.ClientReady, async client => {
+        logger.info({ tag: client.user.tag }, 'Bot conectado')
+        res(true)
+    })
+    client.login(envs.token)
+})
 
 export { client, ready }
-// }
-
-// bootstrap().catch((error) => {
-//   logger.fatal({ err: error }, 'No se pudo iniciar el bot');
-//   process.exit(1);
-// });

@@ -1,7 +1,13 @@
 import { db } from '#database'
 import {
     EmbedBuilder,
+    LabelBuilder,
     MessageFlags,
+    ModalBuilder,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    TextInputBuilder,
+    TextInputStyle,
     type ModalSubmitInteraction,
 } from 'discord.js'
 import { SignJWT } from 'jose'
@@ -9,13 +15,46 @@ import { randomBytes } from 'node:crypto'
 import { encrypt } from '../utils/encript.ts'
 import { envs } from '#config'
 import { getRank } from '../utils/roles.ts'
-import type { ModalInteractionHandler } from 'src/interactions/class.ts'
+import { ModalInteractionHandler } from '../services/interactions.service.ts'
 
 const alg = 'HS256'
 
-export default class implements ModalInteractionHandler {
-    regex = /^wh:add$/
-    async run(interaction: ModalSubmitInteraction<'cached'>) {
+export default class extends ModalInteractionHandler {
+    override regex = /^wh:add$/
+
+    static override build(): ModalBuilder {
+        return new ModalBuilder()
+            .setCustomId('wh:add')
+            .setTitle('Create a Webhook Token')
+            .addLabelComponents(
+                new LabelBuilder()
+                    .setLabel('Permisos')
+                    .setStringSelectMenuComponent(
+                        new StringSelectMenuBuilder()
+                            .setCustomId('permissions')
+                            .setRequired(true)
+                            .setMinValues(1)
+                            .addOptions(
+                                new StringSelectMenuOptionBuilder()
+                                    .setLabel('digs')
+                                    .setValue('digs')
+                                    .setDescription('Webhook de digs'),
+                            ),
+                    ),
+                new LabelBuilder()
+                    .setLabel('Nombre')
+                    .setDescription('Para identificar el token')
+                    .setTextInputComponent(
+                        new TextInputBuilder()
+                            .setCustomId('name')
+                            .setRequired(true)
+                            .setStyle(TextInputStyle.Short)
+                            .setRequired(false),
+                    ),
+            )
+    }
+
+    override async run(interaction: ModalSubmitInteraction<'cached'>) {
         await interaction.deferReply({
             flags: MessageFlags.Ephemeral,
         })

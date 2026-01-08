@@ -1,146 +1,67 @@
 import {
-    ChatInputCommandInteraction,
-    CommandInteraction,
+    type ChatInputCommandInteraction,
     EmbedBuilder,
     PermissionsBitField,
     Role,
+    type CommandInteraction,
 } from 'discord.js'
-import { formatForUser } from '../utils/time.ts'
 import { logger } from '../logger.ts'
-import type { InactivityService } from '../services/inactivityService.ts'
-import type { RoleService } from '../services/roleService.ts'
-import { envs } from '../config.ts'
-import type { RoleStatistic } from '../prisma/generated/client.ts'
-import { handleCodeDB } from '../commands/dis-session.command.ts'
-import { client } from '../client.ts'
-import { handleButton } from './buttons-handler.ts'
-import { handleModal } from './modals-handler.ts'
+import { inactivityService } from '../services/inactivity.service.ts'
+import { formatForUser } from '../utils/time.ts'
+import { roleService } from '../services/roleService.ts'
+import { envs } from '#config'
+import type { RoleStatistic } from '../prisma/generated/browser.ts'
+import type { CommandInteractionHandler } from '../services/interactions.service.ts'
 
 /**
- * Registra los manejadores principales de interacciones de Discord
- * (botones, modales y slash commands) delegando la lógica a los servicios
- * especializados. Se ejecuta una sola vez durante el arranque del bot.
+ * Genera un código de vinculación de sesión y lo persiste en la base de datos.
+ * También intenta enviarlo por DM y responde de forma efímera al usuario.
  */
-export async function registerInteractionHandlers({
-    inactivityService,
-    roleService,
-}: {
-    inactivityService: InactivityService
-    roleService: RoleService
-}) {
-    client.on('interactionCreate', async interaction => {
-        try {
-            if (interaction.isButton()) {
-                await handleButton(interaction)
-            } else if (interaction.isModalSubmit()) {
-                await handleModal(interaction)
-            } else if (interaction.isChatInputCommand()) {
-                // Los slash commands se tipan como 'cached' para garantizar que
-                // la información de guild está disponible al manejarlos.
-                await handleCommand(
-                    interaction as ChatInputCommandInteraction<'cached'>,
-                    inactivityService,
-                    roleService,
-                )
-            }
-        } catch (error) {
-            logger.error(
-                { err: error, interaction: interaction.id },
-                'Error procesando interacción',
+export default class implements CommandInteractionHandler {
+    name = 'inactividad'
+    async run(interaction: ChatInputCommandInteraction<'cached'>) {
+        if (interaction.commandName !== 'inactividad') return
+        if (
+            !interaction.memberPermissions?.has(
+                PermissionsBitField.Flags.Administrator,
             )
-            if (interaction.isRepliable()) {
-                const replyContent =
-                    'Ocurrió un error inesperado al procesar tu solicitud.'
-                const ephemeral = !(
-                    interaction.isChatInputCommand() &&
-                    interaction.commandName === 'inactividad'
-                )
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({
-                        content: replyContent,
-                        ephemeral,
+        ) {
+            return await interaction.reply({
+                content: 'Solo administradores pueden usar estos comandos.',
+            })
+        }
+
+        const group = interaction.options.getSubcommandGroup(false)
+        if (!group) {
+            switch (interaction.options.getSubcommand()) {
+                case 'listar':
+                    return await handleList(interaction)
+                case 'estadisticas':
+                    return await handleStats(interaction)
+                default:
+                    return await interaction.reply({
+                        content: 'Comando desconocido.',
                     })
-                } else {
-                    await interaction.reply({
-                        content: replyContent,
-                        ephemeral,
-                    })
-                }
             }
         }
-    })
-}
 
-/**
- * Enruta los comandos de barra hacia el manejador correspondiente según el
- * nombre del comando recibido.
- */
-async function handleCommand(
-    interaction: ChatInputCommandInteraction<'cached'>,
-    inactivityService: InactivityService,
-    roleService: RoleService,
-) {
-    if (interaction.commandName === 'inactividad')
-        return inactividadCommand(interaction, inactivityService, roleService)
-    if (interaction.commandName === 'dis-session')
-        return handleCodeDB(interaction)
-    await interaction.reply({ content: 'Comando desconocido.' })
-}
-
-/**
- * Agrupa la lógica del comando administrativo `/inactividad`, verificando
- * permisos y delegando en los subcomandos individuales.
- */
-async function inactividadCommand(
-    interaction: ChatInputCommandInteraction<'cached'>,
-    inactivityService: InactivityService,
-    roleService: RoleService,
-) {
-    if (interaction.commandName !== 'inactividad') return
-    if (
-        !interaction.memberPermissions?.has(
-            PermissionsBitField.Flags.Administrator,
-        )
-    ) {
-        await interaction.reply({
-            content: 'Solo administradores pueden usar estos comandos.',
-        })
-        return
-    }
-
-    const group = interaction.options.getSubcommandGroup(false)
-    if (!group) {
-        switch (interaction.options.getSubcommand()) {
-            case 'listar':
-                await handleList(interaction, inactivityService, roleService)
-                return
-            case 'estadisticas':
-                await handleStats(interaction, inactivityService, roleService)
-                return
-            default:
-                await interaction.reply({ content: 'Comando desconocido.' })
-                return
+        if (group === 'roles') {
+            switch (interaction.options.getSubcommand()) {
+                case 'agregar':
+                    return await handleRoleAdd(interaction)
+                case 'eliminar':
+                    return await handleRoleRemove(interaction)
+                case 'listar':
+                    return await handleRoleList(interaction)
+                default:
+                    return await interaction.reply({
+                        content: 'Subcomando desconocido.',
+                    })
+            }
         }
-    }
 
-    if (group === 'roles') {
-        switch (interaction.options.getSubcommand()) {
-            case 'agregar':
-                await handleRoleAdd(interaction, roleService)
-                return
-            case 'eliminar':
-                await handleRoleRemove(interaction, roleService)
-                return
-            case 'listar':
-                await handleRoleList(interaction, roleService)
-                return
-            default:
-                await interaction.reply({ content: 'Subcomando desconocido.' })
-                return
-        }
+        await interaction.reply({ content: 'Comando desconocido.' })
     }
-
-    await interaction.reply({ content: 'Comando desconocido.' })
 }
 
 /**
@@ -148,11 +69,7 @@ async function inactividadCommand(
  * miembros pertenecientes a los roles monitoreados, utilizando tanto la
  * caché de Discord como la base de datos.
  */
-async function handleList(
-    interaction: CommandInteraction<'cached'>,
-    inactivityService: InactivityService,
-    roleService: RoleService,
-) {
+async function handleList(interaction: CommandInteraction<'cached'>) {
     // Recupera registros en BD y configuración de roles a monitorear.
     const records = await inactivityService.listInactivities(
         interaction.guildId,
@@ -286,11 +203,7 @@ async function handleList(
  * Calcula estadísticas de inactividad por rol, incluyendo porcentajes y
  * tendencias históricas, para su visualización en un embed detallado.
  */
-async function handleStats(
-    interaction: CommandInteraction<'cached'>,
-    inactivityService: InactivityService,
-    roleService: RoleService,
-) {
+async function handleStats(interaction: CommandInteraction<'cached'>) {
     // Obtiene registros actuales y roles monitoreados para generar métricas.
     const records = await inactivityService.listInactivities(
         interaction.guildId,
@@ -345,10 +258,9 @@ async function handleStats(
     }
 
     if (!summaries.length) {
-        await interaction.reply({
+        return await interaction.reply({
             content: 'No se encontraron roles monitoreados disponibles.',
         })
-        return
     }
 
     const embed = new EmbedBuilder()
@@ -386,7 +298,6 @@ async function handleStats(
 
 async function handleRoleAdd(
     interaction: ChatInputCommandInteraction<'cached'>,
-    roleService: RoleService,
 ) {
     const role = interaction.options.getRole('rol', true)
     roleService.addRole(interaction.guildId, role.id)
@@ -403,7 +314,6 @@ async function handleRoleAdd(
  */
 async function handleRoleRemove(
     interaction: ChatInputCommandInteraction<'cached'>,
-    roleService: RoleService,
 ) {
     const role = interaction.options.getRole('rol', true)
     roleService.removeRole(interaction.guildId, role.id)
@@ -420,14 +330,12 @@ async function handleRoleRemove(
  * Lista los roles actualmente vigilados y los devuelve como menciones para
  * facilitar su lectura por parte del administrador.
  */
-async function handleRoleList(
-    interaction: CommandInteraction<'cached'>,
-    roleService: RoleService,
-) {
+async function handleRoleList(interaction: CommandInteraction<'cached'>) {
     const roles = await roleService.listRoles(interaction.guildId)
     if (!roles.length) {
-        await interaction.reply({ content: 'No hay roles monitoreados.' })
-        return
+        return await interaction.reply({
+            content: 'No hay roles monitoreados.',
+        })
     }
 
     const mentions = roles.map(roleId => `<@&${roleId}>`)

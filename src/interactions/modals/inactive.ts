@@ -1,12 +1,21 @@
-import { MessageFlags, type ModalSubmitInteraction } from 'discord.js'
-import type { ModalInteractionHandler } from '../interactions/class.ts'
-import { inactivityService } from '../services/inactivityService.ts'
+import {
+    MessageFlags,
+    ModalBuilder,
+    type ModalSubmitInteraction,
+} from 'discord.js'
+import { inactivityService } from '../services/inactivity.service.ts'
 import { formatForUser, parseUserTime } from '../utils/time.ts'
 import { DateTime } from 'luxon'
+import { ModalInteractionHandler } from '../services/interactions.service.ts'
 
-export default class implements ModalInteractionHandler {
-    regex = /^wh:add$/
-    async run(interaction: ModalSubmitInteraction<'cached'>) {
+export default class extends ModalInteractionHandler {
+    override regex = /^wh:add$/
+
+    static override build(): ModalBuilder {
+        return new ModalBuilder()
+    }
+
+    override async run(interaction: ModalSubmitInteraction<'cached'>) {
         const duration = interaction.fields.getTextInputValue('duration')
         const until = interaction.fields.getTextInputValue('until')
 

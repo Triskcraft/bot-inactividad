@@ -5,7 +5,6 @@ import { envs } from '../config.ts'
 
 /**
  * Registra los slash commands del bot.
- * @param {import('../config.js').BotConfig} config
  */
 export async function registerCommands() {
     const rest = new REST({ version: '10' }).setToken(envs.token)
