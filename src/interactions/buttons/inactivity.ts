@@ -1,8 +1,8 @@
 import { MessageFlags, type ButtonInteraction } from 'discord.js'
-import { buildInactivityModal } from '../interactions/inactivityPanel.ts'
-import { inactivityService } from '../services/inactivity.service.ts'
-import { formatForUser } from '../utils/time.ts'
-import type { ButtonInteractionHandler } from '../services/interactions.service.ts'
+import { buildInactivityModal } from '../../interactions/inactivityPanel.ts'
+import { inactivityService } from '../../services/inactivity.service.ts'
+import { formatForUser } from '../../utils/time.ts'
+import type { ButtonInteractionHandler } from '../../services/interactions.service.ts'
 
 export default class implements ButtonInteractionHandler {
     regex = /^inactivity:.*/

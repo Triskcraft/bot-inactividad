@@ -4,7 +4,7 @@ import {
     type ButtonInteraction,
 } from 'discord.js'
 import WhModal from '../modals/webhook.ts'
-import type { ButtonInteractionHandler } from '../services/interactions.service.ts'
+import type { ButtonInteractionHandler } from '../../services/interactions.service.ts'
 
 export default class implements ButtonInteractionHandler {
     regex = /^wh:add$/

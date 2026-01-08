@@ -12,10 +12,10 @@ import {
 } from 'discord.js'
 import { SignJWT } from 'jose'
 import { randomBytes } from 'node:crypto'
-import { encrypt } from '../utils/encript.ts'
+import { encrypt } from '../../utils/encript.ts'
 import { envs } from '#config'
-import { getRank } from '../utils/roles.ts'
-import { ModalInteractionHandler } from '../services/interactions.service.ts'
+import { getRank } from '../../utils/roles.ts'
+import { ModalInteractionHandler } from '../../services/interactions.service.ts'
 
 const alg = 'HS256'
 
