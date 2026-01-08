@@ -6,7 +6,7 @@ import {
     EmbedBuilder,
 } from '@discordjs/builders'
 import { ButtonStyle, type BaseMessageOptions } from 'discord.js'
-import { logger } from '../logger.ts'
+import { logger } from '#logger'
 
 export async function deployAdminPanel() {
     const channel = await client.channels.fetch(envs.PANEL_CHANNEL_ID)

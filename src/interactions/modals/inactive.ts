@@ -3,10 +3,10 @@ import {
     ModalBuilder,
     type ModalSubmitInteraction,
 } from 'discord.js'
-import { inactivityService } from '../../services/inactivity.service.ts'
+import { inactivityService } from '#inactivity.service'
 import { formatForUser, parseUserTime } from '../../utils/time.ts'
 import { DateTime } from 'luxon'
-import { ModalInteractionHandler } from '../../services/interactions.service.ts'
+import { ModalInteractionHandler } from '#interactions.service'
 
 export default class extends ModalInteractionHandler {
     override regex = /^wh:add$/

@@ -4,7 +4,7 @@ import type { GuildMember } from 'discord.js'
 import { db } from '../prisma/database.ts'
 import { envs } from '../config.ts'
 import { client } from '../client.ts'
-import { logger } from '../logger.ts'
+import { logger } from '#logger'
 import { buildInactivityPanel } from '../interactions/inactivityPanel.ts'
 
 /**

@@ -15,7 +15,7 @@ import { randomBytes } from 'node:crypto'
 import { encrypt } from '../../utils/encript.ts'
 import { envs } from '#config'
 import { getRank } from '../../utils/roles.ts'
-import { ModalInteractionHandler } from '../../services/interactions.service.ts'
+import { ModalInteractionHandler } from '#interactions.service'
 
 const alg = 'HS256'
 

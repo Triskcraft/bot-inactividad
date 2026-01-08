@@ -10,7 +10,11 @@
         "paths": {
             "#config": ["src/config.ts"],
             "#client": ["src/client.ts"],
-            "#database": ["src/prisma/database.ts"]
+            "#database": ["src/prisma/database.ts"],
+            "#logger": ["src/logger.ts"],
+            "#inactivity.service": ["src/services/inactivity.service.ts"],
+            "#interactions.service": ["src/services/interactions.service.ts"],
+            "#role.service": ["src/services/role.service.ts"]
         },
         // "outDir": "./build",
 

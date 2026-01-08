@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js'
 import { envs } from './config.ts'
 import { registerCommands } from './interactions/commands.ts'
-import { logger } from './logger.ts'
+import { logger } from '#logger'
 
 /**
  * Configuración del cliente de Discord. Se habilitan los intents y partials

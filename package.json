@@ -13,7 +13,11 @@
     "imports": {
         "#config": "./src/config.ts",
         "#client": "./src/client.ts",
-        "#database": "./src/prisma/database.ts"
+        "#logger": "./src/logger.ts",
+        "#database": "./src/prisma/database.ts",
+        "#inactivity.service": "./src/services/inactivity.service.ts",
+        "#interactions.service": "./src/services/interactions.service.ts",
+        "#role.service": "./src/services/role.service.ts"
     },
     "dependencies": {
         "@discordjs/rest": "2.6.0",

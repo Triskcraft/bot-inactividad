@@ -1,12 +1,12 @@
 import { app } from './api/server.ts'
 import { client } from './client.ts'
 import { envs } from './config.ts'
-import { logger } from './logger.ts'
+import { logger } from '#logger'
 import { db } from './prisma/database.ts'
-import { inactivityService } from './services/inactivity.service.ts'
-import { interactionService } from './services/interactions.service.ts'
+import { inactivityService } from '#inactivity.service'
+import { interactionService } from '#interactions.service'
 import { deployAdminPanel } from './services/panel.ts'
-import { roleService } from './services/role.service.ts'
+import { roleService } from '#role.service'
 import { Scheduler } from './services/scheduler.ts'
 
 /**
