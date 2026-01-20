@@ -8,7 +8,6 @@ import { interactionService } from '#interactions.service'
 import { deployAdminPanel } from './services/panel.ts'
 import { roleService } from '#role.service'
 import { Scheduler } from './services/scheduler.ts'
-import { createHmac } from 'node:crypto'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente
@@ -32,45 +31,6 @@ process.on('SIGTERM', () => shutdown('SIGTERM'))
  */
 app.listen(envs.API_PORT, async () => {
     logger.info(`api listening on port ${envs.API_PORT}`)
-    function signPayload(secret: string, payload: string) {
-        return createHmac('sha256', secret).update(payload).digest('hex')
-    }
-
-    const WEBHOOK_URL = 'http://localhost:3000/webhooks/digs'
-
-    const JWT =
-        'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6Ijg0NzQ3OTA5NDIxMDcyNDE3IiwidXNlciI6IjUzNDYxNDAyNTI3MTc3MTE1OCIsInBlcm1pc3Npb25zIjpbImRpZ3MiXSwibmFtZSI6InRlc3QiLCJpYXQiOjE3Njg5NDE0NzZ9.iemT0SxEf1pzn0emJCU75pHZ_QuwB3CojoQudKcjS5o'
-    const SECRET =
-        'ed821f2798f3bc828caded91f742d7398d488f86490aeb590b494fe6d7fa1ee6'
-
-    const payload = {
-        user_id: '123456789',
-        delta: 10,
-        reason: 'kill',
-    }
-
-    // ⚠️ stringify UNA sola vez
-    const body = JSON.stringify(payload)
-
-    const timestamp = Math.floor(Date.now() / 1000)
-
-    // firma sobre el raw body
-    const signature = signPayload(SECRET, `${timestamp}.${body}`)
-
-    const res = await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${JWT}`,
-            'X-Signature': signature,
-            'X-Timestamp': timestamp.toString(),
-            'Content-Type': 'application/json',
-        },
-        body,
-    })
-
-    const text = await res.text()
-
-    console.log(res.status, text)
 })
 
 /**
