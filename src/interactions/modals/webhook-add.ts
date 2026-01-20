@@ -6,6 +6,7 @@ import {
     ModalBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
+    TextDisplayBuilder,
     TextInputBuilder,
     TextInputStyle,
     type ModalSubmitInteraction,
@@ -17,14 +18,16 @@ import { envs } from '#config'
 import { getRank } from '../../utils/roles.ts'
 import { ModalInteractionHandler } from '#interactions.service'
 import { deployAdminPanel } from '../../services/panel.ts'
+import type { WebhookToken } from '../../prisma/generated/client.ts'
+import { PrismaClientKnownRequestError } from '../../prisma/generated/internal/prismaNamespace.ts'
 
 const alg = 'HS256'
 
 export default class extends ModalInteractionHandler {
     override regex = /^wh:add$/
 
-    static override async build() {
-        return new ModalBuilder()
+    static override async build({ error }: { error?: string } = {}) {
+        const modal = new ModalBuilder()
             .setCustomId('wh:add')
             .setTitle('Create a Webhook Token')
             .addLabelComponents(
@@ -49,10 +52,15 @@ export default class extends ModalInteractionHandler {
                         new TextInputBuilder()
                             .setCustomId('name')
                             .setRequired(true)
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(false),
+                            .setStyle(TextInputStyle.Short),
                     ),
             )
+        if (error) {
+            modal.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(error),
+            )
+        }
+        return modal
     }
 
     override async run(interaction: ModalSubmitInteraction<'cached'>) {
@@ -63,26 +71,40 @@ export default class extends ModalInteractionHandler {
         const permissions =
             interaction.fields.getStringSelectValues('permissions')
         const name = interaction.fields.getTextInputValue('name')
-        const wt = await db.webhookToken.create({
-            data: {
-                secret: encrypt(secret).payload,
-                permissions: [...permissions],
-                name,
-                discord_user: {
-                    connectOrCreate: {
-                        create: {
-                            id: interaction.user.id,
-                            rank: getRank([
-                                ...interaction.member.roles.cache.values(),
-                            ]),
-                        },
-                        where: {
-                            id: interaction.user.id,
+        let wt: WebhookToken
+        try {
+            wt = await db.webhookToken.create({
+                data: {
+                    secret: encrypt(secret).payload,
+                    permissions: [...permissions],
+                    name,
+                    discord_user: {
+                        connectOrCreate: {
+                            create: {
+                                id: interaction.user.id,
+                                rank: getRank([
+                                    ...interaction.member.roles.cache.values(),
+                                ]),
+                            },
+                            where: {
+                                id: interaction.user.id,
+                            },
                         },
                     },
                 },
-            },
-        })
+            })
+        } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError) {
+                if (error.code === 'P2002')
+                    return await interaction.editReply({
+                        content: 'Ese nombre ya está en uso',
+                    })
+            }
+            return await interaction.editReply({
+                content: 'Ha ocurrido un error al crear el token',
+            })
+        }
+
         const jwt = await new SignJWT({
             id: wt.id,
             user: interaction.user.id,

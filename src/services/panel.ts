@@ -8,7 +8,7 @@ import {
     SeparatorBuilder,
     TextDisplayBuilder,
 } from '@discordjs/builders'
-import { ButtonStyle, MessageFlags } from 'discord.js'
+import { ButtonStyle, MessageFlags, type SendableChannels } from 'discord.js'
 import { logger } from '#logger'
 import { db } from '#database'
 
@@ -62,8 +62,20 @@ export async function deployAdminPanel() {
         select: { value: true },
     })
     if (whpmid) {
-        await channel.messages.delete(whpmid.value).catch(() => null)
+        const anc = await channel.messages.fetch(whpmid.value)
+        if (anc) {
+            await anc.edit({
+                components: [container],
+            })
+        } else {
+            await resend(channel, container)
+        }
+    } else {
+        await resend(channel, container)
     }
+}
+
+async function resend(channel: SendableChannels, container: ContainerBuilder) {
     const nmsg = await channel.send({
         components: [container],
         flags: MessageFlags.IsComponentsV2 | MessageFlags.SuppressNotifications,
