@@ -37,22 +37,6 @@ export function loadConfig() {
         'NODE_ENV',
     ]
 
-    const requiredMissing = required.filter(key => !process.env[key])
-    if (requiredMissing.length > 0) {
-        throw new Error(
-            `Faltan variables de entorno: ${requiredMissing.join(', ')}`,
-        )
-    }
-
-    const recommendedMissing = recomended.filter(key => !process.env[key])
-    if (recommendedMissing.length > 0) {
-        console.warn(
-            `Variables de entorno recomendadas establecidas a un valor por defecto\nSe recomienda establecer las siguientes variables: ${recommendedMissing.toLocaleString(
-                'es-MX',
-            )}`,
-        )
-    }
-
     const {
         API_PORT = '3000',
         WHITELIST_ROUTE = '',
@@ -63,6 +47,23 @@ export function loadConfig() {
         ENCRYPT_KEY = '',
         JWT_SECRERT = '',
     } = process.env
+
+    const recommendedMissing = recomended.filter(key => !process.env[key])
+    if (recommendedMissing.length > 0) {
+        console.warn(
+            `Variables de entorno recomendadas establecidas a un valor por defecto\nSe recomienda establecer las siguientes variables:`,
+        )
+        for (const key of recommendedMissing) {
+            console.log(`${key}="${eval(key)}"`)
+        }
+    }
+
+    const requiredMissing = required.filter(key => !process.env[key])
+    if (requiredMissing.length > 0) {
+        throw new Error(
+            `Faltan variables de entorno:\n${requiredMissing.join('=""\n')}`,
+        )
+    }
 
     return {
         token: process.env.DISCORD_TOKEN!,
