@@ -1,5 +1,11 @@
-import { MessageFlags, type ButtonInteraction } from 'discord.js'
-import { buildInactivityModal } from '../../interactions/inactivityPanel.ts'
+import {
+    LabelBuilder,
+    MessageFlags,
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    type ButtonInteraction,
+} from 'discord.js'
 import { inactivityService } from '#inactivity.service'
 import { formatForUser } from '../../utils/time.ts'
 import type { ButtonInteractionHandler } from '#interactions.service'
@@ -54,4 +60,34 @@ export default class implements ButtonInteractionHandler {
                 })
         }
     }
+}
+
+/**
+ * Crea un modal para solicitar información de inactividad.
+ */
+export function buildInactivityModal(customId: string) {
+    // Campo para recibir una duración en formato libre (ej. "3d 4h").
+    const durationInput = new LabelBuilder()
+        .setLabel('Fecha exacta (ej: 2024-05-31 18:00)')
+        .setTextInputComponent(
+            new TextInputBuilder()
+                .setCustomId('duration')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(false),
+        )
+
+    // Campo alternativo para ingresar una fecha absoluta concreta.
+    const untilInput = new LabelBuilder()
+        .setLabel('Fecha exacta (ej: 2024-05-31 18:00)')
+        .setTextInputComponent(
+            new TextInputBuilder()
+                .setCustomId('until')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(false),
+        )
+
+    return new ModalBuilder()
+        .setCustomId(customId)
+        .setTitle('Configurar inactividad')
+        .addLabelComponents([durationInput, untilInput])
 }

@@ -1,11 +1,16 @@
 import { formatForUser } from '../utils/time.ts'
 import type { InactivityPeriod } from '../prisma/generated/client.ts'
-import type { GuildMember } from 'discord.js'
+import {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    EmbedBuilder,
+    type GuildMember,
+} from 'discord.js'
 import { db } from '../prisma/database.ts'
 import { envs } from '../config.ts'
 import { client } from '../client.ts'
 import { logger } from '#logger'
-import { buildInactivityPanel } from '../interactions/inactivityPanel.ts'
 
 /**
  * Servicio encargado de persistir y exponer los estados de inactividad.
@@ -150,3 +155,37 @@ function mapRow(row: InactivityPeriod) {
 }
 
 export const inactivityService = new InactivityService()
+
+/**
+ * Crea el embed y botones principales para la auto-gestión.
+ */
+export function buildInactivityPanel() {
+    const embed = new EmbedBuilder()
+        .setTitle('Gestión de Inactividad')
+        .setDescription(
+            'Administra tus periodos de ausencia utilizando los botones de abajo. Todas las respuestas del bot serán efímeras y solo tú podrás verlas.',
+        )
+        .setColor(0x5865f2)
+
+    // Fila única de botones que abarcan el ciclo completo de autogestión.
+    const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+            .setCustomId('inactivity:set')
+            .setLabel('Marcar inactividad')
+            .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+            .setCustomId('inactivity:edit')
+            .setLabel('Modificar inactividad')
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId('inactivity:clear')
+            .setLabel('Desmarcar inactividad')
+            .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+            .setCustomId('inactivity:show')
+            .setLabel('Mostrar estado')
+            .setStyle(ButtonStyle.Success),
+    )
+
+    return { embed, components: [buttons] }
+}
