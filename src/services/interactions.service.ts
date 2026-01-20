@@ -25,7 +25,10 @@ export abstract class ModalInteractionHandler {
             flags: MessageFlags.Ephemeral,
         })
     }
-    static build(): ModalBuilder {
+    static async build(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        params: Record<string, unknown> = {},
+    ): Promise<ModalBuilder> {
         return new ModalBuilder()
     }
 }

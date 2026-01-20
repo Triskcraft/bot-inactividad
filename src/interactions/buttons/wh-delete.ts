@@ -3,11 +3,11 @@ import {
     PermissionFlagsBits,
     type ButtonInteraction,
 } from 'discord.js'
-import WhModal from '../modals/webhook-add.ts'
+import WhModal from '../modals/webhook-delete.ts'
 import type { ButtonInteractionHandler } from '#interactions.service'
 
 export default class implements ButtonInteractionHandler {
-    regex = /^wh:add$/
+    regex = /^wh:delete:(.+)$/
     async run(interaction: ButtonInteraction<'cached'>) {
         if (
             !interaction.member.permissions.has(
@@ -19,6 +19,10 @@ export default class implements ButtonInteractionHandler {
                 content: 'No tienes permisos para usar esto',
             })
         }
-        await interaction.showModal(await WhModal.build())
+        await interaction.showModal(
+            await WhModal.build({
+                id: this.regex.exec(interaction.customId)![1]!,
+            }),
+        )
     }
 }

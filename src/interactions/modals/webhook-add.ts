@@ -16,13 +16,14 @@ import { encrypt } from '../../utils/encript.ts'
 import { envs } from '#config'
 import { getRank } from '../../utils/roles.ts'
 import { ModalInteractionHandler } from '#interactions.service'
+import { deployAdminPanel } from '../../services/panel.ts'
 
 const alg = 'HS256'
 
 export default class extends ModalInteractionHandler {
     override regex = /^wh:add$/
 
-    static override build(): ModalBuilder {
+    static override async build() {
         return new ModalBuilder()
             .setCustomId('wh:add')
             .setTitle('Create a Webhook Token')
@@ -113,6 +114,7 @@ export default class extends ModalInteractionHandler {
         interaction.editReply({
             embeds: [embed],
         })
+        await deployAdminPanel()
         // const { payload, protectedHeader } = await jwtVerify(jwt + '1', jwtsecret)
     }
 }

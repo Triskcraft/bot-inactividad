@@ -129,7 +129,7 @@ model DiscordUser {
 
 model WebhookToken {
     id              String   @id @default(dbgenerated("snowflake()"))
-    name            String
+    name            String   @unique
     discord_user_id String
     secret          String
     permissions     String[]
@@ -138,4 +138,13 @@ model WebhookToken {
     discord_user DiscordUser @relation(fields: [discord_user_id], references: [id])
 
     @@map("webhook_tokens")
+}
+
+model State {
+    id         String   @id @default(dbgenerated("snowflake()"))
+    key        String   @unique
+    value      String
+    updated_at DateTime @updatedAt
+
+    @@map("states")
 }

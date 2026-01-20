@@ -9,9 +9,9 @@ import { DateTime } from 'luxon'
 import { ModalInteractionHandler } from '#interactions.service'
 
 export default class extends ModalInteractionHandler {
-    override regex = /^wh:add$/
+    override regex = /^inactivity:.$/
 
-    static override build(): ModalBuilder {
+    static override async build() {
         return new ModalBuilder()
     }
 
