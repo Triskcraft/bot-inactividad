@@ -8,6 +8,7 @@ import type { ButtonInteractionHandler } from '#interactions.service'
 
 export default class implements ButtonInteractionHandler {
     regex = /^wh:delete:(.+)$/
+
     async run(interaction: ButtonInteraction<'cached'>) {
         if (
             !interaction.member.permissions.has(

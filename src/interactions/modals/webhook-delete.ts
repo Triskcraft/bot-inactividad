@@ -12,7 +12,7 @@ import { ModalInteractionHandler } from '#interactions.service'
 import { deployAdminPanel } from '../../services/panel.ts'
 
 export default class extends ModalInteractionHandler {
-    override regex = /^wh:delete:(.+)$/
+    override regex = /^wh:delete:(?<id>.+)$/
 
     static override async build({ id }: { id: string }) {
         const token = await db.webhookToken.findUnique({

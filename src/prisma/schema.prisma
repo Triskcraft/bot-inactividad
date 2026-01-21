@@ -102,7 +102,7 @@ model Media {
 /// Información de jugador de Minecraft enlazada con su usuario de Discord.
 model MinecraftUser {
     uuid            String @id
-    nickname        String
+    nickname        String @unique
     digs            Int    @default(0)
     description     String @default("")
     discord_user_id String @unique

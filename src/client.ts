@@ -8,7 +8,7 @@ import { logger } from '#logger'
  * necesarios para escuchar eventos de miembros, mensajes y reacciones aun
  * cuando la información llegue incompleta desde la pasarela de Discord.
  */
-const client = new Client<true>({
+const bot = new Client<true>({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
@@ -23,12 +23,8 @@ const client = new Client<true>({
     ],
 })
 
-client.on(Events.Error, error =>
-    logger.error({ err: error }, 'Discord.js error'),
-)
-client.on(Events.ShardError, error =>
-    logger.error({ err: error }, 'Shard error'),
-)
+bot.on(Events.Error, error => logger.error({ err: error }, 'Discord.js error'))
+bot.on(Events.ShardError, error => logger.error({ err: error }, 'Shard error'))
 
 /**
  * El despliegue de comandos solo se ejecuta cuando la variable de entorno
@@ -45,12 +41,10 @@ if (envs.DEPLOY_COMMAND) {
  * Promesa que se resuelve cuando Discord notifica que el bot está listo.
  * Permite encadenar tareas de arranque que dependan del estado conectado.
  */
-const ready = await new Promise<true>(res => {
-    client.once(Events.ClientReady, async client => {
+export const client = await new Promise<Client<true>>(res => {
+    bot.once(Events.ClientReady, async client => {
         logger.info({ tag: client.user.tag }, 'Bot conectado')
-        res(true)
+        res(client)
     })
-    client.login(envs.token)
+    bot.login(envs.token)
 })
-
-export { client, ready }
