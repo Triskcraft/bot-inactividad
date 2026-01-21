@@ -102,7 +102,7 @@ model Media {
 /// Información de jugador de Minecraft enlazada con su usuario de Discord.
 model MinecraftUser {
     uuid            String @id
-    nickname        String
+    nickname        String @unique
     digs            Int    @default(0)
     description     String @default("")
     discord_user_id String @unique
@@ -122,6 +122,29 @@ model DiscordUser {
     inactivityPeriods InactivityPeriod[]
     minecraftUser     MinecraftUser?
     linkCode          LinkCode?
+    webhookTokens     WebhookToken[]
 
     @@map("discord_users")
+}
+
+model WebhookToken {
+    id              String   @id @default(dbgenerated("snowflake()"))
+    name            String   @unique
+    discord_user_id String
+    secret          String
+    permissions     String[]
+    created_at      DateTime @default(now())
+
+    discord_user DiscordUser @relation(fields: [discord_user_id], references: [id])
+
+    @@map("webhook_tokens")
+}
+
+model State {
+    id         String   @id @default(dbgenerated("snowflake()"))
+    key        String   @unique
+    value      String
+    updated_at DateTime @updatedAt
+
+    @@map("states")
 }
