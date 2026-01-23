@@ -17,7 +17,7 @@ import { encrypt } from '../../utils/encript.ts'
 import { envs } from '#config'
 import { getRank } from '../../utils/roles.ts'
 import { ModalInteractionHandler } from '#interactions.service'
-import { deployAdminPanel } from '../../services/panel.ts'
+import { deployAdminPanel } from '../../services/panel.service.ts'
 import type { WebhookToken } from '../../prisma/generated/client.ts'
 import { PrismaClientKnownRequestError } from '../../prisma/generated/internal/prismaNamespace.ts'
 

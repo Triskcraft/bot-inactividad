@@ -5,10 +5,9 @@ import { logger } from '#logger'
 import { db } from './prisma/database.ts'
 import { inactivityService } from '#inactivity.service'
 import { interactionService } from '#interactions.service'
-import { deployAdminPanel } from './services/panel.ts'
+import { deployAdminPanel } from './services/panel.service.ts'
 import { roleService } from '#role.service'
 import { Scheduler } from './services/scheduler.ts'
-import { createHmac } from 'node:crypto'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente

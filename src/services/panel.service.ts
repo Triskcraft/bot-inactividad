@@ -71,7 +71,22 @@ export async function deployAdminPanel() {
             await resend(channel, container)
         }
     } else {
-        await resend(channel, container)
+        const pinned = await channel.messages.fetchPins()
+        const my = pinned.items.find(
+            msg => msg.message.author.id === client.user.id,
+        )
+        if (my) {
+            my.message.edit({
+                components: [container],
+            })
+            await db.state.upsert({
+                where: { key: 'wh_panel_message_id' },
+                update: { value: my.message.id },
+                create: { key: 'wh_panel_message_id', value: my.message.id },
+            })
+        } else {
+            await resend(channel, container)
+        }
     }
 }
 
@@ -85,4 +100,5 @@ async function resend(channel: SendableChannels, container: ContainerBuilder) {
         update: { value: nmsg.id },
         create: { key: 'wh_panel_message_id', value: nmsg.id },
     })
+    await nmsg.pin()
 }
