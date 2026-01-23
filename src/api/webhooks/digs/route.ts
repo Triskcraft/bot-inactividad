@@ -27,6 +27,8 @@ const reqSchema = z.array(
     ]),
 )
 
+const queue = new Map<string, { kind: 'uuid' | 'nickname'; digs: number }>()
+
 router.post('/', async (req, res) => {
     console.log(req.body.toString('utf-8'))
     let jsonbody: unknown
@@ -42,44 +44,42 @@ router.post('/', async (req, res) => {
             details: z.treeifyError(parsedBody.error),
         })
     }
+    res.send('ok')
+
     const { data: body } = parsedBody
 
-    const updated: { nickname: string; uuid: string; digs: number }[] = []
     for (const entry of body) {
+        if (entry.digs < 0) continue
+        queue.set(entry.uuid ?? entry.nickname!, {
+            kind: entry.uuid ? 'uuid' : 'nickname',
+            digs: entry.digs,
+        })
+    }
+})
+
+setInterval(async () => {
+    const copy = new Map(queue)
+    queue.clear()
+    for (const [identifier, { kind, digs }] of copy) {
+        if (digs < 0) continue
         try {
-            const newuser = await db.minecraftUser.update({
+            await db.minecraftUser.update({
                 where:
-                    entry.uuid ?
-                        {
-                            uuid: entry.uuid,
-                        }
-                    :   {
-                            nickname: entry.nickname!,
-                        },
-                data: {
-                    digs: entry.digs,
-                },
-            })
-            updated.push({
-                digs: newuser.digs,
-                nickname: newuser.nickname,
-                uuid: newuser.uuid,
+                    kind === 'uuid' ?
+                        { uuid: identifier }
+                    :   { nickname: identifier },
+                data: { digs },
             })
         } catch (error) {
             if (error instanceof PrismaClientKnownRequestError) {
                 if (error.code !== 'P2025') {
                     logger.error(error, 'Error updating digs')
-                    return res
-                        .status(500)
-                        .json({ error: 'Internal server error' })
                 }
             } else {
                 logger.error(error, 'Error updating digs')
-                return res.status(500).json({ error: 'Internal server error' })
             }
         }
     }
-    res.json(updated)
-})
+}, 10_000)
 
 export default router
