@@ -62,7 +62,7 @@ export async function deployAdminPanel() {
         select: { value: true },
     })
     if (whpmid) {
-        const anc = await channel.messages.fetch(whpmid.value)
+        const anc = await channel.messages.fetch(whpmid.value).catch(() => null)
         if (anc) {
             await anc.edit({
                 components: [container],
