@@ -7,76 +7,81 @@ import { decrypt } from '../utils/encript.ts'
 
 const MAX_DRIFT_MS = 15_000
 
-export async function webhookAuth(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-) {
-    const tokenString = req.headers.authorization?.replace('Bearer ', '')
-    if (!tokenString) {
-        return res.status(401).send('Unauthorized')
-    }
-
-    const timestamp = Number(req.headers['x-timestamp'])
-    if (Number.isNaN(timestamp)) {
-        return res.status(400).send('Invalid timestamp')
-    }
-
-    const now = Date.now()
-    if (Math.abs(now - timestamp * 1000) > MAX_DRIFT_MS) {
-        return res.status(401).send('Expired')
-    }
-
-    const signature = req.headers['x-signature']
-    if (!signature) {
-        return res.status(400).send('Missing signature')
-    }
-    console.log(signature, timestamp, typeof signature)
-
-    if (typeof signature !== 'string') {
-        return res.status(400).send('Invalid signature')
-    }
-
-    const jwtPayload = await jwtVerify<{
-        id: string
-        user: string
-        permissions: string[]
-        name: string
-        iat: number
-    }>(tokenString, envs.JWT_SECRERT).catch(() => null)
-    if (!jwtPayload) {
-        return res.status(401).send('Unauthorized')
-    }
-    if (!jwtPayload.payload.permissions.includes('digs')) {
-        return res.status(403).send('Forbidden')
-    }
-    const tokendb = await db.webhookToken.findUnique({
-        where: { id: jwtPayload.payload.id },
-        include: { discord_user: true },
-    })
-    if (!tokendb) {
-        return res.status(401).send('Unauthorized')
-    }
-    const secret = decrypt(tokendb.secret)
-    const rawBody = req.body.toString('utf8')
-    const signedPayload = `${timestamp}.${rawBody}`
-
-    const expected = createHmac('sha256', secret)
-        .update(signedPayload)
-        .digest('hex')
-
-    const sigBuffer = Buffer.from(signature, 'hex')
-    const expBuffer = Buffer.from(expected, 'hex')
-
-    if (
-        sigBuffer.length !== expBuffer.length ||
-        !timingSafeEqual(sigBuffer, expBuffer)
+type WHPermissions = 'digs' | 'link'
+export function webhookAuth(permissions: WHPermissions[]) {
+    return async function webhookAuth(
+        req: Request,
+        res: Response,
+        next: NextFunction,
     ) {
-        return res.status(401).send('Invalid signature')
-    }
+        const tokenString = req.headers.authorization?.replace('Bearer ', '')
+        if (!tokenString) {
+            return res.status(401).send('Unauthorized')
+        }
 
-    req.user = {
-        id: jwtPayload.payload.user,
+        const timestamp = Number(req.headers['x-timestamp'])
+        if (Number.isNaN(timestamp)) {
+            return res.status(400).send('Invalid timestamp')
+        }
+
+        const now = Date.now()
+        if (Math.abs(now - timestamp * 1000) > MAX_DRIFT_MS) {
+            return res.status(401).send('Expired')
+        }
+
+        const signature = req.headers['x-signature']
+        if (!signature) {
+            return res.status(400).send('Missing signature')
+        }
+        console.log(signature, timestamp, typeof signature)
+
+        if (typeof signature !== 'string') {
+            return res.status(400).send('Invalid signature')
+        }
+
+        const jwtPayload = await jwtVerify<{
+            id: string
+            user: string
+            permissions: string[]
+            name: string
+            iat: number
+        }>(tokenString, envs.JWT_SECRERT).catch(() => null)
+        if (!jwtPayload) {
+            return res.status(401).send('Unauthorized')
+        }
+        if (
+            !permissions.every(p => jwtPayload.payload.permissions.includes(p))
+        ) {
+            return res.status(403).send('Forbidden')
+        }
+        const tokendb = await db.webhookToken.findUnique({
+            where: { id: jwtPayload.payload.id },
+            include: { discord_user: true },
+        })
+        if (!tokendb) {
+            return res.status(401).send('Unauthorized')
+        }
+        const secret = decrypt(tokendb.secret)
+        const rawBody = req.body.toString('utf8')
+        const signedPayload = `${timestamp}.${rawBody}`
+
+        const expected = createHmac('sha256', secret)
+            .update(signedPayload)
+            .digest('hex')
+
+        const sigBuffer = Buffer.from(signature, 'hex')
+        const expBuffer = Buffer.from(expected, 'hex')
+
+        if (
+            sigBuffer.length !== expBuffer.length ||
+            !timingSafeEqual(sigBuffer, expBuffer)
+        ) {
+            return res.status(401).send('Invalid signature')
+        }
+
+        req.user = {
+            id: jwtPayload.payload.user,
+        }
+        next()
     }
-    next()
 }

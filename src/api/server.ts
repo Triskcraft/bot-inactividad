@@ -2,7 +2,6 @@ import Express from 'express'
 import cors from 'cors'
 import v1 from './v1/route.ts'
 import webhooks from './webhooks/route.ts'
-import { webhookAuth } from './webhook-auth.middleware.ts'
 
 /**
  * Servidor HTTP mínimo que expone endpoints de lectura para integraciones
@@ -18,11 +17,6 @@ app.use(
 )
 
 app.use('/v1', Express.json({ type: 'application/json' }), v1)
-app.use(
-    '/webhooks',
-    Express.raw({ type: 'application/json' }),
-    webhookAuth,
-    webhooks,
-)
+app.use('/webhooks', Express.raw({ type: 'application/json' }), webhooks)
 
 export { app }

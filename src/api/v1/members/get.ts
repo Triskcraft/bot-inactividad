@@ -11,11 +11,6 @@ import { db } from '#database'
 export async function getMembers(req: Request, res: Response) {
     const members = await db.minecraftUser.findMany({
         include: {
-            discord_user: {
-                select: {
-                    rank: true,
-                },
-            },
             medias: {
                 select: {
                     type: true,
@@ -37,7 +32,7 @@ export async function getMembers(req: Request, res: Response) {
         ({
             description,
             digs,
-            discord_user: { rank },
+            rank,
             linked_roles,
             medias,
             nickname: mc_name,

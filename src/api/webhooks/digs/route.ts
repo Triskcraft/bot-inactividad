@@ -30,12 +30,13 @@ const reqSchema = z.array(
 const queue = new Map<string, { kind: 'uuid' | 'nickname'; digs: number }>()
 
 router.post('/', async (req, res) => {
-    console.log(req.body.toString('utf-8'))
     let jsonbody: unknown
     try {
         jsonbody = JSON.parse(req.body.toString('utf-8'))
     } catch {
-        return res.status(400).send('Invalid JSON')
+        return res.status(400).send({
+            error: 'Invalid JSON',
+        })
     }
     const parsedBody = reqSchema.safeParse(jsonbody)
     if (!parsedBody.success) {
@@ -44,7 +45,6 @@ router.post('/', async (req, res) => {
             details: z.treeifyError(parsedBody.error),
         })
     }
-    res.send('ok')
 
     const { data: body } = parsedBody
 

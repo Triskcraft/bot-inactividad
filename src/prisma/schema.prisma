@@ -106,6 +106,7 @@ model MinecraftUser {
     digs            Int    @default(0)
     description     String @default("")
     discord_user_id String @unique
+    rank            String @default("Miembro")
 
     discord_user DiscordUser  @relation(fields: [discord_user_id], references: [id])
     linked_roles LinkedRole[]
