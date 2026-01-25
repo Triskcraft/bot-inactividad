@@ -62,7 +62,7 @@ export async function deployAdminPanel() {
         select: { value: true },
     })
     if (whpmid) {
-        const anc = await channel.messages.fetch(whpmid.value)
+        const anc = await channel.messages.fetch(whpmid.value).catch(() => null)
         if (anc) {
             await anc.edit({
                 components: [container],
@@ -83,15 +83,12 @@ async function checkPinned(
     const my = pinned.items.find(
         msg => msg.message.author.id === client.user.id,
     )
+    let nid: string 
     if (my) {
         await my.message.edit({
             components: [container],
         })
-        await db.state.upsert({
-            where: { key: 'wh_panel_message_id' },
-            update: { value: my.message.id },
-            create: { key: 'wh_panel_message_id', value: my.message.id },
-        })
+        nid = my.message.id
     } else {
         const nmsg = await channel.send({
             components: [container],
@@ -99,11 +96,12 @@ async function checkPinned(
                 MessageFlags.IsComponentsV2 |
                 MessageFlags.SuppressNotifications,
         })
-        await db.state.upsert({
-            where: { key: 'wh_panel_message_id' },
-            update: { value: nmsg.id },
-            create: { key: 'wh_panel_message_id', value: nmsg.id },
-        })
+        nid = nmsg.id
         await nmsg.pin()
     }
+    await db.state.upsert({
+            where: { key: 'wh_panel_message_id' },
+            update: { value: nid },
+            create: { key: 'wh_panel_message_id', value: nid },
+        })
 }
