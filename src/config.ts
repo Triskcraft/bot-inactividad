@@ -100,3 +100,11 @@ export const RANK_ROLES: Readonly<string[]> = [
     '1202775128006459453', // miembro
     '1202775706912948264', // member test
 ]
+
+export const WEBHOOK_PERMISSIONS = {
+    DIGS: 'digs',
+    LINK: 'link',
+} as const
+
+export type WebhookPermission =
+    (typeof WEBHOOK_PERMISSIONS)[keyof typeof WEBHOOK_PERMISSIONS]

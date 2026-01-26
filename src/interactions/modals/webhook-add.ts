@@ -14,7 +14,7 @@ import {
 import { SignJWT } from 'jose'
 import { randomBytes } from 'node:crypto'
 import { encrypt } from '../../utils/encript.ts'
-import { envs } from '#config'
+import { envs, WEBHOOK_PERMISSIONS } from '#config'
 import { getRank } from '../../utils/roles.ts'
 import { ModalInteractionHandler } from '#interactions.service'
 import { deployAdminPanel } from '../../services/panel.service.ts'
@@ -22,6 +22,11 @@ import type { WebhookToken } from '../../prisma/generated/client.ts'
 import { PrismaClientKnownRequestError } from '../../prisma/generated/internal/prismaNamespace.ts'
 
 const alg = 'HS256'
+
+const Permissions = {
+    [WEBHOOK_PERMISSIONS.DIGS]: 'Webhook de digs',
+    [WEBHOOK_PERMISSIONS.LINK]: 'Linkear cuentas de discord y minecraft',
+}
 
 export default class extends ModalInteractionHandler {
     override regex = /^wh:add$/
@@ -39,10 +44,13 @@ export default class extends ModalInteractionHandler {
                             .setRequired(true)
                             .setMinValues(1)
                             .addOptions(
-                                new StringSelectMenuOptionBuilder()
-                                    .setLabel('digs')
-                                    .setValue('digs')
-                                    .setDescription('Webhook de digs'),
+                                Object.entries(Permissions).map(
+                                    ([name, description]) =>
+                                        new StringSelectMenuOptionBuilder()
+                                            .setLabel(name)
+                                            .setValue(name)
+                                            .setDescription(description),
+                                ),
                             ),
                     ),
                 new LabelBuilder()

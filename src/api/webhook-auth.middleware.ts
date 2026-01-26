@@ -1,4 +1,4 @@
-import { envs } from '#config'
+import { envs, type WebhookPermission } from '#config'
 import { db } from '#database'
 import type { NextFunction, Request, Response } from 'express'
 import { jwtVerify } from 'jose'
@@ -7,8 +7,7 @@ import { decrypt } from '../utils/encript.ts'
 
 const MAX_DRIFT_MS = 15_000
 
-type WHPermissions = 'digs' | 'link'
-export function webhookAuth(permissions: WHPermissions[]) {
+export function webhookAuth(permissions: WebhookPermission[]) {
     return async function webhookAuth(
         req: Request,
         res: Response,
