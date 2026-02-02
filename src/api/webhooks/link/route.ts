@@ -1,5 +1,8 @@
+import { client } from '#client'
+import { envs } from '#config'
 import { db } from '#database'
 import { Router } from 'express'
+import { getRank } from 'src/utils/roles.ts'
 import z from 'zod'
 
 const router = Router()
@@ -36,21 +39,33 @@ router.post('/', async (req, res) => {
         return res.status(404).send({ error: 'Código no encontrado' })
     }
 
+    const discordMember = await client.guilds.cache
+        .get(envs.guildId)!
+        .members.fetch(codedb.discord_id)
+
+    if (!discordMember) {
+        return res.status(400).send({ error: 'discord_id no encontrado' })
+    }
+
     try {
         const [user] = await db.$transaction([
             db.minecraftUser.upsert({
-                where: { discord_user_id: codedb.discord_id },
+                where: { uuid: codedb.id },
                 create: {
                     nickname,
+                    //TODO: check
                     uuid: codedb.discord_id,
                     discord_user: {
                         connect: { id: codedb.discord_id },
                     },
+                    rank: getRank([...discordMember.roles.cache.values()]),
                 },
                 update: {
                     discord_user: {
                         connect: { id: codedb.discord_id },
                     },
+                    rank: getRank([...discordMember.roles.cache.values()]),
+                    nickname,
                 },
             }),
             db.linkCode.delete({
