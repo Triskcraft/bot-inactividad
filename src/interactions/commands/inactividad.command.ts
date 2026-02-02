@@ -1,264 +1,67 @@
 import {
-    ButtonInteraction,
-    ChatInputCommandInteraction,
-    CommandInteraction,
+    type ChatInputCommandInteraction,
     EmbedBuilder,
-    GuildMember,
-    MessageFlags,
-    ModalSubmitInteraction,
     PermissionsBitField,
     Role,
+    type CommandInteraction,
 } from 'discord.js'
-import { DateTime } from 'luxon'
-import { buildInactivityModal } from '../interactions/inactivityPanel.ts'
-import { parseUserTime, formatForUser } from '../utils/time.ts'
-import { logger } from '../logger.ts'
-import type { InactivityService } from '../services/inactivityService.ts'
-import type { RoleService } from '../services/roleService.ts'
-import { envs } from '../config.ts'
-import type { RoleStatistic } from '../prisma/generated/client.ts'
-import { handleCodeDB } from '../commands/dis-session.command.ts'
-import { client } from '../client.ts'
+import { logger } from '#logger'
+import { inactivityService } from '#inactivity.service'
+import { formatForUser } from '../../utils/time.ts'
+import { envs } from '#config'
+import type { RoleStatistic } from '../../prisma/generated/browser.ts'
+import type { CommandInteractionHandler } from '#interactions.service'
+import { roleService } from '#role.service'
 
 /**
- * Registra los manejadores principales de interacciones de Discord
- * (botones, modales y slash commands) delegando la lógica a los servicios
- * especializados. Se ejecuta una sola vez durante el arranque del bot.
+ * Genera un código de vinculación de sesión y lo persiste en la base de datos.
+ * También intenta enviarlo por DM y responde de forma efímera al usuario.
  */
-export async function registerInteractionHandlers({
-    inactivityService,
-    roleService,
-}: {
-    inactivityService: InactivityService
-    roleService: RoleService
-}) {
-    client.on('interactionCreate', async interaction => {
-        try {
-            if (interaction.isButton()) {
-                await handleButton(interaction, inactivityService)
-            } else if (interaction.isModalSubmit()) {
-                await handleModal(interaction, inactivityService)
-            } else if (interaction.isChatInputCommand()) {
-                // Los slash commands se tipan como 'cached' para garantizar que
-                // la información de guild está disponible al manejarlos.
-                await handleCommand(
-                    interaction as ChatInputCommandInteraction<'cached'>,
-                    inactivityService,
-                    roleService,
-                )
-            }
-        } catch (error) {
-            logger.error(
-                { err: error, interaction: interaction.id },
-                'Error procesando interacción',
+export default class implements CommandInteractionHandler {
+    name = 'inactividad'
+    async run(interaction: ChatInputCommandInteraction<'cached'>) {
+        if (interaction.commandName !== 'inactividad') return
+        if (
+            !interaction.memberPermissions?.has(
+                PermissionsBitField.Flags.Administrator,
             )
-            if (interaction.isRepliable()) {
-                const replyContent =
-                    'Ocurrió un error inesperado al procesar tu solicitud.'
-                const ephemeral = !(
-                    interaction.isChatInputCommand() &&
-                    interaction.commandName === 'inactividad'
-                )
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({
-                        content: replyContent,
-                        ephemeral,
+        ) {
+            return await interaction.reply({
+                content: 'Solo administradores pueden usar estos comandos.',
+            })
+        }
+
+        const group = interaction.options.getSubcommandGroup(false)
+        if (!group) {
+            switch (interaction.options.getSubcommand()) {
+                case 'listar':
+                    return await handleList(interaction)
+                case 'estadisticas':
+                    return await handleStats(interaction)
+                default:
+                    return await interaction.reply({
+                        content: 'Comando desconocido.',
                     })
-                } else {
-                    await interaction.reply({
-                        content: replyContent,
-                        ephemeral,
-                    })
-                }
             }
         }
-    })
-}
 
-/**
- * Manejador central de botones del panel de inactividad. Cada botón ejecuta
- * una acción distinta: crear/editar, limpiar o mostrar el estado del usuario.
- */
-async function handleButton(
-    interaction: ButtonInteraction,
-    inactivityService: InactivityService,
-) {
-    // Los botones solo son válidos dentro de un servidor; evita uso en MD.
-    if (!interaction.inGuild()) {
-        await interaction.reply({
-            content: 'Solo disponible dentro del servidor.',
-            flags: MessageFlags.Ephemeral,
-        })
-        return
-    }
-
-    const member = interaction.member as GuildMember
-
-    switch (interaction.customId) {
-        case 'inactivity:set':
-        case 'inactivity:edit': {
-            // Muestra el modal que permite indicar fecha o duración.
-            await interaction.showModal(
-                buildInactivityModal(
-                    interaction.customId === 'inactivity:set' ?
-                        'modal:set'
-                    :   'modal:edit',
-                ),
-            )
-            break
-        }
-        case 'inactivity:clear': {
-            inactivityService.clearInactivity(member.id)
-            await interaction.reply({
-                content: 'Tu inactividad fue eliminada. ¡Bienvenido de vuelta!',
-                flags: MessageFlags.Ephemeral,
-            })
-            break
-        }
-        case 'inactivity:show': {
-            const record = await inactivityService.getInactivity(member.id)
-            if (!record) {
-                await interaction.reply({
-                    content: 'No tienes inactividad registrada.',
-                    flags: MessageFlags.Ephemeral,
-                })
-                return
+        if (group === 'roles') {
+            switch (interaction.options.getSubcommand()) {
+                case 'agregar':
+                    return await handleRoleAdd(interaction)
+                case 'eliminar':
+                    return await handleRoleRemove(interaction)
+                case 'listar':
+                    return await handleRoleList(interaction)
+                default:
+                    return await interaction.reply({
+                        content: 'Subcomando desconocido.',
+                    })
             }
-
-            await interaction.reply({
-                content: `Estarás inactivo hasta ${formatForUser(record.ends_at)}.`,
-                flags: MessageFlags.Ephemeral,
-            })
-            break
         }
-        default:
-            await interaction.reply({
-                content: 'Acción desconocida.',
-                flags: MessageFlags.Ephemeral,
-            })
+
+        await interaction.reply({ content: 'Comando desconocido.' })
     }
-}
-
-/**
- * Procesa los formularios enviados desde el modal de inactividad validando
- * que exista al menos un campo y que la fecha indicada sea futura.
- */
-async function handleModal(
-    interaction: ModalSubmitInteraction,
-    inactivityService: InactivityService,
-) {
-    const duration = interaction.fields.getTextInputValue('duration')
-    const until = interaction.fields.getTextInputValue('until')
-
-    // Ambos campos son opcionales, pero al menos uno debe contener valor.
-    if (!duration && !until) {
-        await interaction.reply({
-            content: 'Debes completar al menos uno de los campos.',
-            flags: MessageFlags.Ephemeral,
-        })
-        return
-    }
-
-    try {
-        const reference = until || duration
-        const { until: untilDate } = parseUserTime(reference)
-        if (untilDate.toMillis() <= DateTime.utc().toMillis()) {
-            await interaction.reply({
-                content:
-                    'La fecha indicada ya pasó. Por favor ingresa un valor en el futuro.',
-                flags: MessageFlags.Ephemeral,
-            })
-            return
-        }
-        inactivityService.markInactivity(
-            interaction.guildId!,
-            interaction.member as GuildMember,
-            untilDate.toJSDate(),
-            interaction.customId,
-        )
-        // Respuesta privada para evitar spam en el canal de interacción.
-        await interaction.reply({
-            content: `Registramos tu inactividad hasta ${formatForUser(untilDate.toJSDate())}.`,
-            flags: MessageFlags.Ephemeral,
-        })
-    } catch (error) {
-        await interaction.reply({
-            content: (error as Error).message,
-            flags: MessageFlags.Ephemeral,
-        })
-    }
-}
-
-/**
- * Enruta los comandos de barra hacia el manejador correspondiente según el
- * nombre del comando recibido.
- */
-async function handleCommand(
-    interaction: ChatInputCommandInteraction<'cached'>,
-    inactivityService: InactivityService,
-    roleService: RoleService,
-) {
-    if (interaction.commandName === 'inactividad')
-        return inactividadCommand(interaction, inactivityService, roleService)
-    if (interaction.commandName === 'dis-session')
-        return handleCodeDB(interaction)
-    await interaction.reply({ content: 'Comando desconocido.' })
-}
-
-/**
- * Agrupa la lógica del comando administrativo `/inactividad`, verificando
- * permisos y delegando en los subcomandos individuales.
- */
-async function inactividadCommand(
-    interaction: ChatInputCommandInteraction<'cached'>,
-    inactivityService: InactivityService,
-    roleService: RoleService,
-) {
-    if (interaction.commandName !== 'inactividad') return
-    if (
-        !interaction.memberPermissions?.has(
-            PermissionsBitField.Flags.Administrator,
-        )
-    ) {
-        await interaction.reply({
-            content: 'Solo administradores pueden usar estos comandos.',
-        })
-        return
-    }
-
-    const group = interaction.options.getSubcommandGroup(false)
-    if (!group) {
-        switch (interaction.options.getSubcommand()) {
-            case 'listar':
-                await handleList(interaction, inactivityService, roleService)
-                return
-            case 'estadisticas':
-                await handleStats(interaction, inactivityService, roleService)
-                return
-            default:
-                await interaction.reply({ content: 'Comando desconocido.' })
-                return
-        }
-    }
-
-    if (group === 'roles') {
-        switch (interaction.options.getSubcommand()) {
-            case 'agregar':
-                await handleRoleAdd(interaction, roleService)
-                return
-            case 'eliminar':
-                await handleRoleRemove(interaction, roleService)
-                return
-            case 'listar':
-                await handleRoleList(interaction, roleService)
-                return
-            default:
-                await interaction.reply({ content: 'Subcomando desconocido.' })
-                return
-        }
-    }
-
-    await interaction.reply({ content: 'Comando desconocido.' })
 }
 
 /**
@@ -266,11 +69,7 @@ async function inactividadCommand(
  * miembros pertenecientes a los roles monitoreados, utilizando tanto la
  * caché de Discord como la base de datos.
  */
-async function handleList(
-    interaction: CommandInteraction<'cached'>,
-    inactivityService: InactivityService,
-    roleService: RoleService,
-) {
+async function handleList(interaction: CommandInteraction<'cached'>) {
     // Recupera registros en BD y configuración de roles a monitorear.
     const records = await inactivityService.listInactivities(
         interaction.guildId,
@@ -404,11 +203,7 @@ async function handleList(
  * Calcula estadísticas de inactividad por rol, incluyendo porcentajes y
  * tendencias históricas, para su visualización en un embed detallado.
  */
-async function handleStats(
-    interaction: CommandInteraction<'cached'>,
-    inactivityService: InactivityService,
-    roleService: RoleService,
-) {
+async function handleStats(interaction: CommandInteraction<'cached'>) {
     // Obtiene registros actuales y roles monitoreados para generar métricas.
     const records = await inactivityService.listInactivities(
         interaction.guildId,
@@ -463,10 +258,9 @@ async function handleStats(
     }
 
     if (!summaries.length) {
-        await interaction.reply({
+        return await interaction.reply({
             content: 'No se encontraron roles monitoreados disponibles.',
         })
-        return
     }
 
     const embed = new EmbedBuilder()
@@ -504,7 +298,6 @@ async function handleStats(
 
 async function handleRoleAdd(
     interaction: ChatInputCommandInteraction<'cached'>,
-    roleService: RoleService,
 ) {
     const role = interaction.options.getRole('rol', true)
     roleService.addRole(interaction.guildId, role.id)
@@ -521,7 +314,6 @@ async function handleRoleAdd(
  */
 async function handleRoleRemove(
     interaction: ChatInputCommandInteraction<'cached'>,
-    roleService: RoleService,
 ) {
     const role = interaction.options.getRole('rol', true)
     roleService.removeRole(interaction.guildId, role.id)
@@ -538,14 +330,12 @@ async function handleRoleRemove(
  * Lista los roles actualmente vigilados y los devuelve como menciones para
  * facilitar su lectura por parte del administrador.
  */
-async function handleRoleList(
-    interaction: CommandInteraction<'cached'>,
-    roleService: RoleService,
-) {
+async function handleRoleList(interaction: CommandInteraction<'cached'>) {
     const roles = await roleService.listRoles(interaction.guildId)
     if (!roles.length) {
-        await interaction.reply({ content: 'No hay roles monitoreados.' })
-        return
+        return await interaction.reply({
+            content: 'No hay roles monitoreados.',
+        })
     }
 
     const mentions = roles.map(roleId => `<@&${roleId}>`)
