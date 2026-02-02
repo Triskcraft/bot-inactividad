@@ -6,6 +6,10 @@ import { db } from './prisma/database.ts'
 import { inactivityService } from '#inactivity.service'
 import { interactionService } from '#interactions.service'
 import { deployAdminPanel } from './services/panel.service.ts'
+import {
+    initializeRankService,
+    unregisterRankService,
+} from './services/rank.service.ts'
 import { roleService } from '#role.service'
 import { Scheduler } from './services/scheduler.ts'
 
@@ -16,6 +20,7 @@ import { Scheduler } from './services/scheduler.ts'
 async function shutdown(signal: string) {
     logger.info({ signal }, 'Cerrando bot')
     scheduler.stop()
+    unregisterRankService()
     await client.destroy()
     await db.$disconnect()
     process.exit(0)
@@ -47,5 +52,6 @@ if (envs.DEPLOY_INACTIVITY_PANEL) {
     logger.info('Saltando el despliegue del panel de inactividad')
 }
 await deployAdminPanel()
+initializeRankService()
 // Activa los jobs programados que mantienen el sistema actualizado.
 scheduler.start()

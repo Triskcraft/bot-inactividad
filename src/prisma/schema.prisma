@@ -117,8 +117,7 @@ model MinecraftUser {
 
 /// Representa a un usuario de Discord, incluyendo su rango y relaciones.
 model DiscordUser {
-    id   String @id
-    rank String @default("Miembro")
+    id String @id
 
     inactivityPeriods InactivityPeriod[]
     minecraftUser     MinecraftUser?
