@@ -1,7 +1,6 @@
 import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js'
 import { db } from '../../prisma/database.ts'
 import { logger } from '#logger'
-import { getRank } from '../../utils/roles.ts'
 import type { CommandInteractionHandler } from '#interactions.service'
 
 /**
@@ -17,8 +16,6 @@ export default class implements CommandInteractionHandler {
         const discord_id = interaction.user.id
         const username = interaction.user.username
         const discord_nickname = interaction.member?.displayName || username
-        const member = await interaction.guild.members.fetch(discord_id)
-        const rank_role = getRank([...member.roles.cache.values()])
 
         try {
             await db.linkCode
@@ -37,7 +34,7 @@ export default class implements CommandInteractionHandler {
                         connectOrCreate: {
                             create: {
                                 id: discord_id,
-                                rank: rank_role,
+                                username: interaction.user.username,
                             },
                             where: {
                                 id: discord_id,

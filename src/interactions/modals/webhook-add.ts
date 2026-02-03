@@ -15,7 +15,6 @@ import { SignJWT } from 'jose'
 import { randomBytes } from 'node:crypto'
 import { encrypt } from '../../utils/encript.ts'
 import { envs, WEBHOOK_PERMISSIONS } from '#config'
-import { getRank } from '../../utils/roles.ts'
 import { ModalInteractionHandler } from '#interactions.service'
 import { deployAdminPanel } from '../../services/panel.service.ts'
 import type { WebhookToken } from '../../prisma/generated/client.ts'
@@ -90,9 +89,7 @@ export default class extends ModalInteractionHandler {
                         connectOrCreate: {
                             create: {
                                 id: interaction.user.id,
-                                rank: getRank([
-                                    ...interaction.member.roles.cache.values(),
-                                ]),
+                                username: interaction.user.username,
                             },
                             where: {
                                 id: interaction.user.id,
