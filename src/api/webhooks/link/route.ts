@@ -2,7 +2,7 @@ import { client } from '#client'
 import { envs } from '#config'
 import { db } from '#database'
 import { Router } from 'express'
-import { getRank } from 'src/utils/roles.ts'
+import { getRank } from '../../../utils/roles.ts'
 import z from 'zod'
 
 const router = Router()
