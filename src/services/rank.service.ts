@@ -67,6 +67,7 @@ async function handleRankUpdate(
 }
 
 export async function initializeRankService() {
+    logger.info('Inicializando Rank Service')
     // Initialize cahce
     await updateMinecraftMembersCache()
     // Register event listener
