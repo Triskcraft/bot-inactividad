@@ -34,6 +34,7 @@ export default class implements CommandInteractionHandler {
                         connectOrCreate: {
                             create: {
                                 id: discord_id,
+                                username: interaction.user.username,
                             },
                             where: {
                                 id: discord_id,

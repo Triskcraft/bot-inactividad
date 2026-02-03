@@ -89,6 +89,7 @@ export default class extends ModalInteractionHandler {
                         connectOrCreate: {
                             create: {
                                 id: interaction.user.id,
+                                username: interaction.user.username,
                             },
                             where: {
                                 id: interaction.user.id,

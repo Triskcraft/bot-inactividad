@@ -34,7 +34,10 @@ export class InactivityService {
             create: {
                 discord_user: {
                     connectOrCreate: {
-                        create: { id: member.id },
+                        create: {
+                            id: member.id,
+                            username: member.user.username,
+                        },
                         where: { id: member.id },
                     },
                 },
