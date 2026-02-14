@@ -11,3 +11,5 @@ dist
 *.db-shm
 *.db-wal
 whitelist.json
+# tests
+stats

@@ -16,7 +16,6 @@
             "#interactions.service": ["src/services/interactions.service.ts"],
             "#role.service": ["src/services/role.service.ts"]
         },
-        // "outDir": "./build",
 
         // Environment Settings
         // See also https://aka.ms/tsconfig/module
