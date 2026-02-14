@@ -4,6 +4,11 @@ import { db } from '#database'
 import { Router } from 'express'
 import { getRank } from '../../../utils/roles.ts'
 import z from 'zod'
+import {
+    BadRequestError,
+    InternalServerError,
+    NotFoundError,
+} from '../../errors.ts'
 
 const router = Router()
 
@@ -17,12 +22,11 @@ router.post('/', async (req, res) => {
     try {
         jsonbody = JSON.parse(req.body.toString('utf-8'))
     } catch {
-        return res.status(400).send('Invalid JSON')
+        throw new BadRequestError('Invalid JSON')
     }
     const parsedBody = reqSchema.safeParse(jsonbody)
     if (!parsedBody.success) {
-        return res.status(400).json({
-            error: 'Invalid payload',
+        throw new BadRequestError('Invalid payload', {
             details: z.treeifyError(parsedBody.error),
         })
     }
@@ -36,7 +40,7 @@ router.post('/', async (req, res) => {
     })
 
     if (!codedb) {
-        return res.status(404).send({ error: 'Código no encontrado' })
+        throw new NotFoundError('Código no encontrado')
     }
 
     const discordMember = await client.guilds.cache
@@ -44,7 +48,11 @@ router.post('/', async (req, res) => {
         .members.fetch(codedb.discord_id)
 
     if (!discordMember) {
-        return res.status(400).send({ error: 'discord_id no encontrado' })
+        throw new BadRequestError('discord_id no encontrado')
+    }
+    const uuid = await nicknameToUUID(nickname)
+    if (!uuid) {
+        throw new BadRequestError('nickname no encontrado')
     }
 
     try {
@@ -53,8 +61,7 @@ router.post('/', async (req, res) => {
                 where: { uuid: codedb.id },
                 create: {
                     nickname,
-                    //TODO: check
-                    uuid: codedb.discord_id,
+                    uuid,
                     discord_user: {
                         connect: { id: codedb.discord_id },
                     },
@@ -67,6 +74,17 @@ router.post('/', async (req, res) => {
                     rank: getRank([...discordMember.roles.cache.values()]),
                     nickname,
                 },
+                select: {
+                    uuid: true,
+                    nickname: true,
+                    rank: true,
+                    discord_user: {
+                        select: {
+                            id: true,
+                            username: true,
+                        },
+                    },
+                },
             }),
             db.linkCode.delete({
                 where: { code },
@@ -74,15 +92,25 @@ router.post('/', async (req, res) => {
         ])
 
         if (!user) {
-            return res
-                .status(500)
-                .send({ error: 'Error al vincular la cuenta' })
+            throw new InternalServerError('Error al vincular la cuenta')
         }
 
         res.status(200).json(user)
     } catch {
-        return res.status(500).send({ error: 'Error al vincular la cuenta' })
+        throw new InternalServerError('Error al vincular la cuenta')
     }
 })
 
 export default router
+
+async function nicknameToUUID(nickname: string) {
+    const req = await fetch(
+        `https://api.mojang.com/users/profiles/minecraft/${nickname}`,
+    )
+    if (req.status !== 200) return null
+    const { id } = (await req.json()) as {
+        id: string
+        name: string
+    }
+    return id
+}

@@ -2,21 +2,19 @@
     // Visit https://aka.ms/tsconfig to read more about this file
     "exclude": ["prisma.config.ts"],
 
-    "include": ["src", "types.d.ts"],
+    "include": ["src", "types.d.ts", "scripts"],
 
     "compilerOptions": {
         // File Layout
-        "baseUrl": ".",
         "paths": {
-            "#config": ["src/config.ts"],
-            "#client": ["src/client.ts"],
-            "#database": ["src/prisma/database.ts"],
-            "#logger": ["src/logger.ts"],
-            "#inactivity.service": ["src/services/inactivity.service.ts"],
-            "#interactions.service": ["src/services/interactions.service.ts"],
-            "#role.service": ["src/services/role.service.ts"]
+            "#config": ["./src/config.ts"],
+            "#client": ["./src/client.ts"],
+            "#database": ["./src/prisma/database.ts"],
+            "#logger": ["./src/logger.ts"],
+            "#inactivity.service": ["./src/services/inactivity.service.ts"],
+            "#interactions.service": ["./src/services/interactions.service.ts"],
+            "#role.service": ["./src/services/role.service.ts"]
         },
-        // "outDir": "./build",
 
         // Environment Settings
         // See also https://aka.ms/tsconfig/module

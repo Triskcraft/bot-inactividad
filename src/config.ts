@@ -28,6 +28,7 @@ export function loadConfig() {
         'PANEL_CHANNEL_ID',
         'ENCRYPT_KEY',
         'JWT_SECRERT',
+        'DIGS_STATS_DIR',
     ]
 
     const recomended = [
@@ -46,6 +47,7 @@ export function loadConfig() {
         PANEL_CHANNEL_ID = '',
         ENCRYPT_KEY = '',
         JWT_SECRERT = '',
+        DIGS_STATS_DIR = '',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
@@ -83,6 +85,7 @@ export function loadConfig() {
         PANEL_CHANNEL_ID,
         ENCRYPT_KEY: Buffer.from(ENCRYPT_KEY, 'base64'),
         JWT_SECRERT: new TextEncoder().encode(JWT_SECRERT),
+        DIGS_STATS_DIR,
     }
 }
 

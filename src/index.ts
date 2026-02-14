@@ -12,6 +12,7 @@ import {
 } from './services/rank.service.ts'
 import { roleService } from '#role.service'
 import { Scheduler } from './services/scheduler.ts'
+import { startDigsService, stopDigsService } from './services/digs.service.ts'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente
@@ -21,6 +22,7 @@ async function shutdown(signal: string) {
     logger.info({ signal }, 'Cerrando bot')
     scheduler.stop()
     unregisterRankService()
+    stopDigsService()
     await client.destroy()
     await db.$disconnect()
     process.exit(0)
@@ -55,3 +57,4 @@ await deployAdminPanel()
 initializeRankService()
 // Activa los jobs programados que mantienen el sistema actualizado.
 scheduler.start()
+startDigsService()

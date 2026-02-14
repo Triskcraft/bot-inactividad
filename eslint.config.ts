@@ -19,13 +19,13 @@ export default defineConfig([
         ignores: ['package-lock.json', 'tsconfig.json'],
         plugins: { json },
         language: 'json/json',
-        extends: ['json/recommended'],
+        rules: json.configs.recommended.rules,
     },
     {
         files: ['**/*.jsonc'],
         plugins: { json },
         language: 'json/jsonc',
-        extends: ['json/recommended'],
+        rules: json.configs.recommended.rules,
     },
     prettier,
     {
@@ -40,6 +40,24 @@ export default defineConfig([
                     js: 'never',
                     ts: 'always',
                     tsx: 'never',
+                },
+            ],
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                {
+                    argsIgnorePattern: '^_',
+                },
+            ],
+        },
+    },
+    {
+        files: ['src/api/**/*.ts'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: "CallExpression[callee.property.name='send']",
+                    message: 'Usa res.json() en lugar de res.send()',
                 },
             ],
         },

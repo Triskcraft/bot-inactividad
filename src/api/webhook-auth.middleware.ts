@@ -4,6 +4,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { jwtVerify } from 'jose'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { decrypt } from '../utils/encript.ts'
+import { BadRequestError, ForbiddenError, UnauthorizedError } from './errors.ts'
 
 const MAX_DRIFT_MS = 15_000
 
@@ -15,27 +16,27 @@ export function webhookAuth(permissions: WebhookPermission[]) {
     ) {
         const tokenString = req.headers.authorization?.replace('Bearer ', '')
         if (!tokenString) {
-            return res.status(401).send('Unauthorized')
+            throw new UnauthorizedError()
         }
 
         const timestamp = Number(req.headers['x-timestamp'])
         if (Number.isNaN(timestamp)) {
-            return res.status(400).send('Invalid timestamp')
+            throw new BadRequestError('Invalid timestamp')
         }
 
         const now = Date.now()
         if (Math.abs(now - timestamp * 1000) > MAX_DRIFT_MS) {
-            return res.status(401).send('Expired')
+            throw new BadRequestError('Expired')
         }
 
         const signature = req.headers['x-signature']
         if (!signature) {
-            return res.status(400).send('Missing signature')
+            throw new BadRequestError('Missing signature')
         }
         console.log(signature, timestamp, typeof signature)
 
         if (typeof signature !== 'string') {
-            return res.status(400).send('Invalid signature')
+            throw new BadRequestError('Invalid signature')
         }
 
         const jwtPayload = await jwtVerify<{
@@ -46,19 +47,19 @@ export function webhookAuth(permissions: WebhookPermission[]) {
             iat: number
         }>(tokenString, envs.JWT_SECRERT).catch(() => null)
         if (!jwtPayload) {
-            return res.status(401).send('Unauthorized')
+            throw new UnauthorizedError()
         }
         if (
             !permissions.every(p => jwtPayload.payload.permissions.includes(p))
         ) {
-            return res.status(403).send('Forbidden')
+            throw new ForbiddenError()
         }
         const tokendb = await db.webhookToken.findUnique({
             where: { id: jwtPayload.payload.id },
             include: { discord_user: true },
         })
         if (!tokendb) {
-            return res.status(401).send('Unauthorized')
+            throw new UnauthorizedError()
         }
         const secret = decrypt(tokendb.secret)
         const rawBody = req.body.toString('utf8')
@@ -75,7 +76,7 @@ export function webhookAuth(permissions: WebhookPermission[]) {
             sigBuffer.length !== expBuffer.length ||
             !timingSafeEqual(sigBuffer, expBuffer)
         ) {
-            return res.status(401).send('Invalid signature')
+            throw new UnauthorizedError('Invalid signature')
         }
 
         req.user = {
