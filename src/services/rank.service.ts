@@ -4,33 +4,11 @@ import { db } from '#database'
 import { getRank } from '../utils/roles.ts'
 import { envs } from '#config'
 import { logger } from '#logger'
-
-async function getMembersToCache() {
-    const members = await db.minecraftUser.findMany({
-        select: {
-            uuid: true,
-            nickname: true,
-            discord_user_id: true,
-            rank: true,
-        },
-    })
-    return members
-}
-
-type UUID = string
-type MinecraftMemberCached = Awaited<
-    ReturnType<typeof getMembersToCache>
->[number]
-export const minecraftMembersCache = new Map<UUID, MinecraftMemberCached>()
-
-export async function updateMinecraftMembersCache() {
-    const members = await getMembersToCache()
-    minecraftMembersCache.clear()
-    for (const member of members) {
-        minecraftMembersCache.set(member.uuid, member)
-    }
-    return minecraftMembersCache
-}
+import {
+    minecraftMembersCache,
+    updateMinecraftMembersCache,
+    type MinecraftMemberCached,
+} from '../members.cache.ts'
 
 async function checkRanks(member: GuildMember, cached: MinecraftMemberCached) {
     const currentRank = getRank([...member.roles.cache.values()])
