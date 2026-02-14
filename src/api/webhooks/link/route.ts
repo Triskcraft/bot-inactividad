@@ -4,6 +4,11 @@ import { db } from '#database'
 import { Router } from 'express'
 import { getRank } from '../../../utils/roles.ts'
 import z from 'zod'
+import {
+    BadRequestError,
+    InternalServerError,
+    NotFoundError,
+} from '../../errors.ts'
 
 const router = Router()
 
@@ -17,12 +22,11 @@ router.post('/', async (req, res) => {
     try {
         jsonbody = JSON.parse(req.body.toString('utf-8'))
     } catch {
-        return res.status(400).send('Invalid JSON')
+        throw new BadRequestError('Invalid JSON')
     }
     const parsedBody = reqSchema.safeParse(jsonbody)
     if (!parsedBody.success) {
-        return res.status(400).json({
-            error: 'Invalid payload',
+        throw new BadRequestError('Invalid payload', {
             details: z.treeifyError(parsedBody.error),
         })
     }
@@ -36,7 +40,7 @@ router.post('/', async (req, res) => {
     })
 
     if (!codedb) {
-        return res.status(404).send({ error: 'Código no encontrado' })
+        throw new NotFoundError('Código no encontrado')
     }
 
     const discordMember = await client.guilds.cache
@@ -44,11 +48,11 @@ router.post('/', async (req, res) => {
         .members.fetch(codedb.discord_id)
 
     if (!discordMember) {
-        return res.status(400).send({ error: 'discord_id no encontrado' })
+        throw new BadRequestError('discord_id no encontrado')
     }
     const uuid = await nicknameToUUID(nickname)
     if (!uuid) {
-        return res.status(400).send({ error: 'nickname no encontrado' })
+        throw new BadRequestError('nickname no encontrado')
     }
 
     try {
@@ -88,14 +92,12 @@ router.post('/', async (req, res) => {
         ])
 
         if (!user) {
-            return res
-                .status(500)
-                .send({ error: 'Error al vincular la cuenta' })
+            throw new InternalServerError('Error al vincular la cuenta')
         }
 
         res.status(200).json(user)
     } catch {
-        return res.status(500).send({ error: 'Error al vincular la cuenta' })
+        throw new InternalServerError('Error al vincular la cuenta')
     }
 })
 
