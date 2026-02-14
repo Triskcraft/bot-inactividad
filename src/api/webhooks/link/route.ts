@@ -46,6 +46,10 @@ router.post('/', async (req, res) => {
     if (!discordMember) {
         return res.status(400).send({ error: 'discord_id no encontrado' })
     }
+    const uuid = await nicknameToUUID(nickname)
+    if (!uuid) {
+        return res.status(400).send({ error: 'nickname no encontrado' })
+    }
 
     try {
         const [user] = await db.$transaction([
@@ -53,8 +57,7 @@ router.post('/', async (req, res) => {
                 where: { uuid: codedb.id },
                 create: {
                     nickname,
-                    //TODO: check
-                    uuid: codedb.discord_id,
+                    uuid,
                     discord_user: {
                         connect: { id: codedb.discord_id },
                     },
@@ -66,6 +69,17 @@ router.post('/', async (req, res) => {
                     },
                     rank: getRank([...discordMember.roles.cache.values()]),
                     nickname,
+                },
+                select: {
+                    uuid: true,
+                    nickname: true,
+                    rank: true,
+                    discord_user: {
+                        select: {
+                            id: true,
+                            username: true,
+                        },
+                    },
                 },
             }),
             db.linkCode.delete({
@@ -86,3 +100,15 @@ router.post('/', async (req, res) => {
 })
 
 export default router
+
+async function nicknameToUUID(nickname: string) {
+    const req = await fetch(
+        `https://api.mojang.com/users/profiles/minecraft/${nickname}`,
+    )
+    if (req.status !== 200) return null
+    const { id } = (await req.json()) as {
+        id: string
+        name: string
+    }
+    return id
+}
