@@ -15,27 +15,27 @@ export function webhookAuth(permissions: WebhookPermission[]) {
     ) {
         const tokenString = req.headers.authorization?.replace('Bearer ', '')
         if (!tokenString) {
-            return res.status(401).send('Unauthorized')
+            return res.status(401).json({ error: 'Unauthorized' })
         }
 
         const timestamp = Number(req.headers['x-timestamp'])
         if (Number.isNaN(timestamp)) {
-            return res.status(400).send('Invalid timestamp')
+            return res.status(400).json({ error: 'Invalid timestamp' })
         }
 
         const now = Date.now()
         if (Math.abs(now - timestamp * 1000) > MAX_DRIFT_MS) {
-            return res.status(401).send('Expired')
+            return res.status(401).json({ error: 'Expired' })
         }
 
         const signature = req.headers['x-signature']
         if (!signature) {
-            return res.status(400).send('Missing signature')
+            return res.status(400).json({ error: 'Missing signature' })
         }
         console.log(signature, timestamp, typeof signature)
 
         if (typeof signature !== 'string') {
-            return res.status(400).send('Invalid signature')
+            return res.status(400).json({ error: 'Invalid signature' })
         }
 
         const jwtPayload = await jwtVerify<{
@@ -46,19 +46,19 @@ export function webhookAuth(permissions: WebhookPermission[]) {
             iat: number
         }>(tokenString, envs.JWT_SECRERT).catch(() => null)
         if (!jwtPayload) {
-            return res.status(401).send('Unauthorized')
+            return res.status(401).json({ error: 'Unauthorized' })
         }
         if (
             !permissions.every(p => jwtPayload.payload.permissions.includes(p))
         ) {
-            return res.status(403).send('Forbidden')
+            return res.status(403).json({ error: 'Forbidden' })
         }
         const tokendb = await db.webhookToken.findUnique({
             where: { id: jwtPayload.payload.id },
             include: { discord_user: true },
         })
         if (!tokendb) {
-            return res.status(401).send('Unauthorized')
+            return res.status(401).json({ error: 'Unauthorized' })
         }
         const secret = decrypt(tokendb.secret)
         const rawBody = req.body.toString('utf8')
@@ -75,7 +75,7 @@ export function webhookAuth(permissions: WebhookPermission[]) {
             sigBuffer.length !== expBuffer.length ||
             !timingSafeEqual(sigBuffer, expBuffer)
         ) {
-            return res.status(401).send('Invalid signature')
+            return res.status(401).json({ error: 'Invalid signature' })
         }
 
         req.user = {
