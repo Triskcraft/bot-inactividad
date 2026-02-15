@@ -9,7 +9,7 @@ import {
     type ModalSubmitInteraction,
 } from 'discord.js'
 import { ModalInteractionHandler } from '#interactions.service'
-import { deployAdminPanel } from '../../services/panel.service.ts'
+import { deployWebhookPanel } from '../../services/webhook.service.ts'
 
 export default class extends ModalInteractionHandler {
     override regex = /^wh:delete:(?<id>.+)$/
@@ -77,6 +77,6 @@ export default class extends ModalInteractionHandler {
             content: `Token **${wt.name}** eliminado correctamente.`,
             flags: MessageFlags.Ephemeral,
         })
-        await deployAdminPanel()
+        await deployWebhookPanel()
     }
 }

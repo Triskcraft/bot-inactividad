@@ -1,7 +1,9 @@
+import { logger } from '#logger'
+
 try {
     process.loadEnvFile()
 } catch {
-    console.error('No existe .env')
+    logger.error('No existe .env')
 }
 
 export interface BotConfig {
@@ -36,6 +38,7 @@ export function loadConfig() {
         'DEPLOY_INACTIVITY_PANEL',
         'API_PORT',
         'NODE_ENV',
+        'DEFAULT_ROLE',
     ]
 
     const {
@@ -48,16 +51,19 @@ export function loadConfig() {
         ENCRYPT_KEY = '',
         JWT_SECRERT = '',
         DIGS_STATS_DIR = '',
+        DEFAULT_ROLE = 'Digger',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
     if (recommendedMissing.length > 0) {
-        console.warn(
-            `Variables de entorno recomendadas establecidas a un valor por defecto\nSe recomienda establecer las siguientes variables:`,
+        logger.warn(
+            `Variables de entorno recomendadas establecidas a un valor por defecto`,
         )
+        let text = `Se recomienda establecer las siguientes variables:`
         for (const key of recommendedMissing) {
-            console.log(`${key}="${eval(key)}"`)
+            text += `\n${key}="${eval(key)}"`
         }
+        logger.warn(text)
     }
 
     const requiredMissing = required.filter(key => !process.env[key])
@@ -86,6 +92,7 @@ export function loadConfig() {
         ENCRYPT_KEY: Buffer.from(ENCRYPT_KEY, 'base64'),
         JWT_SECRERT: new TextEncoder().encode(JWT_SECRERT),
         DIGS_STATS_DIR,
+        DEFAULT_ROLE,
     }
 }
 

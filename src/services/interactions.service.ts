@@ -7,6 +7,8 @@ import {
     MessageFlags,
     ModalBuilder,
     ModalSubmitInteraction,
+    StringSelectMenuBuilder,
+    StringSelectMenuInteraction,
 } from 'discord.js'
 import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -15,6 +17,24 @@ import { pathToFileURL } from 'node:url'
 export interface ButtonInteractionHandler {
     regex: RegExp
     run(interaction: ButtonInteraction<'cached'>): Promise<unknown>
+}
+
+export abstract class StringMenuHandler {
+    regex: RegExp = /\\/
+    async run(
+        interaction: StringSelectMenuInteraction<'cached'>,
+    ): Promise<unknown> {
+        return await interaction.reply({
+            content: 'not implemented',
+            flags: MessageFlags.Ephemeral,
+        })
+    }
+    static async build(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        params: Record<string, unknown> = {},
+    ): Promise<StringSelectMenuBuilder> {
+        return new StringSelectMenuBuilder()
+    }
 }
 
 export abstract class ModalInteractionHandler {
@@ -41,12 +61,14 @@ export interface CommandInteractionHandler {
 class InteractionService {
     buttonsCache = new Set<ButtonInteractionHandler>()
     modalsCache = new Set<ModalInteractionHandler>()
+    stringMenuCache = new Set<StringMenuHandler>()
     commandsCache = new Set<CommandInteractionHandler>()
 
     async registerInteractionHandlers() {
         await this.loadButtons()
         await this.loadCommands()
         await this.loadModals()
+        await this.loadStringMenu()
 
         client.on(Events.InteractionCreate, async interaction => {
             try {
@@ -56,6 +78,8 @@ class InteractionService {
                     await this.handleModal(interaction)
                 } else if (interaction.isChatInputCommand()) {
                     await this.handleCommand(interaction)
+                } else if (interaction.isStringSelectMenu()) {
+                    await this.handleStringMenu(interaction)
                 }
             } catch (error) {
                 logger.error(
@@ -123,6 +147,20 @@ class InteractionService {
         }
     }
 
+    async loadStringMenu() {
+        const dir = join(process.cwd(), 'src', 'interactions', 'stringMenu')
+
+        for (const filename of await readdir(dir)) {
+            const filePath = pathToFileURL(join(dir, filename)).href
+
+            const { default: Handler } = (await import(filePath)) as {
+                default: { new (): StringMenuHandler }
+            }
+
+            interactionService.stringMenuCache.add(new Handler())
+        }
+    }
+
     /**
      * Procesa los formularios enviados desde el modal de inactividad validando
      * que exista al menos un campo y que la fecha indicada sea futura.
@@ -158,6 +196,15 @@ class InteractionService {
         if (!interaction.inCachedGuild()) return
         for (const handler of interactionService.commandsCache) {
             if (handler.name === interaction.commandName) {
+                await handler.run(interaction)
+            }
+        }
+    }
+
+    async handleStringMenu(interaction: StringSelectMenuInteraction) {
+        if (!interaction.inCachedGuild()) return
+        for (const handler of interactionService.stringMenuCache) {
+            if (handler.regex.exec(interaction.customId)) {
                 await handler.run(interaction)
             }
         }

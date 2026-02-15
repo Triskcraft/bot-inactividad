@@ -30,5 +30,6 @@
     "typescript.tsdk": "node_modules\\typescript\\lib",
     "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }
+    },
+    "webPreview.schemaPath": "c:\\Users\\tecno\\code\\bot-inactividad\\src\\prisma\\main.schema.prisma"
 }

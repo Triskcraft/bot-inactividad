@@ -2,7 +2,7 @@ import { DateTime } from 'luxon'
 import { Collection, TextChannel } from 'discord.js'
 import { logger } from '#logger'
 import type { InactivityService } from '#inactivity.service'
-import type { RoleService } from '#role.service'
+import type { MonitoredService } from './monitored.service.ts'
 import { envs } from '#config'
 import { client } from '#client'
 
@@ -11,12 +11,12 @@ import { client } from '#client'
  */
 export class Scheduler {
     inactivityService: InactivityService
-    roleService: RoleService
+    roleService: MonitoredService
     intervals: Collection<string, NodeJS.Timeout>
 
     constructor(
         inactivityService: InactivityService,
-        roleService: RoleService,
+        roleService: MonitoredService,
     ) {
         this.inactivityService = inactivityService
         this.roleService = roleService

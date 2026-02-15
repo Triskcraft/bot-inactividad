@@ -11,7 +11,7 @@ import { formatForUser } from '../../utils/time.ts'
 import { envs } from '#config'
 import type { RoleStatistic } from '../../prisma/generated/browser.ts'
 import type { CommandInteractionHandler } from '#interactions.service'
-import { roleService } from '#role.service'
+import { monitoredService } from '../../services/monitored.service.ts'
 
 /**
  * Genera un código de vinculación de sesión y lo persiste en la base de datos.
@@ -74,7 +74,7 @@ async function handleList(interaction: CommandInteraction<'cached'>) {
     const records = await inactivityService.listInactivities(
         interaction.guildId,
     )
-    const trackedRoles = await roleService.listRoles(interaction.guildId)
+    const trackedRoles = await monitoredService.listRoles(interaction.guildId)
 
     if (!trackedRoles.length) {
         await interaction.reply({
@@ -208,7 +208,7 @@ async function handleStats(interaction: CommandInteraction<'cached'>) {
     const records = await inactivityService.listInactivities(
         interaction.guildId,
     )
-    const tracked = await roleService.listRoles(interaction.guildId)
+    const tracked = await monitoredService.listRoles(interaction.guildId)
     if (!tracked.length) {
         await interaction.reply({
             content:
@@ -287,7 +287,7 @@ async function handleStats(interaction: CommandInteraction<'cached'>) {
         })
     }
 
-    const snapshots = await roleService.getSnapshots(interaction.guildId)
+    const snapshots = await monitoredService.getSnapshots(interaction.guildId)
     const historyField = buildHistoryField(snapshots, summaries)
     if (historyField) {
         embed.addFields(historyField)
@@ -300,7 +300,7 @@ async function handleRoleAdd(
     interaction: ChatInputCommandInteraction<'cached'>,
 ) {
     const role = interaction.options.getRole('rol', true)
-    roleService.addRole(interaction.guildId, role.id)
+    monitoredService.addRole(interaction.guildId, role.id)
     await interaction.reply({ content: `Seguiremos el rol ${role}.` })
     await logAdminAction(
         interaction,
@@ -316,7 +316,7 @@ async function handleRoleRemove(
     interaction: ChatInputCommandInteraction<'cached'>,
 ) {
     const role = interaction.options.getRole('rol', true)
-    roleService.removeRole(interaction.guildId, role.id)
+    monitoredService.removeRole(interaction.guildId, role.id)
     await interaction.reply({
         content: `Eliminamos el rol ${role} del seguimiento.`,
     })
@@ -331,7 +331,7 @@ async function handleRoleRemove(
  * facilitar su lectura por parte del administrador.
  */
 async function handleRoleList(interaction: CommandInteraction<'cached'>) {
-    const roles = await roleService.listRoles(interaction.guildId)
+    const roles = await monitoredService.listRoles(interaction.guildId)
     if (!roles.length) {
         return await interaction.reply({
             content: 'No hay roles monitoreados.',

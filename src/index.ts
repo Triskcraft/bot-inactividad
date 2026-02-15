@@ -5,14 +5,15 @@ import { logger } from '#logger'
 import { db } from './prisma/database.ts'
 import { inactivityService } from '#inactivity.service'
 import { interactionService } from '#interactions.service'
-import { deployAdminPanel } from './services/panel.service.ts'
+import { deployWebhookPanel } from './services/webhook.service.ts'
 import {
     initializeRankService,
     unregisterRankService,
 } from './services/rank.service.ts'
-import { roleService } from '#role.service'
+import { monitoredService } from './services/monitored.service.ts'
 import { Scheduler } from './services/scheduler.ts'
 import { startDigsService, stopDigsService } from './services/digs.service.ts'
+import { roleService } from './services/roles.service.ts'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente
@@ -44,7 +45,7 @@ app.listen(envs.API_PORT, async () => {
  * Los servicios principales se comparten en todo el proyecto para permitir
  * coordinación entre las interacciones de Discord y la API HTTP.
  */
-const scheduler = new Scheduler(inactivityService, roleService)
+const scheduler = new Scheduler(inactivityService, monitoredService)
 await interactionService.registerInteractionHandlers()
 
 if (envs.DEPLOY_INACTIVITY_PANEL) {
@@ -53,8 +54,9 @@ if (envs.DEPLOY_INACTIVITY_PANEL) {
 } else {
     logger.info('Saltando el despliegue del panel de inactividad')
 }
-await deployAdminPanel()
+await deployWebhookPanel()
 initializeRankService()
 // Activa los jobs programados que mantienen el sistema actualizado.
 scheduler.start()
 startDigsService()
+roleService.start()

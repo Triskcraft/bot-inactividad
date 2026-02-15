@@ -42,6 +42,10 @@ export default defineConfig([
                     tsx: 'never',
                 },
             ],
+            'import/no-extraneous-dependencies': 'error',
+            'import/no-deprecated': 'error',
+            'import/no-empty-named-blocks': 'error',
+            'import/no-duplicates': 'error',
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 {

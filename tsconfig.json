@@ -13,7 +13,7 @@
             "#logger": ["./src/logger.ts"],
             "#inactivity.service": ["./src/services/inactivity.service.ts"],
             "#interactions.service": ["./src/services/interactions.service.ts"],
-            "#role.service": ["./src/services/role.service.ts"]
+            "#monitored.service": ["./src/services/monitored.service.ts"]
         },
 
         // Environment Settings

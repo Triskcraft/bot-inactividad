@@ -7,12 +7,19 @@ import {
     SectionBuilder,
     SeparatorBuilder,
     TextDisplayBuilder,
-} from '@discordjs/builders'
-import { ButtonStyle, MessageFlags, type SendableChannels } from 'discord.js'
+} from 'discord.js'
+import {
+    ButtonStyle,
+    ComponentType,
+    MessageFlags,
+    type SendableChannels,
+} from 'discord.js'
 import { logger } from '#logger'
 import { db } from '#database'
 
-export async function deployAdminPanel() {
+const PANNEL_NAME = '# 🔐 **Panel de Webhooks**'
+
+export async function deployWebhookPanel() {
     const channel = await client.channels.fetch(envs.PANEL_CHANNEL_ID)
     if (!channel) {
         return logger.warn('Canal de panel no encontrado')
@@ -23,8 +30,8 @@ export async function deployAdminPanel() {
     const container = new ContainerBuilder()
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                '🔐 **Panel de Webhooks**\n' +
-                    'Administra los tokens usados por la web y el servidor de Minecraft.',
+                PANNEL_NAME +
+                    '\nAdministra los tokens usados por la web y el servidor de Minecraft.',
             ),
         )
         .addSeparatorComponents(new SeparatorBuilder())
@@ -37,8 +44,12 @@ export async function deployAdminPanel() {
             new SectionBuilder()
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
-                        `**${token.name}**\n` +
-                            `Creado el <t:${Math.floor(token.created_at.getTime() / 1000)}:d> por <@${token.discord_user_id}>`,
+                        `- **${token.name}**\n` +
+                            `Creado el <t:${Math.floor(token.created_at.getTime() / 1000)}:d> por <@${token.discord_user_id}>\n` +
+                            `Permisos: ${new Intl.ListFormat('es', {
+                                style: 'long',
+                                type: 'conjunction',
+                            }).format(token.permissions.map(p => `\`${p}\``))}`,
                     ),
                 )
                 .setButtonAccessory(
@@ -80,10 +91,19 @@ async function checkPinned(
     container: ContainerBuilder,
 ) {
     const pinned = await channel.messages.fetchPins()
-    const my = pinned.items.find(
-        msg => msg.message.author.id === client.user.id,
-    )
-    let nid: string 
+    const my = pinned.items.find(msg => {
+        const container = msg.message.components[0]
+        if (!container) return false
+        if (container.type !== ComponentType.Container) return false
+        const textDisplay = container.components[0]
+        if (!textDisplay) return false
+        if (textDisplay.type !== ComponentType.TextDisplay) return false
+        return (
+            msg.message.author.id === client.user.id &&
+            textDisplay.content.includes(PANNEL_NAME)
+        )
+    })
+    let nid: string
     if (my) {
         await my.message.edit({
             components: [container],
@@ -100,8 +120,8 @@ async function checkPinned(
         await nmsg.pin()
     }
     await db.state.upsert({
-            where: { key: 'wh_panel_message_id' },
-            update: { value: nid },
-            create: { key: 'wh_panel_message_id', value: nid },
-        })
+        where: { key: 'wh_panel_message_id' },
+        update: { value: nid },
+        create: { key: 'wh_panel_message_id', value: nid },
+    })
 }
