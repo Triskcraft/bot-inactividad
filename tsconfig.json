@@ -1,8 +1,6 @@
 {
     // Visit https://aka.ms/tsconfig to read more about this file
-    "exclude": ["prisma.config.ts"],
-
-    "include": ["src", "types.d.ts", "scripts"],
+    "include": ["src", "types.d.ts", "scripts", "prisma.config.ts"],
 
     "compilerOptions": {
         // File Layout

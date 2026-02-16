@@ -1,6 +1,7 @@
 import { logger } from '#logger'
 import { client } from '../client.ts'
 import {
+    ButtonBuilder,
     ButtonInteraction,
     ChatInputCommandInteraction,
     Events,
@@ -13,13 +14,28 @@ import {
 import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { CustomIdParser } from '../utils/format.ts'
 
-export interface ButtonInteractionHandler {
-    regex: RegExp
-    run(interaction: ButtonInteraction<'cached'>): Promise<unknown>
+export abstract class ButtonInteractionHandler<K extends string = ''> {
+    regex: RegExp = /\\/
+    async run(interaction: ButtonInteraction<'cached'>): Promise<unknown> {
+        return await interaction.reply({
+            content: 'not implemented',
+            flags: MessageFlags.Ephemeral,
+        })
+    }
+    static async build(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        params: Record<string, unknown> = {},
+    ): Promise<ButtonBuilder> {
+        return new ButtonBuilder()
+    }
+    parser(customId: string) {
+        return new CustomIdParser<K>(this.regex, customId)
+    }
 }
 
-export abstract class StringMenuHandler {
+export abstract class StringMenuHandler<K extends string = ''> {
     regex: RegExp = /\\/
     async run(
         interaction: StringSelectMenuInteraction<'cached'>,
@@ -35,9 +51,12 @@ export abstract class StringMenuHandler {
     ): Promise<StringSelectMenuBuilder> {
         return new StringSelectMenuBuilder()
     }
+    parser(customId: string) {
+        return new CustomIdParser<K>(this.regex, customId)
+    }
 }
 
-export abstract class ModalInteractionHandler {
+export abstract class ModalInteractionHandler<K extends string = ''> {
     regex: RegExp = /\\/
     async run(interaction: ModalSubmitInteraction<'cached'>): Promise<unknown> {
         return await interaction.reply({
@@ -50,6 +69,9 @@ export abstract class ModalInteractionHandler {
         params: Record<string, unknown> = {},
     ): Promise<ModalBuilder> {
         return new ModalBuilder()
+    }
+    parser(customId: string) {
+        return new CustomIdParser<K>(this.regex, customId)
     }
 }
 

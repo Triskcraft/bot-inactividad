@@ -38,7 +38,8 @@ export function loadConfig() {
         'DEPLOY_INACTIVITY_PANEL',
         'API_PORT',
         'NODE_ENV',
-        'DEFAULT_ROLE',
+        'DEFAULT_ROLE_NAME',
+        'DEFAULT_ROLE_ID',
     ]
 
     const {
@@ -51,7 +52,8 @@ export function loadConfig() {
         ENCRYPT_KEY = '',
         JWT_SECRERT = '',
         DIGS_STATS_DIR = '',
-        DEFAULT_ROLE = 'Digger',
+        DEFAULT_ROLE_NAME = 'Digger',
+        DEFAULT_ROLE_ID = '',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
@@ -64,6 +66,12 @@ export function loadConfig() {
             text += `\n${key}="${eval(key)}"`
         }
         logger.warn(text)
+    }
+
+    if (!DEFAULT_ROLE_ID) {
+        logger.error('DEFAULT_ROLE_ID no establecido')
+        logger.error('Podria causar comportamientos inesperados en el programa')
+        logger.error('Ejecute `prisma db seed` para generar el id')
     }
 
     const requiredMissing = required.filter(key => !process.env[key])
@@ -92,7 +100,8 @@ export function loadConfig() {
         ENCRYPT_KEY: Buffer.from(ENCRYPT_KEY, 'base64'),
         JWT_SECRERT: new TextEncoder().encode(JWT_SECRERT),
         DIGS_STATS_DIR,
-        DEFAULT_ROLE,
+        DEFAULT_ROLE_NAME,
+        DEFAULT_ROLE_ID,
     }
 }
 

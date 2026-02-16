@@ -18,6 +18,7 @@ import {
 } from 'discord.js'
 import RoleStringMenu from '../interactions/stringMenu/role.ts'
 import RoleAddStringMenu from '../interactions/stringMenu/role-add.ts'
+import RoleCreateButton from '../interactions/buttons/role-create.ts'
 import { listMax } from '../utils/format.ts'
 import { Temporal } from '@js-temporal/polyfill'
 import { minecraftMembersCache } from '../members.cache.ts'
@@ -26,15 +27,25 @@ import { PrismaClientKnownRequestError } from '../prisma/generated/internal/pris
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
 async function fetchRoles() {
-    return await db.role.findMany({
+    const roles = await db.role.findMany({
         include: {
             linked_roles: {
                 include: {
-                    minecraft_user: true,
+                    minecraft_user: {
+                        select: {
+                            uuid: true,
+                            nickname: true,
+                        },
+                    },
                 },
             },
         },
     })
+    return roles.map(r => ({
+        id: r.id,
+        name: r.name,
+        players: r.linked_roles.map(l => l.minecraft_user),
+    }))
 }
 
 type RoleFetched = Awaited<ReturnType<typeof fetchRoles>>[number]
@@ -46,11 +57,11 @@ class RoleService {
     #alreadyCached = false
     #selectedUser: string | null = null
     #defaultRole = {
-        id: '',
-        name: '',
+        id: envs.DEFAULT_ROLE_ID,
+        name: envs.DEFAULT_ROLE_NAME,
     }
 
-    #getRoleCache() {
+    roleCache() {
         if (this.#rolesCache.size === 0) this.#updateRolesCache()
         else if (
             // every 6 hours
@@ -72,30 +83,10 @@ class RoleService {
     async start() {
         logger.info('Inicializando Role Service')
         await this.#chechDefaultRole()
-        await this.#deployPannel()
+        await this.#renderPannel()
     }
 
     async #chechDefaultRole() {
-        const defaultRole = await db.role.findUnique({
-            where: { name: envs.DEFAULT_ROLE },
-        })
-        if (!defaultRole) {
-            try {
-                this.#defaultRole = await db.role.create({
-                    data: {
-                        name: envs.DEFAULT_ROLE,
-                    },
-                })
-            } catch (error) {
-                logger.error(
-                    error,
-                    '[ROLE SERVICE] Default role can not be created',
-                )
-                process.exit(1)
-            }
-        } else {
-            this.#defaultRole = defaultRole
-        }
         const usersWithoutRoles = await db.minecraftUser.findMany({
             where: {
                 linked_roles: {
@@ -132,10 +123,10 @@ class RoleService {
         }
     }
 
-    async #deployPannel() {
+    async #renderPannel({ errors }: { errors?: { create?: string } } = {}) {
         const roles =
             this.#alreadyCached ?
-                this.#getRoleCache()
+                this.roleCache()
             :   await this.#updateRolesCache()
         this.#alreadyCached ||= true
 
@@ -163,9 +154,7 @@ class RoleService {
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
                             `- **${role.name}**\nAsignado a ${listMax(
-                                role.linked_roles.map(
-                                    l => `**${l.minecraft_user.nickname}**`,
-                                ),
+                                role.players.map(u => `**${u.nickname}**`),
                                 2,
                             )}`,
                         ),
@@ -179,15 +168,17 @@ class RoleService {
             )
         }
 
-        container
-            .addActionRowComponents(
-                new ActionRowBuilder<ButtonBuilder>().addComponents(
-                    new ButtonBuilder()
-                        .setLabel('➕ Crear Rol')
-                        .setStyle(ButtonStyle.Success)
-                        .setCustomId('role:create'),
-                ),
+        container.addActionRowComponents(
+            new ActionRowBuilder<ButtonBuilder>().addComponents(
+                await RoleCreateButton.build(),
+            ),
+        )
+        if (errors?.create) {
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(errors.create),
             )
+        }
+        container
             .addSeparatorComponents(new SeparatorBuilder())
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
@@ -322,7 +313,7 @@ class RoleService {
 
     async selectUser(uuid: string) {
         this.#selectedUser = uuid
-        await this.#deployPannel()
+        await this.#renderPannel()
         await db.state.upsert({
             where: { key: 'roles_panel_selected_user' },
             update: { value: uuid },
@@ -363,7 +354,39 @@ class RoleService {
                 }
             }
         }
-        await this.#deployPannel()
+        await this.#renderPannel()
+    }
+
+    async createRole(name: string) {
+        try {
+            const newRole = await db.role.create({
+                data: { name },
+            })
+            this.#rolesCache.set(newRole.id, { ...newRole, players: [] })
+            this.#renderPannel()
+        } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError) {
+                if (error.code === 'P2002') {
+                    await this.#renderPannel({
+                        errors: { create: 'El rol ya existe' },
+                    })
+                    return setTimeout(() => this.#renderPannel(), 5_000)
+                }
+            }
+            logger.error(error, '[ROLE SERVICE] Error al crear un rol')
+
+            await this.#renderPannel({
+                errors: { create: 'Error al crearlo' },
+            })
+            setTimeout(() => this.#renderPannel(), 5_000)
+        }
+    }
+}
+
+export class AlreadyExistsError extends Error {}
+export class UnknowError extends Error {
+    constructor(cause: unknown) {
+        super('Unknow Error', { cause })
     }
 }
 
