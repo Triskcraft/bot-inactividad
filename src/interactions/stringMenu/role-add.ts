@@ -19,7 +19,7 @@ export default class extends StringMenuHandler {
         const selectUserMenu = new StringSelectMenuBuilder()
             .setCustomId(`role:add:${userUUID}`)
             .setMinValues(1)
-            .setMinValues(Math.min(10, roles.length))
+            .setMaxValues(Math.min(10, roles.length))
             .setPlaceholder('Selecciona un rol para agregar')
 
         for (const { id, name } of roles) {

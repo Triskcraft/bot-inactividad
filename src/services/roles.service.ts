@@ -19,46 +19,144 @@ import {
 import RoleStringMenu from '../interactions/stringMenu/role.ts'
 import RoleAddStringMenu from '../interactions/stringMenu/role-add.ts'
 import RoleCreateButton from '../interactions/buttons/role-create.ts'
-import { listMax } from '../utils/format.ts'
+import { listMax, Paginator } from '../utils/format.ts'
 import { Temporal } from '@js-temporal/polyfill'
 import { minecraftMembersCache } from '../members.cache.ts'
 import { PrismaClientKnownRequestError } from '../prisma/generated/internal/prismaNamespace.ts'
+import roleRemove from '../interactions/buttons/role-remove.ts'
+import { randomUUID } from 'node:crypto'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
-async function fetchRoles() {
-    const roles = await db.role.findMany({
-        include: {
-            linked_roles: {
-                include: {
-                    minecraft_user: {
-                        select: {
-                            uuid: true,
-                            nickname: true,
+type RoleFetched = Awaited<ReturnType<typeof RoleCached.fetchRoles>>[number]
+
+type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
+export class RoleCached {
+    static async fetchRoles() {
+        const roles = await db.role.findMany({
+            include: {
+                linked_roles: {
+                    include: {
+                        minecraft_user: {
+                            select: {
+                                uuid: true,
+                                nickname: true,
+                            },
                         },
                     },
                 },
             },
-        },
-    })
-    return roles.map(r => ({
-        id: r.id,
-        name: r.name,
-        players: r.linked_roles.map(l => l.minecraft_user),
-    }))
-}
+        })
+        return roles.map(r => ({
+            id: r.id,
+            name: r.name,
+            players: r.linked_roles.map(l => l.minecraft_user),
+        }))
+    }
 
-type RoleFetched = Awaited<ReturnType<typeof fetchRoles>>[number]
+    #id: string
+
+    get id() {
+        return this.#id
+    }
+
+    #name: string
+
+    get name() {
+        return this.#name
+    }
+
+    #players: {
+        uuid: string
+        nickname: string
+    }[]
+
+    get players() {
+        return this.#players
+    }
+
+    constructor({
+        id,
+        name,
+        players = [],
+    }: MakeOptional<RoleFetched, 'players'>) {
+        this.#id = id
+        this.#name = name
+        this.#players = players
+    }
+
+    async removePlayer(uuid: string) {
+        try {
+            const response = await db.linkedRole.delete({
+                where: {
+                    mc_user_uuid_role_id: {
+                        mc_user_uuid: uuid,
+                        role_id: this.#id,
+                    },
+                },
+                select: {
+                    minecraft_user: {
+                        select: {
+                            nickname: true,
+                        },
+                    },
+                },
+            })
+            this.#players = this.#players.filter(p => p.uuid !== uuid)
+            logger.info(
+                `[ROLE SERVICE] Rol ${this.#name} desvinculado de ${response.minecraft_user.nickname}`,
+            )
+        } catch (error) {
+            logger.error(error, '[ROLE SERVICE] Error desvinculando un rol')
+        }
+    }
+
+    async addPlayer(uuid: string) {
+        const response = await db.linkedRole.create({
+            data: {
+                role: {
+                    connect: {
+                        id: this.#id,
+                    },
+                },
+                minecraft_user: {
+                    connect: {
+                        uuid: uuid,
+                    },
+                },
+            },
+            select: {
+                minecraft_user: {
+                    select: {
+                        nickname: true,
+                    },
+                },
+            },
+        })
+        this.#players.push({
+            nickname: response.minecraft_user.nickname,
+            uuid,
+        })
+        logger.info(
+            `[ROLE SERVICE] Rol ${this.#name} agregado a ${response.minecraft_user.nickname}`,
+        )
+    }
+}
 
 class RoleService {
     #message: Message | null = null
-    #rolesCache = new Map<string, RoleFetched>()
+    #rolesCache = new Map<string, RoleCached>()
     lastFetched = Temporal.Now.instant().epochMilliseconds
     #alreadyCached = false
     #selectedUser: string | null = null
     #defaultRole = {
         id: envs.DEFAULT_ROLE_ID,
         name: envs.DEFAULT_ROLE_NAME,
+    }
+
+    get pannelName() {
+        return PANNEL_NAME
     }
 
     roleCache() {
@@ -73,9 +171,9 @@ class RoleService {
     }
 
     async #updateRolesCache() {
-        const cache = await fetchRoles()
+        const cache = await RoleCached.fetchRoles()
         for (const role of cache) {
-            this.#rolesCache.set(role.id, role)
+            this.#rolesCache.set(role.id, new RoleCached(role))
         }
         return this.#rolesCache
     }
@@ -83,7 +181,7 @@ class RoleService {
     async start() {
         logger.info('Inicializando Role Service')
         await this.#chechDefaultRole()
-        await this.#renderPannel()
+        await this.renderPannel()
     }
 
     async #chechDefaultRole() {
@@ -123,7 +221,7 @@ class RoleService {
         }
     }
 
-    async #renderPannel({ errors }: { errors?: { create?: string } } = {}) {
+    async renderPannel({ errors }: { errors?: { create?: string } } = {}) {
         const roles =
             this.#alreadyCached ?
                 this.roleCache()
@@ -213,8 +311,7 @@ class RoleService {
                 container.addTextDisplayComponents(
                     new TextDisplayBuilder().setContent('Roles:'),
                 )
-                const roles = user.linked_roles.map(l => l.role)
-                for (const { id, name } of roles) {
+                for (const { id, name } of user.linked_roles.map(l => l.role)) {
                     container.addSectionComponents(
                         new SectionBuilder()
                             .addTextDisplayComponents(
@@ -223,10 +320,7 @@ class RoleService {
                                 ),
                             )
                             .setButtonAccessory(
-                                new ButtonBuilder()
-                                    .setLabel('Eliminar')
-                                    .setStyle(ButtonStyle.Danger)
-                                    .setCustomId(`role:remove:${id}`),
+                                await roleRemove.build({ id, uuid: user.uuid }),
                             ),
                     )
                 }
@@ -234,7 +328,7 @@ class RoleService {
                     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
                         await RoleAddStringMenu.build({
                             userUUID: user.uuid,
-                            roles,
+                            roles: [...roles.values()],
                         }),
                     ),
                 )
@@ -263,6 +357,76 @@ class RoleService {
         } else {
             await this.#checkPinned(channel, container)
         }
+    }
+
+    async removeRoleFromPlayer({
+        roleId,
+        playerUUID,
+        message,
+    }: {
+        roleId: string
+        playerUUID: string
+        message?: Message<true>
+    }) {
+        const role = this.roleCache().get(roleId)
+        if (!role) return
+        await role.removePlayer(playerUUID)
+        if (message && message.editable) {
+            message.edit({
+                components: [await this.buildRolePannel({ role })],
+                flags: MessageFlags.IsComponentsV2,
+            })
+        }
+        await this.renderPannel()
+    }
+
+    async buildRolePannel({ role }: { role: RoleCached }) {
+        const container = new ContainerBuilder().addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `# ${role.name}\nJugadores con ese rol`,
+            ),
+        )
+        const pages = new Paginator(role.players, { peer: 5 })
+        const { page, hasNext, hasPrev, items, totalPages } = pages.get(1)
+        for (const { nickname, uuid } of items) {
+            container.addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`- ${nickname}`),
+                    )
+                    .setButtonAccessory(
+                        await roleRemove.build({ id: role.id, uuid }),
+                    ),
+            )
+        }
+
+        return container.addActionRowComponents(
+            new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                    .setLabel('Anterior')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setCustomId(`role:prev:${role.id}`)
+                    .setDisabled(!hasPrev),
+                new ButtonBuilder()
+                    .setLabel(`Página ${page} de ${totalPages}`)
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true)
+                    .setCustomId(`${randomUUID()}`),
+                new ButtonBuilder()
+                    .setLabel('Siguiente')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setCustomId(`role:next:${role.id}`)
+                    .setDisabled(!hasNext),
+                new ButtonBuilder()
+                    .setLabel('Eliminar')
+                    .setStyle(ButtonStyle.Danger)
+                    .setCustomId(`role:delete:${role.id}`),
+                new ButtonBuilder()
+                    .setLabel('Editar')
+                    .setStyle(ButtonStyle.Primary)
+                    .setCustomId(`role:edit:${role.id}`),
+            ),
+        )
     }
 
     async #checkPinned(channel: SendableChannels, container: ContainerBuilder) {
@@ -313,7 +477,7 @@ class RoleService {
 
     async selectUser(uuid: string) {
         this.#selectedUser = uuid
-        await this.#renderPannel()
+        await this.renderPannel()
         await db.state.upsert({
             where: { key: 'roles_panel_selected_user' },
             update: { value: uuid },
@@ -324,27 +488,7 @@ class RoleService {
     async addRoles(mc_user_uuid: string, roles: string[]) {
         for (const role_id of roles) {
             try {
-                const link = await db.linkedRole.create({
-                    data: {
-                        mc_user_uuid,
-                        role_id,
-                    },
-                    select: {
-                        role: {
-                            select: {
-                                name: true,
-                            },
-                        },
-                        minecraft_user: {
-                            select: {
-                                nickname: true,
-                            },
-                        },
-                    },
-                })
-                logger.info(
-                    `[ROLE SERVICE] Rol ${link.role.name} agregado a ${link.minecraft_user.nickname}`,
-                )
+                await this.roleCache().get(role_id)?.addPlayer(mc_user_uuid)
             } catch (error) {
                 if (error instanceof PrismaClientKnownRequestError) {
                     if (error.code !== 'P2002')
@@ -354,7 +498,7 @@ class RoleService {
                 }
             }
         }
-        await this.#renderPannel()
+        await this.renderPannel()
     }
 
     async createRole(name: string) {
@@ -362,23 +506,23 @@ class RoleService {
             const newRole = await db.role.create({
                 data: { name },
             })
-            this.#rolesCache.set(newRole.id, { ...newRole, players: [] })
-            this.#renderPannel()
+            this.#rolesCache.set(newRole.id, new RoleCached(newRole))
+            this.renderPannel()
         } catch (error) {
             if (error instanceof PrismaClientKnownRequestError) {
                 if (error.code === 'P2002') {
-                    await this.#renderPannel({
+                    await this.renderPannel({
                         errors: { create: 'El rol ya existe' },
                     })
-                    return setTimeout(() => this.#renderPannel(), 5_000)
+                    return setTimeout(() => this.renderPannel(), 5_000)
                 }
             }
             logger.error(error, '[ROLE SERVICE] Error al crear un rol')
 
-            await this.#renderPannel({
+            await this.renderPannel({
                 errors: { create: 'Error al crearlo' },
             })
-            setTimeout(() => this.#renderPannel(), 5_000)
+            setTimeout(() => this.renderPannel(), 5_000)
         }
     }
 }
