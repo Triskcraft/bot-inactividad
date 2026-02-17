@@ -25,6 +25,7 @@ import { minecraftMembersCache } from '../members.cache.ts'
 import { PrismaClientKnownRequestError } from '../prisma/generated/internal/prismaNamespace.ts'
 import roleRemove from '../interactions/buttons/role-remove.ts'
 import { randomUUID } from 'node:crypto'
+import roleEdit from '../interactions/buttons/role-edit.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
@@ -74,6 +75,19 @@ export class RoleCached {
 
     get players() {
         return this.#players
+    }
+
+    async editName(name: string) {
+        await db.role.update({
+            data: { name },
+            where: { id: this.#id },
+        })
+        logger.info(`[ROLE SERVICE] Rol ${this.#name} renombrado a ${name}`)
+        if (this.#id === envs.DEFAULT_ROLE_ID) {
+            envs.DEFAULT_ROLE_NAME = name
+        }
+        this.#name = name
+        return this
     }
 
     constructor({
@@ -421,10 +435,7 @@ class RoleService {
                     .setLabel('Eliminar')
                     .setStyle(ButtonStyle.Danger)
                     .setCustomId(`role:delete:${role.id}`),
-                new ButtonBuilder()
-                    .setLabel('Editar')
-                    .setStyle(ButtonStyle.Primary)
-                    .setCustomId(`role:edit:${role.id}`),
+                await roleEdit.build({ id: role.id }),
             ),
         )
     }
@@ -517,6 +528,22 @@ class RoleService {
                     return setTimeout(() => this.renderPannel(), 5_000)
                 }
             }
+            logger.error(error, '[ROLE SERVICE] Error al crear un rol')
+
+            await this.renderPannel({
+                errors: { create: 'Error al crearlo' },
+            })
+            setTimeout(() => this.renderPannel(), 5_000)
+        }
+    }
+
+    async editRole({ id, name }: { id: string; name: string }) {
+        try {
+            await this.#rolesCache
+                .getOrInsert(id, new RoleCached({ id, name }))
+                .editName(name)
+            await this.renderPannel()
+        } catch (error) {
             logger.error(error, '[ROLE SERVICE] Error al crear un rol')
 
             await this.renderPannel({

@@ -1,3 +1,4 @@
+import './utils/polifill.ts'
 import { app } from './api/server.ts'
 import { client } from './client.ts'
 import { envs } from './config.ts'
