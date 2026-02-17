@@ -6,10 +6,13 @@ import {
     MessageFlags,
     SectionBuilder,
     TextDisplayBuilder,
+    ThumbnailBuilder,
     type ButtonInteraction,
 } from 'discord.js'
 import { ButtonInteractionHandler } from '#interactions.service'
 import { roleService } from '../../services/roles.service.ts'
+import { Paginator } from '../../utils/format.ts'
+import { randomUUID } from 'node:crypto'
 
 export default class extends ButtonInteractionHandler<'id'> {
     override regex = /^role:select:(?<id>\d+)$/
@@ -30,10 +33,41 @@ export default class extends ButtonInteractionHandler<'id'> {
                 `# ${role.name}\nJugadores con ese rol`,
             ),
         )
+        const pages = new Paginator(role.players, { peer: 5 })
+        const { page, hasNext, hasPrev, items, totalPages } = pages.get(1)
+        for (const { nickname, uuid } of items) {
+            container.addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`- ${nickname}`),
+                    )
+                    .setButtonAccessory(
+                        new ButtonBuilder()
+                            .setLabel('Remover')
+                            .setStyle(ButtonStyle.Secondary)
+                            .setCustomId(`role:remove:${uuid}`),
+                    ),
+            )
+        }
         container.addActionRowComponents(
             new ActionRowBuilder<ButtonBuilder>().addComponents(
                 new ButtonBuilder()
-                    .setLabel('Eliminar ')
+                    .setLabel('Anterior')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setCustomId(`role:prev:${id}`)
+                    .setDisabled(hasPrev),
+                new ButtonBuilder()
+                    .setLabel(`Página ${page} de ${totalPages}`)
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true)
+                    .setCustomId(`${randomUUID()}`),
+                new ButtonBuilder()
+                    .setLabel('Siguiente')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setCustomId(`role:next:${id}`)
+                    .setDisabled(hasNext),
+                new ButtonBuilder()
+                    .setLabel('Eliminar')
                     .setStyle(ButtonStyle.Danger)
                     .setCustomId(`role:delete:${id}`),
                 new ButtonBuilder()

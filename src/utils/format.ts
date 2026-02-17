@@ -37,3 +37,42 @@ export class CustomIdParser<K extends string> {
         return this.#groups
     }
 }
+
+export interface PageResult<T> {
+    readonly page: number
+    readonly items: T[]
+    readonly hasPrev: boolean
+    readonly hasNext: boolean
+    readonly totalPages: number
+}
+
+export class Paginator<T> {
+    #items: readonly T[]
+    #peer: number
+    #totalPages: number
+
+    constructor(items: readonly T[], { peer = 10 }: { peer?: number } = {}) {
+        if (peer <= 0) {
+            throw new Error('perPage debe ser mayor a 0')
+        }
+
+        this.#items = items
+        this.#peer = peer
+        this.#totalPages = Math.max(1, Math.ceil(items.length / peer))
+    }
+
+    get(page: number): PageResult<T> {
+        const current = Math.min(Math.max(1, page), this.#totalPages)
+
+        const start = (current - 1) * this.#peer
+        const end = start + this.#peer
+
+        return {
+            page: current,
+            items: this.#items.slice(start, end),
+            hasPrev: current > 1,
+            hasNext: current < this.#totalPages,
+            totalPages: this.#totalPages,
+        }
+    }
+}
