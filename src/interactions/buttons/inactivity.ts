@@ -8,11 +8,11 @@ import {
 } from 'discord.js'
 import { inactivityService } from '#inactivity.service'
 import { formatForUser } from '../../utils/time.ts'
-import type { ButtonInteractionHandler } from '#interactions.service'
+import { ButtonInteractionHandler } from '#interactions.service'
 
-export default class implements ButtonInteractionHandler {
-    regex = /^inactivity:.*/
-    async run(interaction: ButtonInteraction<'cached'>) {
+export default class extends ButtonInteractionHandler {
+    override regex = /^inactivity:.*/
+    override async run(interaction: ButtonInteraction<'cached'>) {
         switch (interaction.customId) {
             case 'inactivity:set':
             case 'inactivity:edit': {
