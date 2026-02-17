@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle, type ButtonInteraction } from 'discord.js'
-import WhModal from '../modals/role-create.ts'
+import WhModal from '../../modals/role-create.ts'
 import { ButtonInteractionHandler } from '#interactions.service'
 
 export default class extends ButtonInteractionHandler {

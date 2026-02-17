@@ -18,15 +18,16 @@ import {
 } from 'discord.js'
 import RoleStringMenu from '../interactions/stringMenu/role.ts'
 import RoleAddStringMenu from '../interactions/stringMenu/role-add.ts'
-import RoleCreateButton from '../interactions/buttons/role-create.ts'
+import RoleCreateButton from '../interactions/buttons/role/role-create.ts'
 import { listMax, Paginator } from '../utils/format.ts'
 import { Temporal } from '@js-temporal/polyfill'
 import { minecraftMembersCache } from '../members.cache.ts'
 import { PrismaClientKnownRequestError } from '../prisma/generated/internal/prismaNamespace.ts'
-import roleRemove from '../interactions/buttons/role-remove.ts'
+import roleRemove from '../interactions/buttons/role/role-remove.ts'
 import { randomUUID } from 'node:crypto'
-import roleEdit from '../interactions/buttons/role-edit.ts'
-import roleDelete from '../interactions/buttons/role-delete.ts'
+import roleEdit from '../interactions/buttons/role/role-edit.ts'
+import roleDelete from '../interactions/buttons/role/role-delete.ts'
+import rolePage from '../interactions/buttons/role/role-page.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
@@ -395,14 +396,21 @@ class RoleService {
         await this.renderPannel()
     }
 
-    async buildRolePannel({ role }: { role: RoleCached }) {
+    async buildRolePannel({
+        role,
+        page: currentPage = 1,
+    }: {
+        role: RoleCached
+        page?: number
+    }) {
         const container = new ContainerBuilder().addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `# ${role.name}\nJugadores con ese rol:`,
             ),
         )
         const pages = new Paginator(role.players, { peer: 5 })
-        const { page, hasNext, hasPrev, items, totalPages } = pages.get(1)
+        const { page, hasNext, hasPrev, items, totalPages } =
+            pages.get(currentPage)
         if (items.length === 0) {
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
@@ -427,21 +435,23 @@ class RoleService {
 
         return container.addActionRowComponents(
             new ActionRowBuilder<ButtonBuilder>().addComponents(
-                new ButtonBuilder()
-                    .setLabel('Anterior')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setCustomId(`role:prev:${role.id}`)
-                    .setDisabled(!hasPrev),
+                await rolePage.build({
+                    id: role.id,
+                    label: 'Anterior',
+                    disabled: !hasPrev,
+                    page: page - 1,
+                }),
                 new ButtonBuilder()
                     .setLabel(`Página ${page} de ${totalPages}`)
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
                     .setCustomId(`${randomUUID()}`),
-                new ButtonBuilder()
-                    .setLabel('Siguiente')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setCustomId(`role:next:${role.id}`)
-                    .setDisabled(!hasNext),
+                await rolePage.build({
+                    id: role.id,
+                    label: 'Siguiente',
+                    disabled: !hasNext,
+                    page: page + 1,
+                }),
                 await roleDelete.build({ id: role.id }),
                 await roleEdit.build({ id: role.id }),
             ),

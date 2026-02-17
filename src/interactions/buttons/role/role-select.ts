@@ -5,7 +5,7 @@ import {
     type ButtonInteraction,
 } from 'discord.js'
 import { ButtonInteractionHandler } from '#interactions.service'
-import { roleService } from '../../services/roles.service.ts'
+import { roleService } from '../../../services/roles.service.ts'
 
 export default class extends ButtonInteractionHandler<'id'> {
     override regex = /^role:select:(?<id>\d+)$/

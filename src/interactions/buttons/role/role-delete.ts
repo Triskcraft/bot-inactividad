@@ -7,7 +7,7 @@ import {
     type ButtonInteraction,
 } from 'discord.js'
 import { ButtonInteractionHandler } from '#interactions.service'
-import { roleService } from '../../services/roles.service.ts'
+import { roleService } from '../../../services/roles.service.ts'
 import { envs } from '#config'
 
 export default class RoleDelete extends ButtonInteractionHandler<'id' | 'q'> {
