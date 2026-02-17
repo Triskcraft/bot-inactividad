@@ -19,7 +19,6 @@ export default class RoleDelete extends ButtonInteractionHandler<'id' | 'q'> {
 
         const role = roleService.roleCache().get(id)
         if (!role) return await interaction.deferUpdate()
-        console.log(q)
 
         switch (q) {
             case 'q': {
@@ -76,13 +75,6 @@ export default class RoleDelete extends ButtonInteractionHandler<'id' | 'q'> {
         id: string
         q?: 'q' | 'y' | 'n'
     }): Promise<ButtonBuilder> {
-        console.log(
-            q,
-            q === 'q' ? 'Eliminar'
-            : q === 'n' ? 'Si, quiero eliminarlo'
-            : 'No, deseo conservarlo',
-        )
-
         return new ButtonBuilder()
             .setLabel(
                 q === 'q' ? 'Eliminar'

@@ -46,7 +46,7 @@ async function updateDigs() {
                 data: { digs },
             })
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
     logger.info(`[DIGS SERVICE] Updated digs`)

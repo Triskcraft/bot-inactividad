@@ -33,7 +33,6 @@ export function webhookAuth(permissions: WebhookPermission[]) {
         if (!signature) {
             throw new BadRequestError('Missing signature')
         }
-        console.log(signature, timestamp, typeof signature)
 
         if (typeof signature !== 'string') {
             throw new BadRequestError('Invalid signature')
