@@ -26,6 +26,7 @@ import { PrismaClientKnownRequestError } from '../prisma/generated/internal/pris
 import roleRemove from '../interactions/buttons/role-remove.ts'
 import { randomUUID } from 'node:crypto'
 import roleEdit from '../interactions/buttons/role-edit.ts'
+import roleDelete from '../interactions/buttons/role-delete.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
@@ -77,6 +78,16 @@ export class RoleCached {
         return this.#players
     }
 
+    constructor({
+        id,
+        name,
+        players = [],
+    }: MakeOptional<RoleFetched, 'players'>) {
+        this.#id = id
+        this.#name = name
+        this.#players = players
+    }
+
     async editName(name: string) {
         await db.role.update({
             data: { name },
@@ -88,16 +99,6 @@ export class RoleCached {
         }
         this.#name = name
         return this
-    }
-
-    constructor({
-        id,
-        name,
-        players = [],
-    }: MakeOptional<RoleFetched, 'players'>) {
-        this.#id = id
-        this.#name = name
-        this.#players = players
     }
 
     async removePlayer(uuid: string) {
@@ -397,21 +398,31 @@ class RoleService {
     async buildRolePannel({ role }: { role: RoleCached }) {
         const container = new ContainerBuilder().addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `# ${role.name}\nJugadores con ese rol`,
+                `# ${role.name}\nJugadores con ese rol:`,
             ),
         )
         const pages = new Paginator(role.players, { peer: 5 })
         const { page, hasNext, hasPrev, items, totalPages } = pages.get(1)
-        for (const { nickname, uuid } of items) {
-            container.addSectionComponents(
-                new SectionBuilder()
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`- ${nickname}`),
-                    )
-                    .setButtonAccessory(
-                        await roleRemove.build({ id: role.id, uuid }),
-                    ),
+        if (items.length === 0) {
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `No se encontraron jugadores con ese rol`,
+                ),
             )
+        } else {
+            for (const { nickname, uuid } of items) {
+                container.addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `- ${nickname}`,
+                            ),
+                        )
+                        .setButtonAccessory(
+                            await roleRemove.build({ id: role.id, uuid }),
+                        ),
+                )
+            }
         }
 
         return container.addActionRowComponents(
@@ -431,10 +442,7 @@ class RoleService {
                     .setStyle(ButtonStyle.Secondary)
                     .setCustomId(`role:next:${role.id}`)
                     .setDisabled(!hasNext),
-                new ButtonBuilder()
-                    .setLabel('Eliminar')
-                    .setStyle(ButtonStyle.Danger)
-                    .setCustomId(`role:delete:${role.id}`),
+                await roleDelete.build({ id: role.id }),
                 await roleEdit.build({ id: role.id }),
             ),
         )
@@ -542,6 +550,23 @@ class RoleService {
             await this.#rolesCache
                 .getOrInsert(id, new RoleCached({ id, name }))
                 .editName(name)
+            await this.renderPannel()
+        } catch (error) {
+            logger.error(error, '[ROLE SERVICE] Error al crear un rol')
+
+            await this.renderPannel({
+                errors: { create: 'Error al crearlo' },
+            })
+            setTimeout(() => this.renderPannel(), 5_000)
+        }
+    }
+
+    async deleteRole({ id }: { id: string }) {
+        try {
+            await db.role.delete({
+                where: { id },
+            })
+            this.#rolesCache.delete(id)
             await this.renderPannel()
         } catch (error) {
             logger.error(error, '[ROLE SERVICE] Error al crear un rol')
