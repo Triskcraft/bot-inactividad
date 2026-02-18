@@ -40,6 +40,7 @@ export function loadConfig() {
         'NODE_ENV',
         'DEFAULT_ROLE_NAME',
         'DEFAULT_ROLE_ID',
+        'DEFAULT_RANK',
     ]
 
     const {
@@ -54,6 +55,7 @@ export function loadConfig() {
         DIGS_STATS_DIR = '',
         DEFAULT_ROLE_NAME = 'Digger',
         DEFAULT_ROLE_ID = '',
+        DEFAULT_RANK = 'Miembro',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
@@ -102,6 +104,7 @@ export function loadConfig() {
         DIGS_STATS_DIR,
         DEFAULT_ROLE_NAME,
         DEFAULT_ROLE_ID,
+        DEFAULT_RANK,
     }
 }
 

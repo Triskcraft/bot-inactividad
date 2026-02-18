@@ -6,12 +6,12 @@ import {
     type ModalSubmitInteraction,
 } from 'discord.js'
 import { ModalInteractionHandler } from '#interactions.service'
-import { RoleCached, roleService } from '../../services/roles.service.ts'
+import { MinecraftRole, roleService } from '../../services/roles.service.ts'
 
 export default class extends ModalInteractionHandler<'id'> {
     override regex = /^role:edit:(?<id>\d+)$/
 
-    static override async build({ role }: { role: RoleCached }) {
+    static override async build({ role }: { role: MinecraftRole }) {
         return new ModalBuilder()
             .setCustomId(`role:edit:${role.id}`)
             .setTitle('Edita el rol ' + role.name)

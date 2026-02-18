@@ -1,6 +1,6 @@
 import { logger } from '#logger'
 import {
-    minecraftMembersCache,
+    getMinecraftMembersCache,
     updateMinecraftMembersCache,
 } from '../members.cache.ts'
 import { envs } from '#config'
@@ -13,7 +13,8 @@ let interval: NodeJS.Timeout
 export async function startDigsService() {
     logger.info('Inicializando Digs Service')
     // Initialize cahce
-    if (minecraftMembersCache.size === 0) await updateMinecraftMembersCache()
+    if (getMinecraftMembersCache().size === 0)
+        await updateMinecraftMembersCache()
     updateDigs()
     interval = setInterval(updateDigs, 3_600_000) // 1 hour
 }
@@ -27,7 +28,7 @@ type MinecraftStatsJson = {
 }
 
 async function updateDigs() {
-    for (const { uuid } of minecraftMembersCache.values()) {
+    for (const { uuid } of getMinecraftMembersCache().values()) {
         try {
             const {
                 default: { stats },
