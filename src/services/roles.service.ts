@@ -53,17 +53,22 @@ export class MinecraftRole {
             name: r.name,
             players: new Map(
                 r.linked_roles.map(l => {
-                    const newMember = members.getOrInsert(
+                    return [
                         l.mc_user_uuid,
-                        new MinecraftMember({
-                            discord_user_id: l.minecraft_user.discord_user_id,
-                            nickname: l.minecraft_user.discord_user_id,
-                            uuid: l.mc_user_uuid,
-                            rank: l.minecraft_user.rank,
-                        }),
-                    )
-                    members.set(newMember.uuid, newMember)
-                    return [newMember.uuid, newMember]
+                        members.getOrInsert(
+                            l.mc_user_uuid,
+                            members.getOrInsert(
+                                l.mc_user_uuid,
+                                new MinecraftMember({
+                                    discord_user_id:
+                                        l.minecraft_user.discord_user_id,
+                                    nickname: l.minecraft_user.discord_user_id,
+                                    uuid: l.mc_user_uuid,
+                                    rank: l.minecraft_user.rank,
+                                }),
+                            ),
+                        ),
+                    ]
                 }),
             ),
         }))
