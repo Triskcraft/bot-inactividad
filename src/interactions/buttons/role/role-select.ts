@@ -6,6 +6,7 @@ import {
 } from 'discord.js'
 import { ButtonInteractionHandler } from '#interactions.service'
 import { roleService } from '../../../services/roles.service.ts'
+import { minecraftRolesManager } from '../../../classes/minecraft-roles-manager.ts'
 
 export default class extends ButtonInteractionHandler<'id'> {
     override regex = /^role:select:(?<id>\d+)$/
@@ -14,7 +15,7 @@ export default class extends ButtonInteractionHandler<'id'> {
             flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         })
         const id = this.parser(interaction.customId).get('id')
-        const role = roleService.roleCache().get(id)
+        const role = minecraftRolesManager.cache.get(id)
         if (!role) {
             return await interaction.editReply({
                 content: 'Rol no encontrado',

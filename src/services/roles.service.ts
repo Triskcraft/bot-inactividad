@@ -20,172 +20,21 @@ import RoleStringMenu from '../interactions/stringMenu/role.ts'
 import RoleAddStringMenu from '../interactions/stringMenu/role-add.ts'
 import RoleCreateButton from '../interactions/buttons/role/role-create.ts'
 import { listMax, Paginator } from '../utils/format.ts'
-import { Temporal } from '@js-temporal/polyfill'
 import { PrismaClientKnownRequestError } from '../prisma/generated/internal/prismaNamespace.ts'
 import roleRemove from '../interactions/buttons/role/role-remove.ts'
 import { randomUUID } from 'node:crypto'
 import roleEdit from '../interactions/buttons/role/role-edit.ts'
 import roleDelete from '../interactions/buttons/role/role-delete.ts'
 import rolePage from '../interactions/buttons/role/role-page.ts'
-import { inspect } from 'node:util'
-import { getMinecraftMembersCache, MinecraftMember } from '../members.cache.ts'
+import { getMinecraftMembersCache } from '../members.cache.ts'
+import { MinecraftRole } from '../classes/minecraft-role.ts'
+import { MinecraftMember } from '../classes/minecraft-member.ts'
+import { minecraftRolesManager } from '../classes/minecraft-roles-manager.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
-type RoleFetched = Awaited<ReturnType<typeof MinecraftRole.fetchRoles>>[number]
-
-type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
-
-export class MinecraftRole {
-    static async fetchRoles() {
-        const roles = await db.role.findMany({
-            include: {
-                linked_roles: {
-                    include: {
-                        minecraft_user: true,
-                    },
-                },
-            },
-        })
-        const members = getMinecraftMembersCache()
-        return roles.map(r => ({
-            id: r.id,
-            name: r.name,
-            players: new Map(
-                r.linked_roles.map(l => {
-                    return [
-                        l.mc_user_uuid,
-                        members.getOrInsert(
-                            l.mc_user_uuid,
-                            members.getOrInsert(
-                                l.mc_user_uuid,
-                                new MinecraftMember({
-                                    discord_user_id:
-                                        l.minecraft_user.discord_user_id,
-                                    nickname: l.minecraft_user.discord_user_id,
-                                    uuid: l.mc_user_uuid,
-                                    rank: l.minecraft_user.rank,
-                                }),
-                            ),
-                        ),
-                    ]
-                }),
-            ),
-        }))
-    }
-
-    #id: RoleFetched['id']
-
-    get id() {
-        return this.#id
-    }
-
-    #name: RoleFetched['name']
-
-    get name() {
-        return this.#name
-    }
-
-    #players: RoleFetched['players']
-
-    get players() {
-        return this.#players
-    }
-
-    constructor({
-        id,
-        name,
-        players = new Map(),
-    }: MakeOptional<RoleFetched, 'players'>) {
-        this.#id = id
-        this.#name = name
-        this.#players = players
-    }
-
-    toJSON() {
-        return { id: this.#id, name: this.#name, players: this.#players }
-    }
-
-    [inspect.custom]() {
-        return this.toJSON()
-    }
-
-    async editName(name: string) {
-        await db.role.update({
-            data: { name },
-            where: { id: this.#id },
-        })
-        logger.info(`[ROLE SERVICE] Rol ${this.#name} renombrado a ${name}`)
-        if (this.#id === envs.DEFAULT_ROLE_ID) {
-            envs.DEFAULT_ROLE_NAME = name
-        }
-        this.#name = name
-        return this
-    }
-
-    async removePlayer(uuid: string) {
-        try {
-            const response = await db.linkedRole.delete({
-                where: {
-                    mc_user_uuid_role_id: {
-                        mc_user_uuid: uuid,
-                        role_id: this.#id,
-                    },
-                },
-                select: {
-                    minecraft_user: {
-                        select: {
-                            nickname: true,
-                        },
-                    },
-                },
-            })
-            this.#players.delete(uuid)
-            logger.info(
-                `[ROLE SERVICE] Rol ${this.#name} desvinculado de ${response.minecraft_user.nickname}`,
-            )
-        } catch (error) {
-            logger.error(error, '[ROLE SERVICE] Error desvinculando un rol')
-        }
-    }
-
-    async addPlayer(uuid: string) {
-        const {
-            minecraft_user: { discord_user_id, nickname, rank },
-        } = await db.linkedRole.create({
-            data: {
-                role: {
-                    connect: {
-                        id: this.#id,
-                    },
-                },
-                minecraft_user: {
-                    connect: {
-                        uuid: uuid,
-                    },
-                },
-            },
-            select: {
-                minecraft_user: true,
-            },
-        })
-        const newMember = new MinecraftMember({
-            discord_user_id,
-            nickname,
-            uuid,
-            rank,
-        })
-        this.#players.set(uuid, newMember)
-        getMinecraftMembersCache().set(uuid, newMember)
-        logger.info(`[ROLE SERVICE] Rol ${this.#name} agregado a ${nickname}`)
-    }
-}
-
 class RoleService {
     #message: Message | null = null
-    #rolesCache = new Map<string, MinecraftRole>()
-    lastFetched = Temporal.Now.instant().epochMilliseconds
-    #alreadyCached = false
     #selectedUser: string | null = null
     #defaultRole = {
         id: envs.DEFAULT_ROLE_ID,
@@ -194,25 +43,6 @@ class RoleService {
 
     get pannelName() {
         return PANNEL_NAME
-    }
-
-    roleCache() {
-        if (this.#rolesCache.size === 0) this.#updateRolesCache()
-        else if (
-            // every 6 hours
-            this.lastFetched + 21_600_000 <
-            Temporal.Now.instant().epochMilliseconds
-        )
-            this.#updateRolesCache()
-        return this.#rolesCache
-    }
-
-    async #updateRolesCache() {
-        const cache = await MinecraftRole.fetchRoles()
-        for (const role of cache) {
-            this.#rolesCache.set(role.id, new MinecraftRole(role))
-        }
-        return this.#rolesCache
     }
 
     async start() {
@@ -259,13 +89,7 @@ class RoleService {
     }
 
     async renderPannel({ errors }: { errors?: { create?: string } } = {}) {
-        const roles =
-            this.#alreadyCached ?
-                this.roleCache()
-            :   await this.#updateRolesCache()
-        this.#alreadyCached ||= true
-
-        console.log(roles)
+        const roles = minecraftRolesManager.cache
 
         const channel = await client.channels.fetch(envs.PANEL_CHANNEL_ID)
         if (!channel) {
@@ -414,7 +238,7 @@ class RoleService {
         playerUUID: string
         message?: Message<true>
     }) {
-        const role = this.roleCache().get(roleId)
+        const role = minecraftRolesManager.cache.get(roleId)
         if (!role) return
         await role.removePlayer(playerUUID)
         if (message && message.editable) {
@@ -547,7 +371,9 @@ class RoleService {
     async addRoles(mc_user_uuid: string, roles: string[]) {
         for (const role_id of roles) {
             try {
-                await this.roleCache().get(role_id)?.addPlayer(mc_user_uuid)
+                await minecraftRolesManager.cache
+                    .get(role_id)
+                    ?.addPlayer(mc_user_uuid)
             } catch (error) {
                 if (error instanceof PrismaClientKnownRequestError) {
                     if (error.code !== 'P2002')
@@ -565,7 +391,10 @@ class RoleService {
             const newRole = await db.role.create({
                 data: { name },
             })
-            this.#rolesCache.set(newRole.id, new MinecraftRole(newRole))
+            minecraftRolesManager.cache.set(
+                newRole.id,
+                new MinecraftRole(newRole),
+            )
             this.renderPannel()
         } catch (error) {
             if (error instanceof PrismaClientKnownRequestError) {
@@ -587,7 +416,7 @@ class RoleService {
 
     async editRole({ id, name }: { id: string; name: string }) {
         try {
-            await this.#rolesCache
+            await minecraftRolesManager.cache
                 .getOrInsert(id, new MinecraftRole({ id, name }))
                 .editName(name)
             await this.renderPannel()
@@ -606,7 +435,7 @@ class RoleService {
             await db.role.delete({
                 where: { id },
             })
-            this.#rolesCache.delete(id)
+            minecraftRolesManager.cache.delete(id)
             await this.renderPannel()
         } catch (error) {
             logger.error(error, '[ROLE SERVICE] Error al crear un rol')

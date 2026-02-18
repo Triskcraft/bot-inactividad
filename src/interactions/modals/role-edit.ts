@@ -6,7 +6,8 @@ import {
     type ModalSubmitInteraction,
 } from 'discord.js'
 import { ModalInteractionHandler } from '#interactions.service'
-import { MinecraftRole, roleService } from '../../services/roles.service.ts'
+import { roleService } from '../../services/roles.service.ts'
+import type { MinecraftRole } from '../../classes/minecraft-role.ts'
 
 export default class extends ModalInteractionHandler<'id'> {
     override regex = /^role:edit:(?<id>\d+)$/
