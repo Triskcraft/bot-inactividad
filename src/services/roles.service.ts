@@ -390,31 +390,6 @@ class RoleService {
         await this.renderPannel()
     }
 
-    async createRole(name: string) {
-        try {
-            const newRole = await db.role.create({
-                data: { name },
-            })
-            this.roles.cache.set(newRole.id, new MinecraftRole(newRole))
-            this.renderPannel()
-        } catch (error) {
-            if (error instanceof PrismaClientKnownRequestError) {
-                if (error.code === 'P2002') {
-                    await this.renderPannel({
-                        errors: { create: 'El rol ya existe' },
-                    })
-                    return setTimeout(() => this.renderPannel(), 5_000)
-                }
-            }
-            logger.error(error, '[ROLE SERVICE] Error al crear un rol')
-
-            await this.renderPannel({
-                errors: { create: 'Error al crearlo' },
-            })
-            setTimeout(() => this.renderPannel(), 5_000)
-        }
-    }
-
     async editRole({ id, name }: { id: string; name: string }) {
         try {
             await this.roles.cache

@@ -51,4 +51,14 @@ export class MinecraftRolesManager {
     get cache() {
         return this.#cache
     }
+
+    async create(name: string) {
+        const role = new MinecraftRole(
+            await db.role.create({
+                data: { name },
+            }),
+        )
+        this.#cache.set(role.id, role)
+        return role
+    }
 }

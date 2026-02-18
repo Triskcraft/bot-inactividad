@@ -31,6 +31,7 @@ export default class extends ModalInteractionHandler {
     override async run(interaction: ModalSubmitInteraction<'cached'>) {
         await interaction.deferUpdate()
         const name = interaction.fields.getTextInputValue('name')!
-        await roleService.createRole(name)
+        await roleService.roles.create(name)
+        await roleService.renderPannel()
     }
 }
