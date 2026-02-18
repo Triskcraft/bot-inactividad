@@ -61,4 +61,11 @@ export class MinecraftRolesManager {
         this.#cache.set(role.id, role)
         return role
     }
+
+    async delete(id: string) {
+        await db.role.delete({
+            where: { id },
+        })
+        this.#cache.delete(id)
+    }
 }

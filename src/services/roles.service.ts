@@ -20,7 +20,6 @@ import RoleStringMenu from '../interactions/stringMenu/role.ts'
 import RoleAddStringMenu from '../interactions/stringMenu/role-add.ts'
 import RoleCreateButton from '../interactions/buttons/role/role-create.ts'
 import { listMax, Paginator } from '../utils/format.ts'
-import { PrismaClientKnownRequestError } from '../prisma/generated/internal/prismaNamespace.ts'
 import roleRemove from '../interactions/buttons/role/role-remove.ts'
 import { randomUUID } from 'node:crypto'
 import roleEdit from '../interactions/buttons/role/role-edit.ts'
@@ -42,12 +41,9 @@ class RoleService {
     }
 
     #roles = new MinecraftRolesManager()
+
     get roles() {
         return this.#roles
-    }
-
-    get pannelName() {
-        return PANNEL_NAME
     }
 
     async start() {
@@ -235,27 +231,6 @@ class RoleService {
         }
     }
 
-    async removeRoleFromPlayer({
-        roleId,
-        playerUUID,
-        message,
-    }: {
-        roleId: string
-        playerUUID: string
-        message?: Message<true>
-    }) {
-        const role = this.roles.cache.get(roleId)
-        if (!role) return
-        await role.removePlayer(playerUUID)
-        if (message && message.editable) {
-            message.edit({
-                components: [await this.buildRolePannel({ role })],
-                flags: MessageFlags.IsComponentsV2,
-            })
-        }
-        await this.renderPannel()
-    }
-
     async buildRolePannel({
         role,
         page: currentPage = 1,
@@ -372,55 +347,6 @@ class RoleService {
             update: { value: uuid },
             create: { key: 'roles_panel_selected_user', value: uuid },
         })
-    }
-
-    async addRoles(mc_user_uuid: string, roles: string[]) {
-        for (const role_id of roles) {
-            try {
-                await this.roles.cache.get(role_id)?.addPlayer(mc_user_uuid)
-            } catch (error) {
-                if (error instanceof PrismaClientKnownRequestError) {
-                    if (error.code !== 'P2002')
-                        logger.error(error, 'Error al linkear rol')
-                } else {
-                    logger.error(error, 'Error al linkear rol')
-                }
-            }
-        }
-        await this.renderPannel()
-    }
-
-    async editRole({ id, name }: { id: string; name: string }) {
-        try {
-            await this.roles.cache
-                .getOrInsert(id, new MinecraftRole({ id, name }))
-                .editName(name)
-            await this.renderPannel()
-        } catch (error) {
-            logger.error(error, '[ROLE SERVICE] Error al crear un rol')
-
-            await this.renderPannel({
-                errors: { create: 'Error al crearlo' },
-            })
-            setTimeout(() => this.renderPannel(), 5_000)
-        }
-    }
-
-    async deleteRole({ id }: { id: string }) {
-        try {
-            await db.role.delete({
-                where: { id },
-            })
-            this.roles.cache.delete(id)
-            await this.renderPannel()
-        } catch (error) {
-            logger.error(error, '[ROLE SERVICE] Error al crear un rol')
-
-            await this.renderPannel({
-                errors: { create: 'Error al crearlo' },
-            })
-            setTimeout(() => this.renderPannel(), 5_000)
-        }
     }
 }
 

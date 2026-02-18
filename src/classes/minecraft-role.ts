@@ -48,11 +48,32 @@ export class MinecraftRole {
     }
 
     async editName(name: string) {
-        await db.role.update({
+        const { linked_roles } = await db.role.update({
             data: { name },
             where: { id: this.#id },
+            select: {
+                linked_roles: {
+                    select: {
+                        minecraft_user: true,
+                    },
+                },
+            },
         })
         logger.info(`[ROLE SERVICE] Rol ${this.#name} renombrado a ${name}`)
+        for (const { minecraft_user } of linked_roles) {
+            this.#players.getOrInsert(
+                minecraft_user.uuid,
+                getMinecraftMembersCache().getOrInsert(
+                    minecraft_user.uuid,
+                    new MinecraftMember({
+                        discord_user_id: minecraft_user.discord_user_id,
+                        nickname: minecraft_user.discord_user_id,
+                        uuid: minecraft_user.uuid,
+                        rank: minecraft_user.rank,
+                    }),
+                ),
+            )
+        }
         if (this.#id === envs.DEFAULT_ROLE_ID) {
             envs.DEFAULT_ROLE_NAME = name
         }

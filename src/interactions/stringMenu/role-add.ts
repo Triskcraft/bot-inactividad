@@ -34,6 +34,9 @@ export default class extends StringMenuHandler {
         await interaction.deferUpdate()
         const uuid = this.regex.exec(interaction.customId)?.groups?.uuid
         if (!uuid) return
-        await roleService.addRoles(uuid, interaction.values)
+        for (const role of interaction.values) {
+            await roleService.roles.cache.get(role)?.addPlayer(uuid)
+        }
+        await roleService.renderPannel()
     }
 }

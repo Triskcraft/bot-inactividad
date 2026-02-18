@@ -14,28 +14,25 @@ export default class extends ButtonInteractionHandler<'uuid' | 'id'> {
         const id = parser.get('id')
         const uuid = parser.get('uuid')
 
-        await roleService.removeRoleFromPlayer({
-            roleId: id,
-            playerUUID: uuid,
-        })
-
         const role = roleService.roles.cache.get(id)
         if (!role) return await interaction.deferUpdate()
+        await role.removePlayer(uuid)
 
         const container = interaction.message.components[0]
-        if (!container) return false
-        if (container.type !== ComponentType.Container) return false
+        if (!container || container.type !== ComponentType.Container) {
+            return false
+        }
         const textDisplay = container.components[0]
-        if (!textDisplay) return false
-        if (textDisplay.type !== ComponentType.TextDisplay) return false
+        if (!textDisplay || textDisplay.type !== ComponentType.TextDisplay) {
+            return false
+        }
 
-        if (textDisplay.content.includes(roleService.pannelName)) {
-            await roleService.renderPannel()
-        } else {
+        if (textDisplay.content.includes(role.name)) {
             await interaction.update({
                 components: [await roleService.buildRolePannel({ role })],
             })
         }
+        await roleService.renderPannel()
     }
     static override async build({
         id,
