@@ -1,7 +1,6 @@
 import { ButtonBuilder, ButtonStyle, type ButtonInteraction } from 'discord.js'
 import { ButtonInteractionHandler } from '#interactions.service'
 import { roleService } from '../../../services/roles.service.ts'
-import { minecraftRolesManager } from '../../../classes/minecraft-roles-manager.ts'
 
 export default class extends ButtonInteractionHandler<'page' | 'id'> {
     override regex = /^role:page:(?<id>\d+):(?<page>\d+)$/
@@ -10,7 +9,7 @@ export default class extends ButtonInteractionHandler<'page' | 'id'> {
         const id = parser.get('id')
         const page = +parser.get('page')
 
-        const role = minecraftRolesManager.cache.get(id)
+        const role = roleService.roles.cache.get(id)
         if (!role) return await interaction.deferUpdate()
         await interaction.update({
             components: [await roleService.buildRolePannel({ role, page })],

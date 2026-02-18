@@ -52,7 +52,3 @@ export class MinecraftRolesManager {
         return this.#cache
     }
 }
-
-const minecraftRolesManager = new MinecraftRolesManager()
-await minecraftRolesManager.fetch()
-export { minecraftRolesManager }

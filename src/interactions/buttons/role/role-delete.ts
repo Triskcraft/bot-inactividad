@@ -9,7 +9,6 @@ import {
 import { ButtonInteractionHandler } from '#interactions.service'
 import { roleService } from '../../../services/roles.service.ts'
 import { envs } from '#config'
-import { minecraftRolesManager } from '../../../classes/minecraft-roles-manager.ts'
 
 export default class RoleDelete extends ButtonInteractionHandler<'id' | 'q'> {
     override regex = /^role:delete:(?<id>\d+):(?<q>q|y|n+)$/
@@ -18,7 +17,7 @@ export default class RoleDelete extends ButtonInteractionHandler<'id' | 'q'> {
         const id = parser.get('id')
         const q = parser.get('q') as 'q' | 'y' | 'n'
 
-        const role = minecraftRolesManager.cache.get(id)
+        const role = roleService.roles.cache.get(id)
         if (!role) return await interaction.deferUpdate()
 
         switch (q) {

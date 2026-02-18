@@ -6,7 +6,6 @@ import {
 } from 'discord.js'
 import { ButtonInteractionHandler } from '#interactions.service'
 import { roleService } from '../../../services/roles.service.ts'
-import { minecraftRolesManager } from '../../../classes/minecraft-roles-manager.ts'
 
 export default class extends ButtonInteractionHandler<'uuid' | 'id'> {
     override regex = /^role:remove:(?<id>\d+):(?<uuid>.+)$/
@@ -20,7 +19,7 @@ export default class extends ButtonInteractionHandler<'uuid' | 'id'> {
             playerUUID: uuid,
         })
 
-        const role = minecraftRolesManager.cache.get(id)
+        const role = roleService.roles.cache.get(id)
         if (!role) return await interaction.deferUpdate()
 
         const container = interaction.message.components[0]

@@ -29,7 +29,7 @@ import rolePage from '../interactions/buttons/role/role-page.ts'
 import { getMinecraftMembersCache } from '../members.cache.ts'
 import { MinecraftRole } from '../classes/minecraft-role.ts'
 import { MinecraftMember } from '../classes/minecraft-member.ts'
-import { minecraftRolesManager } from '../classes/minecraft-roles-manager.ts'
+import { MinecraftRolesManager } from '../classes/minecraft-roles-manager.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
@@ -41,12 +41,18 @@ class RoleService {
         name: envs.DEFAULT_ROLE_NAME,
     }
 
+    #roles = new MinecraftRolesManager()
+    get roles() {
+        return this.#roles
+    }
+
     get pannelName() {
         return PANNEL_NAME
     }
 
     async start() {
         logger.info('Inicializando Role Service')
+        await this.#roles.fetch()
         await this.#chechDefaultRole()
         await this.renderPannel()
     }
@@ -89,7 +95,7 @@ class RoleService {
     }
 
     async renderPannel({ errors }: { errors?: { create?: string } } = {}) {
-        const roles = minecraftRolesManager.cache
+        const roles = this.roles.cache
 
         const channel = await client.channels.fetch(envs.PANEL_CHANNEL_ID)
         if (!channel) {
@@ -238,7 +244,7 @@ class RoleService {
         playerUUID: string
         message?: Message<true>
     }) {
-        const role = minecraftRolesManager.cache.get(roleId)
+        const role = this.roles.cache.get(roleId)
         if (!role) return
         await role.removePlayer(playerUUID)
         if (message && message.editable) {
@@ -371,9 +377,7 @@ class RoleService {
     async addRoles(mc_user_uuid: string, roles: string[]) {
         for (const role_id of roles) {
             try {
-                await minecraftRolesManager.cache
-                    .get(role_id)
-                    ?.addPlayer(mc_user_uuid)
+                await this.roles.cache.get(role_id)?.addPlayer(mc_user_uuid)
             } catch (error) {
                 if (error instanceof PrismaClientKnownRequestError) {
                     if (error.code !== 'P2002')
@@ -391,10 +395,7 @@ class RoleService {
             const newRole = await db.role.create({
                 data: { name },
             })
-            minecraftRolesManager.cache.set(
-                newRole.id,
-                new MinecraftRole(newRole),
-            )
+            this.roles.cache.set(newRole.id, new MinecraftRole(newRole))
             this.renderPannel()
         } catch (error) {
             if (error instanceof PrismaClientKnownRequestError) {
@@ -416,7 +417,7 @@ class RoleService {
 
     async editRole({ id, name }: { id: string; name: string }) {
         try {
-            await minecraftRolesManager.cache
+            await this.roles.cache
                 .getOrInsert(id, new MinecraftRole({ id, name }))
                 .editName(name)
             await this.renderPannel()
@@ -435,7 +436,7 @@ class RoleService {
             await db.role.delete({
                 where: { id },
             })
-            minecraftRolesManager.cache.delete(id)
+            this.roles.cache.delete(id)
             await this.renderPannel()
         } catch (error) {
             logger.error(error, '[ROLE SERVICE] Error al crear un rol')
