@@ -222,7 +222,12 @@ async function handleStats(interaction: CommandInteraction<'cached'>) {
         .fetch()
         .catch(() => null)
 
-    const summaries = []
+    const summaries: Array<{
+        role: Role
+        total: number
+        inactive: number
+        active: number
+    }> = []
     let totalMembers = 0
     let totalInactive = 0
     for (const roleId of tracked) {
@@ -232,28 +237,23 @@ async function handleStats(interaction: CommandInteraction<'cached'>) {
         if (!role) continue
 
         // Filtrar miembros que tienen este rol
-        let members
-        if (allServerMembers && allServerMembers.size > 0) {
-            // Si tenemos todos los miembros, usar eso
-            members = allServerMembers.filter(member =>
-                member.roles.cache.has(roleId),
-            )
-        } else {
-            // Si no, usar role.members como fallback
-            members = role.members
-        }
-
-        const inactive = members.filter(member =>
+        const members =
+            allServerMembers && allServerMembers.size > 0 ?
+                allServerMembers.filter(member =>
+                    member.roles.cache.has(roleId),
+                )
+            :   role.members
+        const [inactive, active] = members.partition(member =>
             records.some(record => record.user_id === member.id),
         )
-        const activeCount = members.size - inactive.size
+
         totalMembers += members.size
         totalInactive += inactive.size
         summaries.push({
             role,
             total: members.size,
             inactive: inactive.size,
-            active: activeCount,
+            active: active.size,
         })
     }
 
@@ -394,20 +394,20 @@ function buildHistoryField(
 ) {
     if (!snapshots.length) return null
 
-    const grouped = new Map()
+    const grouped = new Map<string, RoleStatistic[]>()
     for (const snapshot of snapshots) {
         if (!grouped.has(snapshot.role_id)) {
             grouped.set(snapshot.role_id, [])
         }
-        grouped.get(snapshot.role_id).push(snapshot)
+        grouped.getOrInsert(snapshot.role_id, []).push(snapshot)
     }
 
     const lines = []
     for (const summary of summaries) {
         const roleSnapshots = grouped.get(summary.role.id)
         if (!roleSnapshots?.length) continue
-        const sorted = [...roleSnapshots].sort(
-            (a, b) => a.captured_at.toMillis() - b.captured_at.toMillis(),
+        const sorted = [...roleSnapshots].toSorted(
+            (a, b) => a.captured_at.getTime() - b.captured_at.getTime(),
         )
         const recent = sorted.slice(-10)
         const sparkline = buildSparkline(

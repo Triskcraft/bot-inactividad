@@ -48,6 +48,7 @@
         // Recommended Options
         "strict": true,
         "noImplicitOverride": true,
+        "noImplicitAny": true,
         "jsx": "react-jsx",
         "verbatimModuleSyntax": true,
         "isolatedModules": true,

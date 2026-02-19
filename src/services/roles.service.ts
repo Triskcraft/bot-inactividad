@@ -161,11 +161,7 @@ class RoleService {
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
                             `- **${role.name}**\nAsignado a ${listMax(
-                                [
-                                    ...role.players
-                                        .values()
-                                        .map(u => `**${u.nickname}**`),
-                                ],
+                                role.players.map(u => `**${u.nickname}**`),
                                 2,
                             )}`,
                         ),
