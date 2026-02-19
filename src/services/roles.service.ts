@@ -97,7 +97,6 @@ class RoleService {
     }
 
     async renderPannel() {
-        console.time('render')
         const channel =
             client.channels.cache.get(envs.PANEL_CHANNEL_ID) ??
             (await client.channels.fetch(envs.PANEL_CHANNEL_ID))
@@ -114,7 +113,6 @@ class RoleService {
             this.#selectedRole ?
                 await this.#buildRolePannel({ role: this.#selectedRole })
             :   await this.#buildPanel()
-        console.log(this.#selectedRole)
 
         if (this.#message) {
             this.#message.edit({
@@ -140,7 +138,6 @@ class RoleService {
                 await this.#checkPinned(channel, container)
             }
         }
-        console.timeEnd('render')
     }
 
     async #buildPanel() {
