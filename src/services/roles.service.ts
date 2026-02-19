@@ -143,11 +143,15 @@ class RoleService {
     async #buildPanel() {
         const roles = this.roles.cache
         const container = new ContainerBuilder()
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    PANNEL_NAME +
-                        '\nAdministra los roles del servidor de Minecraft.',
-                ),
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            PANNEL_NAME +
+                                '\nAdministra los roles del servidor de Minecraft.',
+                        ),
+                    )
+                    .setButtonAccessory(await RoleCreateButton.build()),
             )
             .addSeparatorComponents(new SeparatorBuilder())
 
@@ -174,17 +178,6 @@ class RoleService {
                     ),
             )
         }
-
-        container.addActionRowComponents(
-            new ActionRowBuilder<ButtonBuilder>().addComponents(
-                await RoleCreateButton.build(),
-            ),
-        )
-        // if (errors?.create) {
-        //     container.addTextDisplayComponents(
-        //         new TextDisplayBuilder().setContent(errors.create),
-        //     )
-        // }
         container
             .addSeparatorComponents(new SeparatorBuilder())
             .addTextDisplayComponents(
