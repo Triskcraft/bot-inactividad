@@ -46,24 +46,12 @@ export default class RoleDelete extends ButtonInteractionHandler<'id' | 'q'> {
                 })
             }
             case 'n': {
-                await roleService.roles.delete(id)
-                await interaction.update({
-                    components: [await roleService.buildRolePannel({ role })],
-                })
+                await interaction.deferUpdate()
                 return await roleService.renderPannel()
             }
             case 'y': {
                 await roleService.roles.delete(id)
-                await interaction.update({
-                    components: [
-                        new ContainerBuilder().addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(
-                                `# ${role.name}\nRol eliminado`,
-                            ),
-                        ),
-                    ],
-                })
-                return await roleService.renderPannel()
+                return await roleService.selectRole(null)
             }
             default: {
                 q satisfies never

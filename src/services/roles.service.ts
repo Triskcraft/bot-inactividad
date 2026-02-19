@@ -29,18 +29,24 @@ import { getMinecraftMembersCache } from '../members.cache.ts'
 import { MinecraftRole } from '../classes/minecraft-role.ts'
 import { MinecraftMember } from '../classes/minecraft-member.ts'
 import { MinecraftRolesManager } from '../classes/minecraft-roles-manager.ts'
+import roleBack from '../interactions/buttons/role/role-back.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
 class RoleService {
     #message: Message | null = null
+
     #selectedUser: string | null = null
+
     #defaultRole = {
         id: envs.DEFAULT_ROLE_ID,
         name: envs.DEFAULT_ROLE_NAME,
     }
 
     #roles = new MinecraftRolesManager()
+
+    #selectedRole: MinecraftRole | null = null
+    #selectedPage = 1
 
     get roles() {
         return this.#roles
@@ -90,10 +96,11 @@ class RoleService {
         }
     }
 
-    async renderPannel({ errors }: { errors?: { create?: string } } = {}) {
-        const roles = this.roles.cache
-
-        const channel = await client.channels.fetch(envs.PANEL_CHANNEL_ID)
+    async renderPannel() {
+        console.time('render')
+        const channel =
+            client.channels.cache.get(envs.PANEL_CHANNEL_ID) ??
+            (await client.channels.fetch(envs.PANEL_CHANNEL_ID))
         if (!channel) {
             return logger.warn('[ROLE SERVICE] Canal de panel no encontrado')
         }
@@ -102,6 +109,42 @@ class RoleService {
                 '[ROLE SERVICE] El canal de pannel no está disponible',
             )
         }
+
+        const container =
+            this.#selectedRole ?
+                await this.#buildRolePannel({ role: this.#selectedRole })
+            :   await this.#buildPanel()
+        console.log(this.#selectedRole)
+
+        if (this.#message) {
+            this.#message.edit({
+                components: [container],
+            })
+        } else {
+            const whpmid = await db.state.findUnique({
+                where: { key: 'roles_panel_message_id' },
+                select: { value: true },
+            })
+            if (whpmid) {
+                const anc = await channel.messages
+                    .fetch(whpmid.value)
+                    .catch(() => null)
+                if (anc) {
+                    await anc.edit({
+                        components: [container],
+                    })
+                } else {
+                    await this.#checkPinned(channel, container)
+                }
+            } else {
+                await this.#checkPinned(channel, container)
+            }
+        }
+        console.timeEnd('render')
+    }
+
+    async #buildPanel() {
+        const roles = this.roles.cache
         const container = new ContainerBuilder()
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
@@ -140,11 +183,11 @@ class RoleService {
                 await RoleCreateButton.build(),
             ),
         )
-        if (errors?.create) {
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(errors.create),
-            )
-        }
+        // if (errors?.create) {
+        //     container.addTextDisplayComponents(
+        //         new TextDisplayBuilder().setContent(errors.create),
+        //     )
+        // }
         container
             .addSeparatorComponents(new SeparatorBuilder())
             .addTextDisplayComponents(
@@ -207,45 +250,23 @@ class RoleService {
             }
         }
 
-        const whpmid = await db.state.findUnique({
-            where: { key: 'roles_panel_message_id' },
-            select: { value: true },
-        })
-        if (this.#message) {
-            this.#message.edit({
-                components: [container],
-            })
-        } else if (whpmid) {
-            const anc = await channel.messages
-                .fetch(whpmid.value)
-                .catch(() => null)
-            if (anc) {
-                await anc.edit({
-                    components: [container],
-                })
-            } else {
-                await this.#checkPinned(channel, container)
-            }
-        } else {
-            await this.#checkPinned(channel, container)
-        }
+        return container
     }
 
-    async buildRolePannel({
-        role,
-        page: currentPage = 1,
-    }: {
-        role: MinecraftRole
-        page?: number
-    }) {
-        const container = new ContainerBuilder().addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `# ${role.name}\nJugadores con ese rol:`,
-            ),
+    async #buildRolePannel({ role }: { role: MinecraftRole }) {
+        const container = new ContainerBuilder().addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# ${role.name}\nJugadores con ese rol:`,
+                    ),
+                )
+                .setButtonAccessory(await roleBack.build()),
         )
         const pages = new Paginator([...role.players.values()], { peer: 5 })
-        const { page, hasNext, hasPrev, items, totalPages } =
-            pages.get(currentPage)
+        const { page, hasNext, hasPrev, items, totalPages } = pages.get(
+            this.#selectedPage,
+        )
         if (items.length === 0) {
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
@@ -347,6 +368,16 @@ class RoleService {
             update: { value: uuid },
             create: { key: 'roles_panel_selected_user', value: uuid },
         })
+    }
+
+    async selectRole(role: MinecraftRole | null, page = 1) {
+        this.#selectedPage = (this.#selectedRole = role) !== null ? page : 1
+        await this.renderPannel()
+    }
+
+    async changuePage(page: number) {
+        this.#selectedPage = page
+        await this.renderPannel()
     }
 }
 

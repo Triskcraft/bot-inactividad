@@ -6,14 +6,9 @@ export default class extends ButtonInteractionHandler<'page' | 'id'> {
     override regex = /^role:page:(?<id>\d+):(?<page>\d+)$/
     override async run(interaction: ButtonInteraction<'cached'>) {
         const parser = this.parser(interaction.customId)
-        const id = parser.get('id')
         const page = +parser.get('page')
 
-        const role = roleService.roles.cache.get(id)
-        if (!role) return await interaction.deferUpdate()
-        await interaction.update({
-            components: [await roleService.buildRolePannel({ role, page })],
-        })
+        await roleService.changuePage(page)
     }
     static override async build({
         id,
