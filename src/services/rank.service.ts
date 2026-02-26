@@ -42,6 +42,7 @@ export async function initializeRankService() {
         const member = await client.guilds.cache
             .get(envs.guildId)!
             .members.fetch(cached.discord_user_id)
+            .catch(() => null)
         if (!member) continue
         checkRanks(member, cached)
     }
