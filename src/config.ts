@@ -31,6 +31,8 @@ export function loadConfig() {
         'ENCRYPT_KEY',
         'JWT_SECRERT',
         'DIGS_STATS_DIR',
+        'BLOG_CHANNEL_ID',
+        'BLOG_ROLE_ID',
     ]
 
     const recomended = [
@@ -56,6 +58,8 @@ export function loadConfig() {
         DEFAULT_ROLE_NAME = 'Digger',
         DEFAULT_ROLE_ID = '',
         DEFAULT_RANK = 'Miembro',
+        BLOG_CHANNEL_ID = '',
+        BLOG_ROLE_ID = '',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
@@ -105,6 +109,8 @@ export function loadConfig() {
         DEFAULT_ROLE_NAME,
         DEFAULT_ROLE_ID,
         DEFAULT_RANK,
+        BLOG_CHANNEL_ID,
+        BLOG_ROLE_ID,
     }
 }
 

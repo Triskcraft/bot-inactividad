@@ -15,6 +15,7 @@ import { monitoredService } from './services/monitored.service.ts'
 import { Scheduler } from './services/scheduler.ts'
 import { startDigsService, stopDigsService } from './services/digs.service.ts'
 import { roleService } from './services/roles.service.ts'
+import { blogService } from './services/blog.service.ts'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente
@@ -61,3 +62,4 @@ initializeRankService()
 scheduler.start()
 startDigsService()
 roleService.start()
+blogService.start()
