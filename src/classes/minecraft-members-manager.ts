@@ -4,7 +4,7 @@ import { MinecraftMember } from './minecraft-member.ts'
 
 export class MinecraftMembersManager {
     async fetch() {
-        const members = await db.minecraftUser.findMany({
+        const members = await db.minecraftPlayer.findMany({
             select: {
                 uuid: true,
                 nickname: true,

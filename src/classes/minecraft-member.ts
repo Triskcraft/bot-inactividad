@@ -58,7 +58,7 @@ export class MinecraftMember {
     }
 
     async setRank(rank: string) {
-        await db.minecraftUser.update({
+        await db.minecraftPlayer.update({
             where: { uuid: this.#uuid },
             data: { rank },
         })

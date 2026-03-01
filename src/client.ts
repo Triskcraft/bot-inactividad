@@ -14,6 +14,7 @@ const bot = new Client<true>({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.MessageContent,
     ],
     partials: [
         Partials.GuildMember,

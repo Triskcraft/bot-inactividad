@@ -62,7 +62,7 @@ setInterval(async () => {
     for (const [identifier, { kind, digs }] of copy) {
         if (digs < 0) continue
         try {
-            await db.minecraftUser.update({
+            await db.minecraftPlayer.update({
                 where:
                     kind === 'uuid' ?
                         { uuid: identifier }

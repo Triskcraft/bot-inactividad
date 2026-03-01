@@ -54,22 +54,22 @@ export class MinecraftRole {
             select: {
                 linked_roles: {
                     select: {
-                        minecraft_user: true,
+                        minecraft_player: true,
                     },
                 },
             },
         })
         logger.info(`[ROLE SERVICE] Rol ${this.#name} renombrado a ${name}`)
-        for (const { minecraft_user } of linked_roles) {
+        for (const { minecraft_player } of linked_roles) {
             this.#players.getOrInsert(
-                minecraft_user.uuid,
+                minecraft_player.uuid,
                 membersMannager.cache.getOrInsert(
-                    minecraft_user.uuid,
+                    minecraft_player.uuid,
                     new MinecraftMember({
-                        discord_user_id: minecraft_user.discord_user_id,
-                        nickname: minecraft_user.discord_user_id,
-                        uuid: minecraft_user.uuid,
-                        rank: minecraft_user.rank,
+                        discord_user_id: minecraft_player.discord_user_id,
+                        nickname: minecraft_player.discord_user_id,
+                        uuid: minecraft_player.uuid,
+                        rank: minecraft_player.rank,
                     }),
                 ),
             )
@@ -91,7 +91,7 @@ export class MinecraftRole {
                     },
                 },
                 select: {
-                    minecraft_user: {
+                    minecraft_player: {
                         select: {
                             nickname: true,
                         },
@@ -100,7 +100,7 @@ export class MinecraftRole {
             })
             this.#players.delete(uuid)
             logger.info(
-                `[ROLE SERVICE] Rol ${this.#name} desvinculado de ${response.minecraft_user.nickname}`,
+                `[ROLE SERVICE] Rol ${this.#name} desvinculado de ${response.minecraft_player.nickname}`,
             )
         } catch (error) {
             logger.error(error, '[ROLE SERVICE] Error desvinculando un rol')
@@ -109,7 +109,7 @@ export class MinecraftRole {
 
     async addPlayer(uuid: string) {
         const {
-            minecraft_user: { discord_user_id, nickname, rank },
+            minecraft_player: { discord_user_id, nickname, rank },
         } = await db.linkedRole.create({
             data: {
                 role: {
@@ -117,14 +117,14 @@ export class MinecraftRole {
                         id: this.#id,
                     },
                 },
-                minecraft_user: {
+                minecraft_player: {
                     connect: {
                         uuid: uuid,
                     },
                 },
             },
             select: {
-                minecraft_user: true,
+                minecraft_player: true,
             },
         })
         const newMember = new MinecraftMember({

@@ -10,7 +10,7 @@ export class MinecraftRolesManager {
             include: {
                 linked_roles: {
                     include: {
-                        minecraft_user: true,
+                        minecraft_player: true,
                     },
                 },
             },
@@ -30,11 +30,11 @@ export class MinecraftRolesManager {
                                     l.mc_user_uuid,
                                     new MinecraftMember({
                                         discord_user_id:
-                                            l.minecraft_user.discord_user_id,
+                                            l.minecraft_player.discord_user_id,
                                         nickname:
-                                            l.minecraft_user.discord_user_id,
+                                            l.minecraft_player.discord_user_id,
                                         uuid: l.mc_user_uuid,
-                                        rank: l.minecraft_user.rank,
+                                        rank: l.minecraft_player.rank,
                                     }),
                                 ),
                             ]

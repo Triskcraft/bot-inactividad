@@ -37,7 +37,7 @@ async function updateDigs() {
                 0,
             )
 
-            await db.minecraftUser.update({
+            await db.minecraftPlayer.update({
                 where: { uuid },
                 data: { digs },
             })

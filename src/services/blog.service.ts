@@ -7,6 +7,7 @@ import {
     ButtonBuilder,
     ComponentType,
     ContainerBuilder,
+    Events,
     GuildMember,
     Message,
     MessageFlags,
@@ -14,9 +15,14 @@ import {
     SeparatorBuilder,
     TextDisplayBuilder,
     ThreadAutoArchiveDuration,
+    User,
     type SendableChannels,
 } from 'discord.js'
 import blogCreate from '../interactions/buttons/blog/blog-create.ts'
+import { PostsManager } from '../classes/posts-manager.ts'
+import { POST_STATUS } from '../prisma/generated/enums.ts'
+import type { Post } from '../classes/post.ts'
+import blogState from '../interactions/buttons/blog/blog-post.ts'
 
 const PANNEL_NAME = '# 📰 **Panel de Publicaciones**'
 
@@ -33,13 +39,21 @@ class BlogService {
         return this.#channel
     }
 
+    #posts = new PostsManager()
+
+    get posts() {
+        return this.#posts
+    }
+
     async start() {
         logger.info('[BLOG SERVICE] Inicializando...')
         await this.#checkRole()
         if (!this.#role) return
         await this.#checkChannel()
         if (!this.#channel) return
+        await this.#posts.fetch()
         await this.#renderPannel()
+        await this.#installEventListener()
     }
 
     async #checkRole() {
@@ -72,6 +86,32 @@ class BlogService {
         this.#channel = channel
     }
 
+    async #buildMessagePannel({
+        user,
+        title,
+        status = POST_STATUS.DRAFT,
+        id,
+    }: {
+        title: string
+        user: User
+        id?: string
+        status?: POST_STATUS
+    }) {
+        const container = new ContainerBuilder().addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `# ${title}\nAutor: ${user}\nEstado: Draft`,
+            ),
+        )
+        if (id) {
+            container.addActionRowComponents(
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    await blogState.build({ id, status }),
+                ),
+            )
+        }
+        return container
+    }
+
     async createDraft({
         member,
         title,
@@ -83,16 +123,30 @@ class BlogService {
         const message = await this.#channel.send({
             flags: MessageFlags.IsComponentsV2,
             components: [
-                new ContainerBuilder().addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `# ${title}\nAutor: ${member}\nEstado: Draft`,
-                    ),
-                ),
+                await this.#buildMessagePannel({
+                    title,
+                    user: member.user,
+                }),
             ],
         })
         const thread = await message.startThread({
             name: title,
             autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+        })
+        const post = await this.#posts.create({
+            discord_user_id: member.id,
+            thread_id: thread.id,
+            title,
+        })
+        await message.edit({
+            flags: MessageFlags.IsComponentsV2,
+            components: [
+                await this.#buildMessagePannel({
+                    title,
+                    user: member.user,
+                    id: post.id,
+                }),
+            ],
         })
         await thread.members.add(member)
     }
@@ -191,6 +245,57 @@ class BlogService {
             where: { key: 'blog_panel_message_id' },
             update: { value: nid },
             create: { key: 'blog_panel_message_id', value: nid },
+        })
+    }
+
+    async #outdate(post: Post, message: Message) {
+        await post.outdate()
+        await message.edit({
+            flags: MessageFlags.IsComponentsV2,
+            components: [
+                await this.#buildMessagePannel({
+                    user: message.author,
+                    title: post.title,
+                    id: post.id,
+                    status: post.status,
+                }),
+            ],
+        })
+    }
+
+    #installEventListener() {
+        client.on(Events.MessageCreate, async message => {
+            if (!message.inGuild()) return
+            if (!message.channel.isThread()) return
+            const post = this.#posts.cache.find(
+                p => p.thread_id === message.channelId,
+            )
+            if (!post) return
+            if (message.author.id !== post.discord_user_id) return
+            if (post.status === POST_STATUS.DRAFT) return
+            if (post.status === POST_STATUS.OUTDATED) return
+            if (post.status === POST_STATUS.PUBLISHED) {
+                const parent = await message.channel.fetchStarterMessage()
+                if (!parent) return
+                await this.#outdate(post, parent)
+            }
+        })
+
+        client.on(Events.MessageUpdate, async message => {
+            if (!message.inGuild()) return
+            if (!message.channel.isThread()) return
+            const post = this.#posts.cache.find(
+                p => p.thread_id === message.channelId,
+            )
+            if (!post) return
+            if (message.author.id !== post.discord_user_id) return
+            if (post.status === POST_STATUS.DRAFT) return
+            if (post.status === POST_STATUS.OUTDATED) return
+            if (post.status === POST_STATUS.PUBLISHED) {
+                const parent = await message.channel.fetchStarterMessage()
+                if (!parent) return
+                await this.#outdate(post, parent)
+            }
         })
     }
 }

@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
 
     try {
         const [user] = await db.$transaction([
-            db.minecraftUser.upsert({
+            db.minecraftPlayer.upsert({
                 where: { uuid: codedb.id },
                 create: {
                     nickname,

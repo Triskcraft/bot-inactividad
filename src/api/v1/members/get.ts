@@ -9,7 +9,7 @@ import { db } from '#database'
  */
 
 export async function getMembers(req: Request, res: Response) {
-    const members = await db.minecraftUser.findMany({
+    const members = await db.minecraftPlayer.findMany({
         include: {
             medias: {
                 select: {
