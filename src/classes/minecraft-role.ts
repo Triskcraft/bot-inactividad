@@ -1,6 +1,6 @@
 import { db } from '#database'
 import { inspect } from 'node:util'
-import { getMinecraftMembersCache } from '../members.cache.ts'
+import { membersMannager } from '../members.cache.ts'
 import { logger } from '#logger'
 import { envs } from '#config'
 import { MinecraftMember } from './minecraft-member.ts'
@@ -63,7 +63,7 @@ export class MinecraftRole {
         for (const { minecraft_user } of linked_roles) {
             this.#players.getOrInsert(
                 minecraft_user.uuid,
-                getMinecraftMembersCache().getOrInsert(
+                membersMannager.cache.getOrInsert(
                     minecraft_user.uuid,
                     new MinecraftMember({
                         discord_user_id: minecraft_user.discord_user_id,
@@ -134,7 +134,7 @@ export class MinecraftRole {
             rank,
         })
         this.#players.set(uuid, newMember)
-        getMinecraftMembersCache().set(uuid, newMember)
+        membersMannager.cache.set(uuid, newMember)
         logger.info(`[ROLE SERVICE] Rol ${this.#name} agregado a ${nickname}`)
     }
 }

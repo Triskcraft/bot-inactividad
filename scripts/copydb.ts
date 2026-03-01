@@ -1,11 +1,14 @@
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/prisma/generated/client.ts'
+
 try {
     process.loadEnvFile()
 } catch {
     console.error('No existe .env')
 }
+
 const { DATABASE_PROD, DATABASE_PATH } = process.env
+
 if (!DATABASE_PROD) {
     console.error('missing DATABASE_PROD in .env')
     process.exit(1)
@@ -35,4 +38,14 @@ await local.discordUser.createMany({
 // minecraft users
 await local.minecraftUser.createMany({
     data: await prod.minecraftUser.findMany(),
+})
+
+// roles
+await local.role.createMany({
+    data: await prod.role.findMany(),
+})
+
+// linked roles
+await local.linkedRole.createMany({
+    data: await prod.linkedRole.findMany(),
 })

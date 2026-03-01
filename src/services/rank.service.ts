@@ -3,13 +3,10 @@ import { client } from '../client.ts'
 import { getRank } from '../utils/roles.ts'
 import { envs } from '#config'
 import { logger } from '#logger'
-import {
-    getMinecraftMembersCache,
-    updateMinecraftMembersCache,
-    type MinecraftMemberCached,
-} from '../members.cache.ts'
+import { membersMannager } from '../members.cache.ts'
+import type { MinecraftMember } from '../classes/minecraft-member.ts'
 
-async function checkRanks(member: GuildMember, cached: MinecraftMemberCached) {
+async function checkRanks(member: GuildMember, cached: MinecraftMember) {
     const currentRank = getRank([...member.roles.cache.values()])
     if (cached.rank !== currentRank) {
         await cached.setRank(currentRank)
@@ -23,7 +20,7 @@ async function handleRankUpdate(
     oldMember: GuildMember | PartialGuildMember,
     newMember: GuildMember,
 ) {
-    const minecraftLinked = getMinecraftMembersCache()
+    const minecraftLinked = membersMannager.cache
         .values()
         .find(m => m.discord_user_id === oldMember.id)
     if (minecraftLinked) {
@@ -33,12 +30,10 @@ async function handleRankUpdate(
 
 export async function initializeRankService() {
     logger.info('[RANK SERVICE] Inicializando')
-    // Initialize cahce
-    await updateMinecraftMembersCache()
     // Register event listener
     client.on(Events.GuildMemberUpdate, handleRankUpdate)
     // check all members on startup
-    for (const cached of getMinecraftMembersCache().values()) {
+    for (const cached of membersMannager.cache.values()) {
         const member = await client.guilds.cache
             .get(envs.guildId)!
             .members.fetch(cached.discord_user_id)

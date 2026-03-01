@@ -1,6 +1,6 @@
 import { db } from '#database'
 import { Collection } from 'discord.js'
-import { getMinecraftMembersCache } from '../members.cache.ts'
+import { membersMannager } from '../members.cache.ts'
 import { MinecraftMember } from './minecraft-member.ts'
 import { MinecraftRole } from './minecraft-role.ts'
 
@@ -15,7 +15,7 @@ export class MinecraftRolesManager {
                 },
             },
         })
-        const members = getMinecraftMembersCache()
+        const members = membersMannager.cache
         for (const r of roles) {
             this.#cache.set(
                 r.id,

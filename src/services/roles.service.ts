@@ -25,7 +25,7 @@ import { randomUUID } from 'node:crypto'
 import roleEdit from '../interactions/buttons/role/role-edit.ts'
 import roleDelete from '../interactions/buttons/role/role-delete.ts'
 import rolePage from '../interactions/buttons/role/role-page.ts'
-import { getMinecraftMembersCache } from '../members.cache.ts'
+import { membersMannager } from '../members.cache.ts'
 import { MinecraftRole } from '../classes/minecraft-role.ts'
 import { MinecraftMember } from '../classes/minecraft-member.ts'
 import { MinecraftRolesManager } from '../classes/minecraft-roles-manager.ts'
@@ -200,7 +200,7 @@ class RoleService {
                     ),
                 )
             } else {
-                getMinecraftMembersCache().set(
+                membersMannager.cache.set(
                     user.uuid,
                     new MinecraftMember({
                         discord_user_id: user.discord_user_id,
