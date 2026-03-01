@@ -42,8 +42,7 @@ export default class extends ButtonInteractionHandler<'id'> {
                 content: `Este post no te pertenece`,
             })
         }
-        blogService.publish(post)
-        // TODO: publish
+        await blogService.publish(post)
     }
 
     static override async build({

@@ -250,11 +250,14 @@ class BlogService {
 
     async #outdate(post: Post, message: Message) {
         await post.outdate()
+        const user = await client.users.fetch(post.discord_user_id, {
+            cache: true,
+        })
         await message.edit({
             flags: MessageFlags.IsComponentsV2,
             components: [
                 await this.#buildMessagePannel({
-                    user: message.author,
+                    user,
                     title: post.title,
                     id: post.id,
                     status: post.status,
@@ -329,7 +332,25 @@ class BlogService {
             lastId = fetched.last()!.id
         }
 
+        if (messages.length === 0) return
+
         await post.publish(messages)
+
+        const user = await client.users.fetch(post.discord_user_id, {
+            cache: true,
+        })
+
+        await original.edit({
+            flags: MessageFlags.IsComponentsV2,
+            components: [
+                await this.#buildMessagePannel({
+                    user,
+                    title: post.title,
+                    id: post.id,
+                    status: post.status,
+                }),
+            ],
+        })
     }
 }
 
