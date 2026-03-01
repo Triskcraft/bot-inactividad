@@ -171,18 +171,23 @@ model Post {
 
     discord_user     DiscordUser      @relation(fields: [discord_user_id], references: [id])
     minecraft_player MinecraftPlayer? @relation(fields: [minecraft_player_uuid], references: [uuid])
+    post_blocks      PostBlocks[]
 
     @@map("posts")
 }
 
 model PostBlocks {
     message_id  String   @id
+    post_id     String
     timestamp   DateTime
     content     String?
-    components  Json[]
-    embeds      Json[]
-    attachments Json[]
+    components  Json[]   @default([])
+    embeds      Json[]   @default([])
+    attachments Json[]   @default([])
     author_id   String
 
     author DiscordUser @relation(fields: [author_id], references: [id])
+    post   Post        @relation(fields: [post_id], references: [id])
+
+    @@map("post_blocks")
 }

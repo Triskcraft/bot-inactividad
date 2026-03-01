@@ -16,16 +16,17 @@ CREATE TABLE "posts" (
 );
 
 -- CreateTable
-CREATE TABLE "PostBlocks" (
+CREATE TABLE "post_blocks" (
     "message_id" TEXT NOT NULL,
+    "post_id" TEXT NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL,
     "content" TEXT,
-    "components" JSONB[],
-    "embeds" JSONB[],
-    "attachments" JSONB[],
+    "components" JSONB[] DEFAULT ARRAY[]::JSONB[],
+    "embeds" JSONB[] DEFAULT ARRAY[]::JSONB[],
+    "attachments" JSONB[] DEFAULT ARRAY[]::JSONB[],
     "author_id" TEXT NOT NULL,
 
-    CONSTRAINT "PostBlocks_pkey" PRIMARY KEY ("message_id")
+    CONSTRAINT "post_blocks_pkey" PRIMARY KEY ("message_id")
 );
 
 -- CreateIndex
@@ -38,4 +39,7 @@ ALTER TABLE "posts" ADD CONSTRAINT "posts_discord_user_id_fkey" FOREIGN KEY ("di
 ALTER TABLE "posts" ADD CONSTRAINT "posts_minecraft_player_uuid_fkey" FOREIGN KEY ("minecraft_player_uuid") REFERENCES "minecraft_users"("uuid") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PostBlocks" ADD CONSTRAINT "PostBlocks_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "discord_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "post_blocks" ADD CONSTRAINT "post_blocks_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "discord_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "post_blocks" ADD CONSTRAINT "post_blocks_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

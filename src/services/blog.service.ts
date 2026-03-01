@@ -298,6 +298,39 @@ class BlogService {
             }
         })
     }
+
+    async publish(post: Post) {
+        const channel =
+            client.channels.cache.get(post.thread_id) ??
+            (await client.channels.fetch(post.thread_id))
+
+        if (!channel?.isThread()) return
+
+        const original = await channel.fetchStarterMessage()
+        if (!original) return
+
+        const messages: Message<true>[] = []
+        let lastId: string
+
+        while (true) {
+            const fetched = await channel.messages.fetch({
+                limit: 100,
+                before: lastId!,
+            })
+
+            if (fetched.size === 0) break
+
+            messages.push(
+                ...fetched
+                    .filter(m => m.author.id === post.discord_user_id)
+                    .values(),
+            )
+
+            lastId = fetched.last()!.id
+        }
+
+        await post.publish(messages)
+    }
 }
 
 export const blogService = new BlogService()

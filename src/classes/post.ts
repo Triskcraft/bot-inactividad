@@ -1,6 +1,7 @@
 import { inspect } from 'node:util'
 import { POST_STATUS } from '../prisma/generated/enums.ts'
 import { db } from '#database'
+import type { Message } from 'discord.js'
 
 export class Post {
     #id: string
@@ -78,5 +79,43 @@ export class Post {
             },
         })
         this.#status = POST_STATUS.OUTDATED
+
+        return this
+    }
+
+    async publish(messages: Message<true>[]) {
+        if (this.status === POST_STATUS.PUBLISHED) return
+
+        await db.postBlocks.deleteMany({
+            where: {
+                post_id: this.#id,
+            },
+        })
+
+        await db.postBlocks.createMany({
+            data: messages.map(m => ({
+                author_id: this.#discord_user_id,
+                message_id: m.id,
+                post_id: this.#id,
+                timestamp: m.createdAt,
+                content: m.content,
+                embeds: m.embeds,
+                components: m.components,
+                // attachments: m.attachments,
+            })),
+        })
+
+        await db.post.update({
+            where: {
+                id: this.#id,
+            },
+            data: {
+                status: POST_STATUS.PUBLISHED,
+            },
+        })
+
+        this.#status = POST_STATUS.PUBLISHED
+
+        return this
     }
 }
