@@ -1,5 +1,5 @@
 import { envs } from '#config'
-import { db } from '#database'
+import { db } from "#/prisma/database.ts"
 import { inspect } from 'node:util'
 
 export class MinecraftMember {

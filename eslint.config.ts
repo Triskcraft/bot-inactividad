@@ -8,10 +8,12 @@ import importPlugin from 'eslint-plugin-import'
 
 export default defineConfig([
     {
-        files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-        plugins: { js },
-        extends: ['js/recommended'],
-        languageOptions: { globals: globals.node },
+        plugins: {
+            import: importPlugin,
+        },
+        rules: {
+			'import/no-relative-parent-imports': 'error',
+        },
     },
     tseslint.configs.recommended,
     {

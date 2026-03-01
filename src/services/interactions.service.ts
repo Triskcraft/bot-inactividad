@@ -1,4 +1,4 @@
-import { logger } from '#logger'
+import { logger } from "#/logger.ts"
 import { client } from '../client.ts'
 import {
     ButtonBuilder,

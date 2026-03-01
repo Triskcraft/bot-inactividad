@@ -1,8 +1,8 @@
-import { db } from '#database'
+import { db } from "#/prisma/database.ts"
 import { Router } from 'express'
 import { PrismaClientKnownRequestError } from '../../../prisma/generated/internal/prismaNamespace.ts'
 import z from 'zod'
-import { logger } from '#logger'
+import { logger } from "#/logger.ts"
 import { BadRequestError } from '../../errors.ts'
 
 const router = Router()

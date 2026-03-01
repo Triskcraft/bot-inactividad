@@ -7,11 +7,10 @@ import {
     EmbedBuilder,
     type GuildMember,
 } from 'discord.js'
-import { db } from '../prisma/database.ts'
+import { db } from "#/prisma/database.ts"
 import { envs } from '../config.ts'
 import { client } from '../client.ts'
-import { logger } from '#logger'
-
+import { logger } from "#/logger.ts"
 /**
  * Servicio encargado de persistir y exponer los estados de inactividad.
  */

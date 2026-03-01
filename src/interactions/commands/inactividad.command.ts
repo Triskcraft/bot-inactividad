@@ -5,7 +5,7 @@ import {
     Role,
     type CommandInteraction,
 } from 'discord.js'
-import { logger } from '#logger'
+import { logger } from "#/logger.ts"
 import { inactivityService } from '#inactivity.service'
 import { formatForUser } from '../../utils/time.ts'
 import { envs } from '#config'

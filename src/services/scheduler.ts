@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 import { Collection, TextChannel } from 'discord.js'
-import { logger } from '#logger'
+import { logger } from "#/logger.ts"
 import type { InactivityService } from '#inactivity.service'
 import type { MonitoredService } from './monitored.service.ts'
 import { envs } from '#config'

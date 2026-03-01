@@ -1,6 +1,6 @@
 import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js'
-import { db } from '../../prisma/database.ts'
-import { logger } from '#logger'
+import { db } from "#/prisma/database.ts"
+import { logger } from "#/logger.ts"
 import type { CommandInteractionHandler } from '#interactions.service'
 
 /**

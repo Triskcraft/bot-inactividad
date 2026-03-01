@@ -3,7 +3,7 @@ import cors from 'cors'
 import v1 from './v1/route.ts'
 import webhooks from './webhooks/route.ts'
 import { AppError } from './errors.ts'
-import { logger } from '#logger'
+import { logger } from "#/logger.ts"
 
 /**
  * Servidor HTTP mínimo que expone endpoints de lectura para integraciones

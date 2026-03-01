@@ -1,4 +1,4 @@
-import { db } from '#database'
+import { db } from "#/prisma/database.ts"
 import { Temporal } from '@js-temporal/polyfill'
 import { MinecraftMember } from './classes/minecraft-member.ts'
 
