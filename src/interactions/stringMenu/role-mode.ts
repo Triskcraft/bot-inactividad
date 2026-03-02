@@ -3,8 +3,8 @@ import {
     StringSelectMenuInteraction,
     StringSelectMenuOptionBuilder,
 } from 'discord.js'
-import { StringMenuHandler } from '#interactions.service'
-import { roleService } from '../../services/roles.service.ts'
+import { StringMenuHandler } from '#/services/interactions.service.ts'
+import { roleService } from '#/services/roles.service.ts'
 
 export const ROLE_PANEL_MODE = {
     ROLE: 'ROLE',

@@ -2,7 +2,7 @@ import { logger } from '#/logger.ts'
 import {
     getMinecraftMembersCache,
     updateMinecraftMembersCache,
-} from '../members.cache.ts'
+} from '#/members.cache.ts'
 import { envs } from '#/config.ts'
 import { db } from '#/prisma/database.ts'
 import { join } from 'node:path'

@@ -5,8 +5,8 @@ import {
     TextInputStyle,
     type ModalSubmitInteraction,
 } from 'discord.js'
-import { ModalInteractionHandler } from '#interactions.service'
-import { roleService } from '../../services/roles.service.ts'
+import { ModalInteractionHandler } from '#/services/interactions.service.ts'
+import { roleService } from '#/services/roles.service.ts'
 
 export default class extends ModalInteractionHandler {
     override regex = /^role:create$/

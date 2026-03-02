@@ -12,7 +12,7 @@
         "db:copy-prod": "prisma migrate reset && prisma generate && node scripts/copydb.ts"
     },
     "imports": {
-    "#/*": "./src/*"
+        "#/*": "./src/*"
     },
     "dependencies": {
         "@discordjs/rest": "2.6.0",

@@ -1,6 +1,6 @@
 import { ButtonBuilder, ButtonStyle, type ButtonInteraction } from 'discord.js'
-import WhModal from '../../modals/role-create.ts'
-import { ButtonInteractionHandler } from '#interactions.service'
+import WhModal from '#/interactions/modals/role-create.ts'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
 
 export default class extends ButtonInteractionHandler {
     override regex = /^role:create$/

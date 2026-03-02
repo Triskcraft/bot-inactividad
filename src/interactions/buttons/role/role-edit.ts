@@ -1,7 +1,7 @@
 import { ButtonBuilder, ButtonStyle, type ButtonInteraction } from 'discord.js'
-import { ButtonInteractionHandler } from '#interactions.service'
-import roleEdit from '../../modals/role-edit.ts'
-import { roleService } from '../../../services/roles.service.ts'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
+import roleEdit from '#/interactions/modals/role-edit.ts'
+import { roleService } from '#/services/roles.service.ts'
 
 export default class extends ButtonInteractionHandler<'id'> {
     override regex = /^role:edit:(?<id>\d+)$/

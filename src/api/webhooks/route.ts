@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import members from './digs/route.ts'
 import link from './link/route.ts'
-import { webhookAuth } from '../webhook-auth.middleware.ts'
+import { webhookAuth } from '#/api/webhook-auth.middleware.ts'
 
 const router = Router()
 

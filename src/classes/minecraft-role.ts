@@ -1,6 +1,6 @@
 import { db } from '#/prisma/database.ts'
 import { inspect } from 'node:util'
-import { getMinecraftMembersCache } from '../members.cache.ts'
+import { getMinecraftMembersCache } from '#/members.cache.ts'
 import { logger } from '#/logger.ts'
 import { envs } from '#/config.ts'
 import { MinecraftMember } from './minecraft-member.ts'

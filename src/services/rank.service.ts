@@ -1,13 +1,13 @@
 import { Events, GuildMember, type PartialGuildMember } from 'discord.js'
-import { client } from '../client.ts'
-import { getRank } from '../utils/roles.ts'
+import { client } from '#/client.ts'
+import { getRank } from '#/utils/roles.ts'
 import { envs } from '#/config.ts'
 import { logger } from '#/logger.ts'
 import {
     getMinecraftMembersCache,
     updateMinecraftMembersCache,
     type MinecraftMemberCached,
-} from '../members.cache.ts'
+} from '#/members.cache.ts'
 
 async function checkRanks(member: GuildMember, cached: MinecraftMemberCached) {
     const currentRank = getRank([...member.roles.cache.values()])
