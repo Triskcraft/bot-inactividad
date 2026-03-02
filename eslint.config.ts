@@ -8,12 +8,10 @@ import importPlugin from 'eslint-plugin-import'
 
 export default defineConfig([
     {
-        plugins: {
-            import: importPlugin,
-        },
-        rules: {
-			'import/no-relative-parent-imports': 'error',
-        },
+        files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
+        plugins: { js },
+        extends: ['js/recommended'],
+        languageOptions: { globals: globals.node },
     },
     tseslint.configs.recommended,
     {
@@ -48,6 +46,7 @@ export default defineConfig([
             'import/no-deprecated': 'error',
             'import/no-empty-named-blocks': 'error',
             'import/no-duplicates': 'error',
+            'import/no-relative-parent-imports': 'error',
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 {
