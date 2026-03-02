@@ -1,4 +1,4 @@
-import { RANK_ROLES } from '#config'
+import { RANK_ROLES } from '#/config.ts'
 import type { Role } from 'discord.js'
 
 export function getRank(roles: Role[]) {

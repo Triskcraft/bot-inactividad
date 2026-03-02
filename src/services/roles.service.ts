@@ -1,7 +1,7 @@
-import { client } from '#client'
-import { envs } from '#config'
-import { db } from '#database'
-import { logger } from '#logger'
+import { client } from '#/client.ts'
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
+import { logger } from '#/logger.ts'
 import {
     ButtonStyle,
     ButtonBuilder,
@@ -16,20 +16,19 @@ import {
     StringSelectMenuBuilder,
     Message,
 } from 'discord.js'
-import RoleStringMenu from '../interactions/stringMenu/role.ts'
-import RoleAddStringMenu from '../interactions/stringMenu/role-add.ts'
-import RoleCreateButton from '../interactions/buttons/role/role-create.ts'
-import { listMax, Paginator } from '../utils/format.ts'
-import roleRemove from '../interactions/buttons/role/role-remove.ts'
+import RoleStringMenu from '#/interactions/stringMenu/role.ts'
+import RoleAddStringMenu from '#/interactions/stringMenu/role-add.ts'
+import RoleCreateButton from '#/interactions/buttons/role/role-create.ts'
+import { listMax, Paginator } from '#/utils/format.ts'
+import roleRemove from '#/interactions/buttons/role/role-remove.ts'
 import { randomUUID } from 'node:crypto'
-import roleEdit from '../interactions/buttons/role/role-edit.ts'
-import roleDelete from '../interactions/buttons/role/role-delete.ts'
-import rolePage from '../interactions/buttons/role/role-page.ts'
-import { membersMannager } from '../members.cache.ts'
-import { MinecraftRole } from '../classes/minecraft-role.ts'
-import { MinecraftMember } from '../classes/minecraft-member.ts'
-import { MinecraftRolesManager } from '../classes/minecraft-roles-manager.ts'
-import roleBack from '../interactions/buttons/role/role-back.ts'
+import roleEdit from '#/interactions/buttons/role/role-edit.ts'
+import roleDelete from '#/interactions/buttons/role/role-delete.ts'
+import rolePage from '#/interactions/buttons/role/role-page.ts'
+import { MinecraftRole } from '#/classes/minecraft-role.ts'
+import { MinecraftMember } from '#/classes/minecraft-member.ts'
+import { MinecraftRolesManager } from '#/classes/minecraft-roles-manager.ts'
+import roleBack from '#/interactions/buttons/role/role-back.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 

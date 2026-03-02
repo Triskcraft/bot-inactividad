@@ -1,10 +1,10 @@
-import { db } from '#database'
+import { db } from '#/prisma/database.ts'
 import { inspect } from 'node:util'
-import { membersMannager } from '../members.cache.ts'
-import { logger } from '#logger'
-import { envs } from '#config'
+import { logger } from '#/logger.ts'
+import { envs } from '#/config.ts'
 import { MinecraftMember } from './minecraft-member.ts'
 import { Collection } from 'discord.js'
+import { membersMannager } from '#/members.cache.ts'
 
 export class MinecraftRole {
     #id: string

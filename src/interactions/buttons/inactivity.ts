@@ -6,9 +6,9 @@ import {
     TextInputStyle,
     type ButtonInteraction,
 } from 'discord.js'
-import { inactivityService } from '#inactivity.service'
-import { formatForUser } from '../../utils/time.ts'
-import { ButtonInteractionHandler } from '#interactions.service'
+import { inactivityService } from '#/services/inactivity.service.ts'
+import { formatForUser } from '#/utils/time.ts'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
 
 export default class extends ButtonInteractionHandler {
     override regex = /^inactivity:.*/

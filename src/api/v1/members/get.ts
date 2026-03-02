@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { db } from '#database'
+import { db } from "#/prisma/database.ts"
 
 /**
  * Endpoint que entrega el listado de miembros combinando la whitelist de

@@ -1,14 +1,14 @@
-import { client } from '#client'
-import { envs } from '#config'
-import { db } from '#database'
+import { client } from '#/client.ts'
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
 import { Router } from 'express'
-import { getRank } from '../../../utils/roles.ts'
+import { getRank } from '#/utils/roles.ts'
 import z from 'zod'
 import {
     BadRequestError,
     InternalServerError,
     NotFoundError,
-} from '../../errors.ts'
+} from '#/api/errors.ts'
 
 const router = Router()
 

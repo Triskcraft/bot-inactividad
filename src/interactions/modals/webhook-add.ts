@@ -1,4 +1,4 @@
-import { db } from '#database'
+import { db } from '#/prisma/database.ts'
 import {
     EmbedBuilder,
     LabelBuilder,
@@ -13,13 +13,13 @@ import {
 } from 'discord.js'
 import { SignJWT } from 'jose'
 import { randomBytes } from 'node:crypto'
-import { encrypt } from '../../utils/encript.ts'
-import { envs, WEBHOOK_PERMISSIONS } from '#config'
-import { ModalInteractionHandler } from '#interactions.service'
-import { deployWebhookPanel } from '../../services/webhook.service.ts'
-import type { WebhookToken } from '../../prisma/generated/client.ts'
-import { PrismaClientKnownRequestError } from '../../prisma/generated/internal/prismaNamespace.ts'
-import { logger } from '#logger'
+import { encrypt } from '#/utils/encript.ts'
+import { envs, WEBHOOK_PERMISSIONS } from '#/config.ts'
+import { ModalInteractionHandler } from '#/services/interactions.service.ts'
+import { deployWebhookPanel } from '#/services/webhook.service.ts'
+import type { WebhookToken } from '#/prisma/generated/client.ts'
+import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
+import { logger } from '#/logger.ts'
 
 const alg = 'HS256'
 

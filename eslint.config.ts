@@ -46,6 +46,7 @@ export default defineConfig([
             'import/no-deprecated': 'error',
             'import/no-empty-named-blocks': 'error',
             'import/no-duplicates': 'error',
+            'import/no-relative-parent-imports': 'error',
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 {

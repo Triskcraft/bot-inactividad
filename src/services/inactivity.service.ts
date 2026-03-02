@@ -1,5 +1,5 @@
-import { formatForUser } from '../utils/time.ts'
-import type { InactivityPeriod } from '../prisma/generated/client.ts'
+import { formatForUser } from '#/utils/time.ts'
+import type { InactivityPeriod } from '#/prisma/generated/client.ts'
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -7,11 +7,10 @@ import {
     EmbedBuilder,
     type GuildMember,
 } from 'discord.js'
-import { db } from '../prisma/database.ts'
-import { envs } from '../config.ts'
-import { client } from '../client.ts'
-import { logger } from '#logger'
-
+import { db } from '#/prisma/database.ts'
+import { client } from '#/client.ts'
+import { logger } from '#/logger.ts'
+import { envs } from '#/config.ts'
 /**
  * Servicio encargado de persistir y exponer los estados de inactividad.
  */

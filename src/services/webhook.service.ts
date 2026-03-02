@@ -1,5 +1,5 @@
-import { client } from '#client'
-import { envs } from '#config'
+import { client } from '#/client.ts'
+import { envs } from '#/config.ts'
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -14,8 +14,8 @@ import {
     MessageFlags,
     type SendableChannels,
 } from 'discord.js'
-import { logger } from '#logger'
-import { db } from '#database'
+import { logger } from '#/logger.ts'
+import { db } from '#/prisma/database.ts'
 
 const PANNEL_NAME = '# 🔐 **Panel de Webhooks**'
 

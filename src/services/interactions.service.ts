@@ -1,5 +1,5 @@
-import { logger } from '#logger'
-import { client } from '../client.ts'
+import { logger } from '#/logger.ts'
+import { client } from '#/client.ts'
 import {
     ButtonBuilder,
     ButtonInteraction,
@@ -14,7 +14,7 @@ import {
 import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { CustomIdParser } from '../utils/format.ts'
+import { CustomIdParser } from '#/utils/format.ts'
 
 export abstract class ButtonInteractionHandler<K extends string = ''> {
     regex: RegExp = /\\/

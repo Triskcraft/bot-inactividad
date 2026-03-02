@@ -1,9 +1,9 @@
-import { logger } from '#logger'
-import { membersMannager } from '../members.cache.ts'
-import { envs } from '#config'
-import { db } from '#database'
+import { logger } from '#/logger.ts'
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { membersMannager } from '#/members.cache.ts'
 
 let interval: NodeJS.Timeout
 

@@ -1,6 +1,5 @@
-import { db } from '#database'
+import { db } from '#/prisma/database.ts'
 import { Collection } from 'discord.js'
-import { membersMannager } from '../members.cache.ts'
 import { MinecraftMember } from './minecraft-member.ts'
 import { MinecraftRole } from './minecraft-role.ts'
 

@@ -3,8 +3,8 @@ import {
     PermissionFlagsBits,
     type ButtonInteraction,
 } from 'discord.js'
-import WhModal from '../modals/webhook-add.ts'
-import { ButtonInteractionHandler } from '#interactions.service'
+import WhModal from '#/interactions/modals/webhook-add.ts'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
 
 export default class extends ButtonInteractionHandler {
     override regex = /^wh:add$/

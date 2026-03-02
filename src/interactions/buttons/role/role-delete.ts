@@ -6,9 +6,9 @@ import {
     TextDisplayBuilder,
     type ButtonInteraction,
 } from 'discord.js'
-import { ButtonInteractionHandler } from '#interactions.service'
-import { roleService } from '../../../services/roles.service.ts'
-import { envs } from '#config'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
+import { roleService } from '#/services/roles.service.ts'
+import { envs } from '#/config.ts'
 
 export default class RoleDelete extends ButtonInteractionHandler<'id' | 'q'> {
     override regex = /^role:delete:(?<id>\d+):(?<q>q|y|n+)$/

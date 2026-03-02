@@ -5,13 +5,13 @@ import {
     Role,
     type CommandInteraction,
 } from 'discord.js'
-import { logger } from '#logger'
-import { inactivityService } from '#inactivity.service'
-import { formatForUser } from '../../utils/time.ts'
-import { envs } from '#config'
-import type { RoleStatistic } from '../../prisma/generated/browser.ts'
-import type { CommandInteractionHandler } from '#interactions.service'
-import { monitoredService } from '../../services/monitored.service.ts'
+import { logger } from '#/logger.ts'
+import { inactivityService } from '#/services/inactivity.service.ts'
+import { formatForUser } from '#/utils/time.ts'
+import { envs } from '#/config.ts'
+import type { RoleStatistic } from '#/prisma/generated/browser.ts'
+import type { CommandInteractionHandler } from '#/services/interactions.service.ts'
+import { monitoredService } from '#/services/monitored.service.ts'
 
 /**
  * Genera un código de vinculación de sesión y lo persiste en la base de datos.

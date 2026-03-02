@@ -1,9 +1,9 @@
-import { envs, type WebhookPermission } from '#config'
-import { db } from '#database'
+import { envs, type WebhookPermission } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
 import type { NextFunction, Request, Response } from 'express'
 import { jwtVerify } from 'jose'
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { decrypt } from '../utils/encript.ts'
+import { decrypt } from '#/utils/encript.ts'
 import { BadRequestError, ForbiddenError, UnauthorizedError } from './errors.ts'
 
 const MAX_DRIFT_MS = 15_000

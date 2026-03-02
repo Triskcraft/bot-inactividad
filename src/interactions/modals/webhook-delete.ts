@@ -1,4 +1,4 @@
-import { db } from '#database'
+import { db } from '#/prisma/database.ts'
 import {
     LabelBuilder,
     MessageFlags,
@@ -8,8 +8,8 @@ import {
     TextDisplayBuilder,
     type ModalSubmitInteraction,
 } from 'discord.js'
-import { ModalInteractionHandler } from '#interactions.service'
-import { deployWebhookPanel } from '../../services/webhook.service.ts'
+import { ModalInteractionHandler } from '#/services/interactions.service.ts'
+import { deployWebhookPanel } from '#/services/webhook.service.ts'
 
 export default class extends ModalInteractionHandler {
     override regex = /^wh:delete:(?<id>.+)$/
