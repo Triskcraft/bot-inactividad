@@ -1,6 +1,6 @@
-import { envs } from '#config'
-import { db } from "#/prisma/database.ts"
-import { logger } from "#/logger.ts"
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
+import { logger } from '#/logger.ts'
 import { PrismaClientKnownRequestError } from './generated/internal/prismaNamespace.ts'
 
 try {

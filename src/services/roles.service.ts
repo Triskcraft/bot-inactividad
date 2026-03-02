@@ -1,7 +1,7 @@
-import { client } from '#client'
-import { envs } from '#config'
-import { db } from "#/prisma/database.ts"
-import { logger } from "#/logger.ts"
+import { client } from '#/client.ts'
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
+import { logger } from '#/logger.ts'
 import {
     ButtonStyle,
     ButtonBuilder,

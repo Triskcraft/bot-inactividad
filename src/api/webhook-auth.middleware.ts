@@ -1,5 +1,5 @@
-import { envs, type WebhookPermission } from '#config'
-import { db } from "#/prisma/database.ts"
+import { envs, type WebhookPermission } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
 import type { NextFunction, Request, Response } from 'express'
 import { jwtVerify } from 'jose'
 import { createHmac, timingSafeEqual } from 'node:crypto'

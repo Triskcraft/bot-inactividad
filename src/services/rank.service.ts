@@ -1,8 +1,8 @@
 import { Events, GuildMember, type PartialGuildMember } from 'discord.js'
 import { client } from '../client.ts'
 import { getRank } from '../utils/roles.ts'
-import { envs } from '#config'
-import { logger } from "#/logger.ts"
+import { envs } from '#/config.ts'
+import { logger } from '#/logger.ts'
 import {
     getMinecraftMembersCache,
     updateMinecraftMembersCache,

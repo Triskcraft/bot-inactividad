@@ -1,6 +1,6 @@
-import { client } from '#client'
-import { envs } from '#config'
-import { db } from "#/prisma/database.ts"
+import { client } from '#/client.ts'
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
 import { Router } from 'express'
 import { getRank } from '../../../utils/roles.ts'
 import z from 'zod'

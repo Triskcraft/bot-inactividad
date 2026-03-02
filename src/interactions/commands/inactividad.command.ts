@@ -5,12 +5,12 @@ import {
     Role,
     type CommandInteraction,
 } from 'discord.js'
-import { logger } from "#/logger.ts"
-import { inactivityService } from '#inactivity.service'
+import { logger } from '#/logger.ts'
+import { inactivityService } from '#/services/inactivity.service.ts'
 import { formatForUser } from '../../utils/time.ts'
-import { envs } from '#config'
+import { envs } from '#/config.ts'
 import type { RoleStatistic } from '../../prisma/generated/browser.ts'
-import type { CommandInteractionHandler } from '#interactions.service'
+import type { CommandInteractionHandler } from '#/services/interactions.service.ts'
 import { monitoredService } from '../../services/monitored.service.ts'
 
 /**

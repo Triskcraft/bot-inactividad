@@ -1,7 +1,7 @@
 import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js'
-import { db } from "#/prisma/database.ts"
-import { logger } from "#/logger.ts"
-import type { CommandInteractionHandler } from '#interactions.service'
+import { db } from '#/prisma/database.ts'
+import { logger } from '#/logger.ts'
+import type { CommandInteractionHandler } from '#/services/interactions.service.ts'
 
 /**
  * Genera un código de vinculación de sesión y lo persiste en la base de datos.

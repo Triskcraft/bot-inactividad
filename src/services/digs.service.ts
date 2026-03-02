@@ -1,10 +1,10 @@
-import { logger } from "#/logger.ts"
+import { logger } from '#/logger.ts'
 import {
     getMinecraftMembersCache,
     updateMinecraftMembersCache,
 } from '../members.cache.ts'
-import { envs } from '#config'
-import { db } from "#/prisma/database.ts"
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
