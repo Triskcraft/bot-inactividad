@@ -1,7 +1,7 @@
-import { client } from '#client'
-import { envs } from '#config'
-import { db } from '#database'
-import { logger } from '#logger'
+import { client } from '#/client.ts'
+import { envs } from '#/config.ts'
+import { db } from '#/prisma/database.ts'
+import { logger } from '#/logger.ts'
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -18,11 +18,11 @@ import {
     User,
     type SendableChannels,
 } from 'discord.js'
-import blogCreate from '../interactions/buttons/blog/blog-create.ts'
-import { PostsManager } from '../classes/posts-manager.ts'
-import { POST_STATUS } from '../prisma/generated/enums.ts'
-import type { Post } from '../classes/post.ts'
-import blogState from '../interactions/buttons/blog/blog-post.ts'
+import blogCreate from '#/interactions/buttons/blog/blog-create.ts'
+import { PostsManager } from '#/classes/posts-manager.ts'
+import { POST_STATUS } from '#/prisma/generated/enums.ts'
+import type { Post } from '#/classes/post.ts'
+import blogState from '#/interactions/buttons/blog/blog-post.ts'
 
 const PANNEL_NAME = '# 📰 **Panel de Publicaciones**'
 

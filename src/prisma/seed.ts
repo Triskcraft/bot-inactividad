@@ -1,7 +1,7 @@
 import { envs } from '#/config.ts'
 import { db } from '#/prisma/database.ts'
 import { logger } from '#/logger.ts'
-import { PrismaClientKnownRequestError } from './generated/internal/prismaNamespace.ts'
+import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
 
 try {
     const defaultRole = await db.role.create({

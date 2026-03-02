@@ -1,6 +1,6 @@
-import { db } from '#database'
+import { db } from '#/prisma/database.ts'
 import { Collection } from 'discord.js'
-import { Post } from './post.ts'
+import { Post } from '#/classes/post.ts'
 
 export class PostsManager {
     async fetch() {

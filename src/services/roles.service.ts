@@ -29,6 +29,7 @@ import { MinecraftRole } from '#/classes/minecraft-role.ts'
 import { MinecraftMember } from '#/classes/minecraft-member.ts'
 import { MinecraftRolesManager } from '#/classes/minecraft-roles-manager.ts'
 import roleBack from '#/interactions/buttons/role/role-back.ts'
+import { membersMannager } from '#/members.cache.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 

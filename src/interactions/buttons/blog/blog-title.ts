@@ -4,8 +4,8 @@ import {
     MessageFlags,
     type ButtonInteraction,
 } from 'discord.js'
-import { ButtonInteractionHandler } from '#interactions.service'
-import { blogService } from '../../../services/blog.service.ts'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
+import { blogService } from '#/services/blog.service.ts'
 
 export default class extends ButtonInteractionHandler<'id'> {
     override regex = /^blog:title:(?<id>\d+)$/

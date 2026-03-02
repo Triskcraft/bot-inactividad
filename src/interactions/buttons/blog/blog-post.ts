@@ -4,9 +4,9 @@ import {
     MessageFlags,
     type ButtonInteraction,
 } from 'discord.js'
-import { ButtonInteractionHandler } from '#interactions.service'
-import { blogService } from '../../../services/blog.service.ts'
-import { POST_STATUS } from '../../../prisma/generated/enums.ts'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
+import { blogService } from '#/services/blog.service.ts'
+import { POST_STATUS } from '#/prisma/generated/enums.ts'
 
 export default class extends ButtonInteractionHandler<'id'> {
     override regex = /^blog:post:(?<id>\d+)$/

@@ -4,9 +4,9 @@ import {
     MessageFlags,
     type ButtonInteraction,
 } from 'discord.js'
-import { ButtonInteractionHandler } from '#interactions.service'
-import blogCreate from '../../modals/blog-create.ts'
-import { blogService } from '../../../services/blog.service.ts'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
+import blogCreate from '#/interactions/modals/blog-create.ts'
+import { blogService } from '#/services/blog.service.ts'
 
 export default class extends ButtonInteractionHandler {
     override regex = /^blog:create$/

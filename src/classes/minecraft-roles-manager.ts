@@ -1,7 +1,8 @@
 import { db } from '#/prisma/database.ts'
 import { Collection } from 'discord.js'
-import { MinecraftMember } from './minecraft-member.ts'
-import { MinecraftRole } from './minecraft-role.ts'
+import { MinecraftMember } from '#/classes/minecraft-member.ts'
+import { MinecraftRole } from '#/classes/minecraft-role.ts'
+import { membersMannager } from '#/members.cache.ts'
 
 export class MinecraftRolesManager {
     async fetch() {

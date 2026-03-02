@@ -2,7 +2,7 @@ import { DateTime } from 'luxon'
 import { Collection, TextChannel } from 'discord.js'
 import { logger } from '#/logger.ts'
 import type { InactivityService } from '#/services/inactivity.service.ts'
-import type { MonitoredService } from './monitored.service.ts'
+import type { MonitoredService } from '#/services/monitored.service.ts'
 import { envs } from '#/config.ts'
 import { client } from '#/client.ts'
 

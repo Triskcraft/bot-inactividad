@@ -1,6 +1,6 @@
-import { db } from '#database'
+import { db } from '#/prisma/database.ts'
 import { Collection } from 'discord.js'
-import { MinecraftMember } from './minecraft-member.ts'
+import { MinecraftMember } from '#/classes/minecraft-member.ts'
 
 export class MinecraftMembersManager {
     async fetch() {

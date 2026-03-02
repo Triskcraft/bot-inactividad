@@ -1,21 +1,21 @@
-import './utils/polifill.ts'
-import { app } from './api/server.ts'
-import { client } from './client.ts'
-import { envs } from './config.ts'
+import '#/utils/polifill.ts'
+import { app } from '#/api/server.ts'
+import { client } from '#/client.ts'
+import { envs } from '#/config.ts'
 import { logger } from '#/logger.ts'
 import { db } from '#/prisma/database.ts'
 import { inactivityService } from '#/services/inactivity.service.ts'
 import { interactionService } from '#/services/interactions.service.ts'
-import { deployWebhookPanel } from './services/webhook.service.ts'
+import { deployWebhookPanel } from '#/services/webhook.service.ts'
 import {
     initializeRankService,
     unregisterRankService,
-} from './services/rank.service.ts'
-import { monitoredService } from './services/monitored.service.ts'
-import { Scheduler } from './services/scheduler.ts'
-import { startDigsService, stopDigsService } from './services/digs.service.ts'
-import { roleService } from './services/roles.service.ts'
-import { blogService } from './services/blog.service.ts'
+} from '#/services/rank.service.ts'
+import { monitoredService } from '#/services/monitored.service.ts'
+import { Scheduler } from '#/services/scheduler.ts'
+import { startDigsService, stopDigsService } from '#/services/digs.service.ts'
+import { roleService } from '#/services/roles.service.ts'
+import { blogService } from '#/services/blog.service.ts'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente

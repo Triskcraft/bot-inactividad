@@ -4,7 +4,11 @@ import type { NextFunction, Request, Response } from 'express'
 import { jwtVerify } from 'jose'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { decrypt } from '#/utils/encript.ts'
-import { BadRequestError, ForbiddenError, UnauthorizedError } from './errors.ts'
+import {
+    BadRequestError,
+    ForbiddenError,
+    UnauthorizedError,
+} from '#/api/errors.ts'
 
 const MAX_DRIFT_MS = 15_000
 

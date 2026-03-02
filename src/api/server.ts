@@ -1,9 +1,9 @@
 import Express, { type ErrorRequestHandler } from 'express'
 import cors from 'cors'
-import v1 from './v1/route.ts'
-import webhooks from './webhooks/route.ts'
-import { AppError } from './errors.ts'
-import { logger } from "#/logger.ts"
+import v1 from '#/api/v1/route.ts'
+import webhooks from '#/api/webhooks/route.ts'
+import { AppError } from '#/api/errors.ts'
+import { logger } from '#/logger.ts'
 
 /**
  * Servidor HTTP mínimo que expone endpoints de lectura para integraciones

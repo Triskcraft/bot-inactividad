@@ -5,8 +5,8 @@ import {
     TextInputStyle,
     type ModalSubmitInteraction,
 } from 'discord.js'
-import { ModalInteractionHandler } from '#interactions.service'
-import { blogService } from '../../services/blog.service.ts'
+import { ModalInteractionHandler } from '#/services/interactions.service.ts'
+import { blogService } from '#/services/blog.service.ts'
 
 export default class extends ModalInteractionHandler {
     override regex = /^blog:create$/
