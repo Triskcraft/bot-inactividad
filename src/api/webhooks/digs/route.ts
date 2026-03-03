@@ -1,8 +1,9 @@
-import { db } from '#database'
+import { db } from '#/prisma/database.ts'
 import { Router } from 'express'
-import { PrismaClientKnownRequestError } from '../../../prisma/generated/internal/prismaNamespace.ts'
+import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
 import z from 'zod'
-import { logger } from '#logger'
+import { logger } from '#/logger.ts'
+import { BadRequestError } from '#/api/errors.ts'
 
 const router = Router()
 
@@ -34,9 +35,7 @@ router.post('/', async (req, res) => {
     try {
         jsonbody = JSON.parse(req.body.toString('utf-8'))
     } catch {
-        return res.status(400).send({
-            error: 'Invalid JSON',
-        })
+        throw new BadRequestError('Invalid JSON')
     }
     const parsedBody = reqSchema.safeParse(jsonbody)
     if (!parsedBody.success) {
@@ -63,7 +62,7 @@ setInterval(async () => {
     for (const [identifier, { kind, digs }] of copy) {
         if (digs < 0) continue
         try {
-            await db.minecraftUser.update({
+            await db.minecraftPlayer.update({
                 where:
                     kind === 'uuid' ?
                         { uuid: identifier }

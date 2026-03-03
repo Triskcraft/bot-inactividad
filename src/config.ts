@@ -1,7 +1,9 @@
+import { logger } from "#/logger.ts"
+
 try {
     process.loadEnvFile()
 } catch {
-    console.error('No existe .env')
+    logger.error('No existe .env')
 }
 
 export interface BotConfig {
@@ -28,6 +30,9 @@ export function loadConfig() {
         'PANEL_CHANNEL_ID',
         'ENCRYPT_KEY',
         'JWT_SECRERT',
+        'DIGS_STATS_DIR',
+        'BLOG_CHANNEL_ID',
+        'BLOG_ROLE_ID',
     ]
 
     const recomended = [
@@ -35,6 +40,9 @@ export function loadConfig() {
         'DEPLOY_INACTIVITY_PANEL',
         'API_PORT',
         'NODE_ENV',
+        'DEFAULT_ROLE_NAME',
+        'DEFAULT_ROLE_ID',
+        'DEFAULT_RANK',
     ]
 
     const {
@@ -46,16 +54,30 @@ export function loadConfig() {
         PANEL_CHANNEL_ID = '',
         ENCRYPT_KEY = '',
         JWT_SECRERT = '',
+        DIGS_STATS_DIR = '',
+        DEFAULT_ROLE_NAME = 'Digger',
+        DEFAULT_ROLE_ID = '',
+        DEFAULT_RANK = 'Miembro',
+        BLOG_CHANNEL_ID = '',
+        BLOG_ROLE_ID = '',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
     if (recommendedMissing.length > 0) {
-        console.warn(
-            `Variables de entorno recomendadas establecidas a un valor por defecto\nSe recomienda establecer las siguientes variables:`,
+        logger.warn(
+            `Variables de entorno recomendadas establecidas a un valor por defecto`,
         )
+        let text = `Se recomienda establecer las siguientes variables:`
         for (const key of recommendedMissing) {
-            console.log(`${key}="${eval(key)}"`)
+            text += `\n${key}="${eval(key)}"`
         }
+        logger.warn(text)
+    }
+
+    if (!DEFAULT_ROLE_ID) {
+        logger.error('DEFAULT_ROLE_ID no establecido')
+        logger.error('Podria causar comportamientos inesperados en el programa')
+        logger.error('Ejecute `prisma db seed` para generar el id')
     }
 
     const requiredMissing = required.filter(key => !process.env[key])
@@ -83,6 +105,12 @@ export function loadConfig() {
         PANEL_CHANNEL_ID,
         ENCRYPT_KEY: Buffer.from(ENCRYPT_KEY, 'base64'),
         JWT_SECRERT: new TextEncoder().encode(JWT_SECRERT),
+        DIGS_STATS_DIR,
+        DEFAULT_ROLE_NAME,
+        DEFAULT_ROLE_ID,
+        DEFAULT_RANK,
+        BLOG_CHANNEL_ID,
+        BLOG_ROLE_ID,
     }
 }
 

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getMembers } from './get.ts'
+import { getMembers } from '#/api/v1/members/get.ts'
 
 const router = Router()
 

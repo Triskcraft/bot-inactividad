@@ -1,10 +1,10 @@
-import { db } from '../prisma/database.ts'
+import { db } from "#/prisma/database.ts"
 import { Temporal } from '@js-temporal/polyfill'
 
 /**
  * Gestiona los roles que los administradores desean monitorear.
  */
-export class RoleService {
+export class MonitoredService {
     async addRole(guild_id: string, role_id: string) {
         // Se usa upsert implícito manejando colisión mediante catch.
         await db.trackedRole
@@ -54,4 +54,4 @@ export class RoleService {
     }
 }
 
-export const roleService = new RoleService()
+export const monitoredService = new MonitoredService()

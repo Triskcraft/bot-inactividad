@@ -6,13 +6,13 @@ import {
     TextInputStyle,
     type ButtonInteraction,
 } from 'discord.js'
-import { inactivityService } from '#inactivity.service'
-import { formatForUser } from '../../utils/time.ts'
-import type { ButtonInteractionHandler } from '#interactions.service'
+import { inactivityService } from '#/services/inactivity.service.ts'
+import { formatForUser } from '#/utils/time.ts'
+import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
 
-export default class implements ButtonInteractionHandler {
-    regex = /^inactivity:.*/
-    async run(interaction: ButtonInteraction<'cached'>) {
+export default class extends ButtonInteractionHandler {
+    override regex = /^inactivity:.*/
+    override async run(interaction: ButtonInteraction<'cached'>) {
         switch (interaction.customId) {
             case 'inactivity:set':
             case 'inactivity:edit': {

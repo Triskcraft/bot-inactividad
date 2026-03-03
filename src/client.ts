@@ -1,8 +1,7 @@
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js'
-import { envs } from './config.ts'
-import { registerCommands } from './interactions/commands.ts'
-import { logger } from '#logger'
-
+import { envs } from '#/config.ts'
+import { registerCommands } from '#/interactions/commands.ts'
+import { logger } from '#/logger.ts'
 /**
  * Configuración del cliente de Discord. Se habilitan los intents y partials
  * necesarios para escuchar eventos de miembros, mensajes y reacciones aun
@@ -14,6 +13,7 @@ const bot = new Client<true>({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.MessageContent,
     ],
     partials: [
         Partials.GuildMember,

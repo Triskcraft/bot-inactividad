@@ -1,23 +1,62 @@
-import { logger } from '#logger'
-import { client } from '../client.ts'
+import { logger } from '#/logger.ts'
+import { client } from '#/client.ts'
 import {
+    ButtonBuilder,
     ButtonInteraction,
     ChatInputCommandInteraction,
     Events,
     MessageFlags,
     ModalBuilder,
     ModalSubmitInteraction,
+    StringSelectMenuBuilder,
+    StringSelectMenuInteraction,
 } from 'discord.js'
 import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { CustomIdParser } from '#/utils/format.ts'
 
-export interface ButtonInteractionHandler {
-    regex: RegExp
-    run(interaction: ButtonInteraction<'cached'>): Promise<unknown>
+export abstract class ButtonInteractionHandler<K extends string = ''> {
+    regex: RegExp = /\\/
+    async run(interaction: ButtonInteraction<'cached'>): Promise<unknown> {
+        return await interaction.reply({
+            content: 'not implemented',
+            flags: MessageFlags.Ephemeral,
+        })
+    }
+    static async build(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        params: Record<string, unknown> = {},
+    ): Promise<ButtonBuilder> {
+        return new ButtonBuilder()
+    }
+    parser(customId: string) {
+        return new CustomIdParser<K>(this.regex, customId)
+    }
 }
 
-export abstract class ModalInteractionHandler {
+export abstract class StringMenuHandler<K extends string = ''> {
+    regex: RegExp = /\\/
+    async run(
+        interaction: StringSelectMenuInteraction<'cached'>,
+    ): Promise<unknown> {
+        return await interaction.reply({
+            content: 'not implemented',
+            flags: MessageFlags.Ephemeral,
+        })
+    }
+    static async build(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        params: Record<string, unknown> = {},
+    ): Promise<StringSelectMenuBuilder> {
+        return new StringSelectMenuBuilder()
+    }
+    parser(customId: string) {
+        return new CustomIdParser<K>(this.regex, customId)
+    }
+}
+
+export abstract class ModalInteractionHandler<K extends string = ''> {
     regex: RegExp = /\\/
     async run(interaction: ModalSubmitInteraction<'cached'>): Promise<unknown> {
         return await interaction.reply({
@@ -31,6 +70,9 @@ export abstract class ModalInteractionHandler {
     ): Promise<ModalBuilder> {
         return new ModalBuilder()
     }
+    parser(customId: string) {
+        return new CustomIdParser<K>(this.regex, customId)
+    }
 }
 
 export interface CommandInteractionHandler {
@@ -41,12 +83,14 @@ export interface CommandInteractionHandler {
 class InteractionService {
     buttonsCache = new Set<ButtonInteractionHandler>()
     modalsCache = new Set<ModalInteractionHandler>()
+    stringMenuCache = new Set<StringMenuHandler>()
     commandsCache = new Set<CommandInteractionHandler>()
 
     async registerInteractionHandlers() {
         await this.loadButtons()
         await this.loadCommands()
         await this.loadModals()
+        await this.loadStringMenu()
 
         client.on(Events.InteractionCreate, async interaction => {
             try {
@@ -56,6 +100,8 @@ class InteractionService {
                     await this.handleModal(interaction)
                 } else if (interaction.isChatInputCommand()) {
                     await this.handleCommand(interaction)
+                } else if (interaction.isStringSelectMenu()) {
+                    await this.handleStringMenu(interaction)
                 }
             } catch (error) {
                 logger.error(
@@ -88,8 +134,14 @@ class InteractionService {
     async loadButtons() {
         const dir = join(process.cwd(), 'src', 'interactions', 'buttons')
 
-        for (const filename of await readdir(dir)) {
-            const filePath = pathToFileURL(join(dir, filename)).href
+        for (const file of await readdir(dir, {
+            recursive: true,
+            withFileTypes: true,
+        })) {
+            if (!file.isFile()) continue
+            const filePath = pathToFileURL(
+                join(file.parentPath, file.name),
+            ).href
 
             const { default: Handler } = (await import(filePath)) as {
                 default: { new (): ButtonInteractionHandler }
@@ -120,6 +172,20 @@ class InteractionService {
             }
 
             interactionService.modalsCache.add(new Handler())
+        }
+    }
+
+    async loadStringMenu() {
+        const dir = join(process.cwd(), 'src', 'interactions', 'stringMenu')
+
+        for (const filename of await readdir(dir)) {
+            const filePath = pathToFileURL(join(dir, filename)).href
+
+            const { default: Handler } = (await import(filePath)) as {
+                default: { new (): StringMenuHandler }
+            }
+
+            interactionService.stringMenuCache.add(new Handler())
         }
     }
 
@@ -158,6 +224,15 @@ class InteractionService {
         if (!interaction.inCachedGuild()) return
         for (const handler of interactionService.commandsCache) {
             if (handler.name === interaction.commandName) {
+                await handler.run(interaction)
+            }
+        }
+    }
+
+    async handleStringMenu(interaction: StringSelectMenuInteraction) {
+        if (!interaction.inCachedGuild()) return
+        for (const handler of interactionService.stringMenuCache) {
+            if (handler.regex.exec(interaction.customId)) {
                 await handler.run(interaction)
             }
         }

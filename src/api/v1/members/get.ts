@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { db } from '#database'
+import { db } from "#/prisma/database.ts"
 
 /**
  * Endpoint que entrega el listado de miembros combinando la whitelist de
@@ -9,7 +9,7 @@ import { db } from '#database'
  */
 
 export async function getMembers(req: Request, res: Response) {
-    const members = await db.minecraftUser.findMany({
+    const members = await db.minecraftPlayer.findMany({
         include: {
             medias: {
                 select: {

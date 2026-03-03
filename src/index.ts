@@ -1,17 +1,21 @@
-import { app } from './api/server.ts'
-import { client } from './client.ts'
-import { envs } from './config.ts'
-import { logger } from '#logger'
-import { db } from './prisma/database.ts'
-import { inactivityService } from '#inactivity.service'
-import { interactionService } from '#interactions.service'
-import { deployAdminPanel } from './services/panel.service.ts'
+import '#/utils/polifill.ts'
+import { app } from '#/api/server.ts'
+import { client } from '#/client.ts'
+import { envs } from '#/config.ts'
+import { logger } from '#/logger.ts'
+import { db } from '#/prisma/database.ts'
+import { inactivityService } from '#/services/inactivity.service.ts'
+import { interactionService } from '#/services/interactions.service.ts'
+import { deployWebhookPanel } from '#/services/webhook.service.ts'
 import {
     initializeRankService,
     unregisterRankService,
-} from './services/rank.service.ts'
-import { roleService } from '#role.service'
-import { Scheduler } from './services/scheduler.ts'
+} from '#/services/rank.service.ts'
+import { monitoredService } from '#/services/monitored.service.ts'
+import { Scheduler } from '#/services/scheduler.ts'
+import { startDigsService, stopDigsService } from '#/services/digs.service.ts'
+import { roleService } from '#/services/roles.service.ts'
+import { blogService } from '#/services/blog.service.ts'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente
@@ -21,6 +25,7 @@ async function shutdown(signal: string) {
     logger.info({ signal }, 'Cerrando bot')
     scheduler.stop()
     unregisterRankService()
+    stopDigsService()
     await client.destroy()
     await db.$disconnect()
     process.exit(0)
@@ -42,7 +47,7 @@ app.listen(envs.API_PORT, async () => {
  * Los servicios principales se comparten en todo el proyecto para permitir
  * coordinación entre las interacciones de Discord y la API HTTP.
  */
-const scheduler = new Scheduler(inactivityService, roleService)
+const scheduler = new Scheduler(inactivityService, monitoredService)
 await interactionService.registerInteractionHandlers()
 
 if (envs.DEPLOY_INACTIVITY_PANEL) {
@@ -51,7 +56,10 @@ if (envs.DEPLOY_INACTIVITY_PANEL) {
 } else {
     logger.info('Saltando el despliegue del panel de inactividad')
 }
-await deployAdminPanel()
+await deployWebhookPanel()
 initializeRankService()
 // Activa los jobs programados que mantienen el sistema actualizado.
 scheduler.start()
+startDigsService()
+roleService.start()
+blogService.start()

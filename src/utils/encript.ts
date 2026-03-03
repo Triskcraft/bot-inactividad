@@ -1,4 +1,4 @@
-import { envs } from '#config'
+import { envs } from '#/config.ts'
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 
 const ALGO = 'aes-256-gcm'

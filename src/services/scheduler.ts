@@ -1,22 +1,22 @@
 import { DateTime } from 'luxon'
 import { Collection, TextChannel } from 'discord.js'
-import { logger } from '#logger'
-import type { InactivityService } from '#inactivity.service'
-import type { RoleService } from '#role.service'
-import { envs } from '#config'
-import { client } from '#client'
+import { logger } from '#/logger.ts'
+import type { InactivityService } from '#/services/inactivity.service.ts'
+import type { MonitoredService } from '#/services/monitored.service.ts'
+import { envs } from '#/config.ts'
+import { client } from '#/client.ts'
 
 /**
  * Administra tareas recurrentes del bot.
  */
 export class Scheduler {
     inactivityService: InactivityService
-    roleService: RoleService
+    roleService: MonitoredService
     intervals: Collection<string, NodeJS.Timeout>
 
     constructor(
         inactivityService: InactivityService,
-        roleService: RoleService,
+        roleService: MonitoredService,
     ) {
         this.inactivityService = inactivityService
         this.roleService = roleService

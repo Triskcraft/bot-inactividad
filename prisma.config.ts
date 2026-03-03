@@ -11,4 +11,8 @@ export default defineConfig({
     datasource: {
         url: process.env.DATABASE_PATH!,
     },
+
+    migrations: {
+        seed: 'node src/prisma/seed.ts',
+    },
 })

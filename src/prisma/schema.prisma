@@ -79,8 +79,8 @@ model LinkedRole {
     mc_user_uuid String
     role_id      String
 
-    role           Role          @relation(fields: [role_id], references: [id])
-    minecraft_user MinecraftUser @relation(fields: [mc_user_uuid], references: [uuid])
+    role             Role            @relation(fields: [role_id], references: [id])
+    minecraft_player MinecraftPlayer @relation(fields: [mc_user_uuid], references: [uuid])
 
     @@id([mc_user_uuid, role_id])
     @@map("linked_roles")
@@ -93,14 +93,14 @@ model Media {
     type         String
     url          String
 
-    minecraft_user MinecraftUser @relation(fields: [mc_user_uuid], references: [uuid])
+    minecraft_player MinecraftPlayer @relation(fields: [mc_user_uuid], references: [uuid])
 
     @@unique([mc_user_uuid, type])
     @@map("medias")
 }
 
 /// Información de jugador de Minecraft enlazada con su usuario de Discord.
-model MinecraftUser {
+model MinecraftPlayer {
     uuid            String @id
     nickname        String @unique
     digs            Int    @default(0)
@@ -111,6 +111,7 @@ model MinecraftUser {
     discord_user DiscordUser  @relation(fields: [discord_user_id], references: [id])
     linked_roles LinkedRole[]
     medias       Media[]
+    posts        Post[]
 
     @@map("minecraft_users")
 }
@@ -120,10 +121,12 @@ model DiscordUser {
     id       String @id
     username String @unique
 
-    inactivityPeriods InactivityPeriod[]
-    minecraftUser     MinecraftUser?
-    linkCode          LinkCode?
-    webhookTokens     WebhookToken[]
+    inactivity_periods InactivityPeriod[]
+    minecraft_player   MinecraftPlayer?
+    link_code          LinkCode?
+    webhook_tokens     WebhookToken[]
+    posts              Post[]
+    post_blocks        PostBlocks[]
 
     @@map("discord_users")
 }
@@ -148,4 +151,43 @@ model State {
     updated_at DateTime @updatedAt
 
     @@map("states")
+}
+
+enum POST_STATUS {
+    DRAFT
+    PUBLISHED
+    OUTDATED
+}
+
+model Post {
+    id                    String      @id @default(dbgenerated("snowflake()"))
+    title                 String      @unique
+    discord_user_id       String
+    minecraft_player_uuid String?
+    thread_id             String
+    status                POST_STATUS @default(DRAFT)
+    created_at            DateTime    @default(now())
+    updated_at            DateTime    @updatedAt
+
+    discord_user     DiscordUser      @relation(fields: [discord_user_id], references: [id])
+    minecraft_player MinecraftPlayer? @relation(fields: [minecraft_player_uuid], references: [uuid])
+    post_blocks      PostBlocks[]
+
+    @@map("posts")
+}
+
+model PostBlocks {
+    message_id  String   @id
+    post_id     String
+    timestamp   DateTime
+    content     String?
+    components  Json[]   @default([])
+    embeds      Json[]   @default([])
+    attachments Json[]   @default([])
+    author_id   String
+
+    author DiscordUser @relation(fields: [author_id], references: [id])
+    post   Post        @relation(fields: [post_id], references: [id])
+
+    @@map("post_blocks")
 }
