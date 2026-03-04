@@ -17,7 +17,7 @@ export class MinecraftMembersManager {
                 m.uuid,
                 new MinecraftMember({
                     discord_user_id: m.discord_user_id,
-                    nickname: m.discord_user_id,
+                    nickname: m.nickname,
                     uuid: m.uuid,
                     rank: m.rank,
                 }),

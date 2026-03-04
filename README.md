@@ -21,6 +21,17 @@ de Prisma y expone una pequeña API HTTP para datos del servidor.
 - **Configuración con toggles**: variables para decidir si se publican comandos
   o el panel en cada arranque, útil para entornos CI/CD.
 
+
+## Documentación detallada
+
+Además de esta guía rápida, la documentación funcional y de arquitectura está en `docs/`:
+
+- `docs/01-arquitectura-general.md`
+- `docs/02-webhooks-y-seguridad.md`
+- `docs/03-sistema-posts-blog.md`
+- `docs/04-inactividad-y-estadisticas.md`
+- `docs/05-mapa-de-archivos.md`
+
 ## Requisitos
 
 - Node.js **22.21+** (coincide con `engines` en `package.json`).
