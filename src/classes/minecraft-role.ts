@@ -67,7 +67,7 @@ export class MinecraftRole {
                     minecraft_player.uuid,
                     new MinecraftMember({
                         discord_user_id: minecraft_player.discord_user_id,
-                        nickname: minecraft_player.discord_user_id,
+                        nickname: minecraft_player.nickname,
                         uuid: minecraft_player.uuid,
                         rank: minecraft_player.rank,
                     }),
