@@ -55,7 +55,7 @@ export default class extends ButtonInteractionHandler<'id'> {
         return new ButtonBuilder()
             .setLabel('Publicar')
             .setStyle(ButtonStyle.Primary)
-            .setDisabled(status !== POST_STATUS.PUBLISHED)
+            .setDisabled(status === POST_STATUS.PUBLISHED)
             .setCustomId('blog:post:' + id)
     }
 }
