@@ -15,6 +15,7 @@ Este módulo convierte Discord en un flujo editorial simple:
 - **`src/classes/post.ts`**: entidad de publicación y transiciones de estado.
 - **`src/classes/posts-manager.ts`**: cache y acceso a posts.
 - **Interacciones `blog/*`**: botones/modales para crear y cambiar estado.
+- **ruta `src/api/v1/posts/*`**: ruta de consulta de los posts.
 
 ## Estado de un post
 
@@ -47,6 +48,7 @@ Este módulo convierte Discord en un flujo editorial simple:
 2. Reescribe `post_blocks` con el contenido actual.
 3. Cambia estado a `PUBLISHED`.
 4. Actualiza tarjeta de estado en el mensaje principal.
+5. Quedan listos para consultar en `/v1/posts`.
 
 ## 4) Desactualizar automáticamente
 

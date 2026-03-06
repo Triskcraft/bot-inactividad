@@ -44,6 +44,8 @@
 - `src/api/v1/route.ts`: agregador de rutas v1.
 - `src/api/v1/members/route.ts`: router de `/v1/members`.
 - `src/api/v1/members/get.ts`: handler de listado enriquecido de miembros.
+- `src/api/v1/posts/route.ts`: router de `/v1/posts`.
+- `src/api/v1/posts/get.ts`: handler de listado enriquecido de posts.
 - `src/api/webhooks/route.ts`: agregador de rutas webhook.
 - `src/api/webhooks/digs/route.ts`: webhook para actualizar `digs`.
 - `src/api/webhooks/link/route.ts`: webhook para vinculación Discord↔Minecraft.
