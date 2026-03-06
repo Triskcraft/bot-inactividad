@@ -98,9 +98,14 @@ class BlogService {
         id?: string
         status?: POST_STATUS
     }) {
+        const statusText = {
+            [POST_STATUS.DRAFT]: 'Draft',
+            [POST_STATUS.OUTDATED]: 'Outdated',
+            [POST_STATUS.PUBLISHED]: 'Published',
+        }
         const container = new ContainerBuilder().addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `# ${title}\nAutor: ${user}\nEstado: Draft`,
+                `# ${title}\nAutor: ${user}\nEstado: ${statusText[status]}`,
             ),
         )
         if (id) {
