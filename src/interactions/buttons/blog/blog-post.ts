@@ -42,6 +42,7 @@ export default class extends ButtonInteractionHandler<'id'> {
                 content: `Este post no te pertenece`,
             })
         }
+        await interaction.deferUpdate()
         await blogService.publish(post)
     }
 
