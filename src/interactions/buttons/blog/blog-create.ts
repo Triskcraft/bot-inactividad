@@ -5,7 +5,7 @@ import {
     type ButtonInteraction,
 } from 'discord.js'
 import { ButtonInteractionHandler } from '#/services/interactions.service.ts'
-import blogCreate from '#/interactions/modals/blog-create.ts'
+import blogCreate from '#/interactions/modals/blog/blog-create.ts'
 import { blogService } from '#/services/blog.service.ts'
 
 export default class extends ButtonInteractionHandler {

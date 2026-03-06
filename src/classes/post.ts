@@ -118,4 +118,17 @@ export class Post {
 
         return this
     }
+
+    async changueTitle(title: string) {
+        await db.post.update({
+            where: {
+                id: this.#id,
+            },
+            data: {
+                title,
+            },
+        })
+        this.#title = title
+        return this
+    }
 }
