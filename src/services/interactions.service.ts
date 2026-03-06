@@ -164,8 +164,14 @@ class InteractionService {
     async loadModals() {
         const dir = join(process.cwd(), 'src', 'interactions', 'modals')
 
-        for (const filename of await readdir(dir)) {
-            const filePath = pathToFileURL(join(dir, filename)).href
+        for (const file of await readdir(dir, {
+            recursive: true,
+            withFileTypes: true,
+        })) {
+            if (!file.isFile()) continue
+            const filePath = pathToFileURL(
+                join(file.parentPath, file.name),
+            ).href
 
             const { default: Handler } = (await import(filePath)) as {
                 default: { new (): ModalInteractionHandler }
