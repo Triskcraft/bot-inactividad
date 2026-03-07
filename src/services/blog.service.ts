@@ -23,6 +23,7 @@ import { PostsManager } from '#/classes/posts-manager.ts'
 import { POST_STATUS } from '#/prisma/generated/enums.ts'
 import type { Post } from '#/classes/post.ts'
 import blogState from '#/interactions/buttons/blog/blog-post.ts'
+import blogTitle from '#/interactions/buttons/blog/blog-title.ts'
 
 const PANNEL_NAME = '# 📰 **Panel de Publicaciones**'
 
@@ -106,6 +107,7 @@ class BlogService {
             container.addActionRowComponents(
                 new ActionRowBuilder<ButtonBuilder>().addComponents(
                     await blogState.build({ id, status }),
+                    await blogTitle.build({ id }),
                 ),
             )
         }
@@ -351,6 +353,37 @@ class BlogService {
                 }),
             ],
         })
+    }
+
+    async changueTitle(post: Post, title: string) {
+        await post.changueTitle(title)
+        const user =
+            client.users.cache.get(post.discord_user_id) ??
+            (await client.users.fetch(post.discord_user_id))
+        const message =
+            this.#channel?.messages.cache.get(post.thread_id) ??
+            (await this.#channel?.messages.fetch(post.thread_id))
+        if (message) {
+            await message.edit({
+                flags: MessageFlags.IsComponentsV2,
+                components: [
+                    await this.#buildMessagePannel({
+                        user,
+                        title,
+                        id: post.id,
+                        status: post.status,
+                    }),
+                ],
+            })
+        }
+        const thread =
+            client.channels.cache.get(post.thread_id) ??
+            (await client.channels.fetch(post.thread_id))
+        if (thread && thread.isThread()) {
+            await thread.edit({
+                name: title,
+            })
+        }
     }
 }
 
