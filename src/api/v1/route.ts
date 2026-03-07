@@ -5,6 +5,6 @@ import posts from '#/api/v1/posts/route.ts'
 const router = Router()
 
 router.use('/members', members)
-router.use('/members', posts)
+router.use('/posts', posts)
 
 export default router
