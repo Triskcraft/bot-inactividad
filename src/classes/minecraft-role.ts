@@ -5,7 +5,9 @@ import { envs } from '#/config.ts'
 import { MinecraftMember } from '#/classes/minecraft-member.ts'
 import { Collection } from 'discord.js'
 import { membersMannager } from '#/members.cache.ts'
+import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
 
+type UUID = string
 export class MinecraftRole {
     #id: string
 
@@ -19,7 +21,7 @@ export class MinecraftRole {
         return this.#name
     }
 
-    #players: Collection<string, MinecraftMember>
+    #players: Collection<UUID, MinecraftMember>
 
     get players() {
         return this.#players
@@ -32,7 +34,7 @@ export class MinecraftRole {
     }: {
         id: string
         name: string
-        players?: Collection<string, MinecraftMember>
+        players?: Collection<UUID, MinecraftMember>
     }) {
         this.#id = id
         this.#name = name
@@ -108,33 +110,81 @@ export class MinecraftRole {
     }
 
     async addPlayer(uuid: string) {
-        const {
-            minecraft_player: { discord_user_id, nickname, rank },
-        } = await db.linkedRole.create({
-            data: {
-                role: {
-                    connect: {
-                        id: this.#id,
+        try {
+            const {
+                minecraft_player: { discord_user_id, nickname, rank },
+            } = await db.linkedRole.create({
+                data: {
+                    role: {
+                        connect: {
+                            id: this.#id,
+                        },
+                    },
+                    minecraft_player: {
+                        connect: {
+                            uuid: uuid,
+                        },
                     },
                 },
-                minecraft_player: {
-                    connect: {
-                        uuid: uuid,
+                select: {
+                    minecraft_player: true,
+                },
+            })
+            const newMember = new MinecraftMember({
+                discord_user_id,
+                nickname,
+                uuid,
+                rank,
+            })
+            this.#players.set(uuid, newMember)
+            membersMannager.cache.set(uuid, newMember)
+            logger.info(
+                `[ROLE SERVICE] Rol ${this.#name} agregado a ${nickname}`,
+            )
+        } catch (e) {
+            if (
+                e instanceof PrismaClientKnownRequestError &&
+                e.code === 'P2002'
+            ) {
+                await this.fetch()
+            } else {
+                logger.error(
+                    e,
+                    `[ROLE SERVICE] Error al intentar agregar el rol ${this.#name} a ${uuid}`,
+                )
+            }
+        }
+    }
+
+    async fetch() {
+        const role = await db.role.findUnique({
+            where: { id: this.#id },
+            include: {
+                linked_roles: {
+                    include: {
+                        minecraft_player: true,
                     },
                 },
-            },
-            select: {
-                minecraft_player: true,
             },
         })
-        const newMember = new MinecraftMember({
+        if (!role) return null
+        this.#id = role.id
+        this.#name = role.name
+
+        for (const {
             discord_user_id,
             nickname,
             uuid,
             rank,
-        })
-        this.#players.set(uuid, newMember)
-        membersMannager.cache.set(uuid, newMember)
-        logger.info(`[ROLE SERVICE] Rol ${this.#name} agregado a ${nickname}`)
+        } of role.linked_roles.map(l => l.minecraft_player)) {
+            this.#players.getOrInsertComputed(uuid, () => {
+                return new MinecraftMember({
+                    discord_user_id,
+                    nickname,
+                    uuid,
+                    rank,
+                })
+            })
+        }
     }
 }
