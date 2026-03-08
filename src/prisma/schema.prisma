@@ -99,14 +99,20 @@ model Media {
     @@map("medias")
 }
 
+enum PLAYER_STATUS {
+    ACTIVE
+    DELETED
+}
+
 /// Información de jugador de Minecraft enlazada con su usuario de Discord.
 model MinecraftPlayer {
-    uuid            String @id
-    nickname        String @unique
-    digs            Int    @default(0)
-    description     String @default("")
-    discord_user_id String @unique
-    rank            String @default("Miembro")
+    uuid            String        @id
+    nickname        String        @unique
+    digs            Int           @default(0)
+    description     String        @default("")
+    discord_user_id String        @unique
+    rank            String        @default("Miembro")
+    status          PLAYER_STATUS @default(ACTIVE)
 
     discord_user DiscordUser  @relation(fields: [discord_user_id], references: [id])
     linked_roles LinkedRole[]
