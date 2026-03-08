@@ -33,6 +33,15 @@ class PlayersService {
             if (!player) return
             await this.#players.delete(player.uuid)
         })
+
+        client.on(Events.GuildMemberRemove, async member => {
+            if (member.guild.id !== envs.DISCORD_GUILD_ID) return
+            const player = this.#players.cache.find(
+                p => p.discord_user_id === member.id,
+            )
+            if (!player) return
+            await this.#players.delete(player.uuid)
+        })
     }
 }
 
