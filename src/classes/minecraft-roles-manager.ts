@@ -2,7 +2,7 @@ import { db } from '#/prisma/database.ts'
 import { Collection } from 'discord.js'
 import { MinecraftMember } from '#/classes/minecraft-member.ts'
 import { MinecraftRole } from '#/classes/minecraft-role.ts'
-import { membersMannager } from '#/members.cache.ts'
+import { membersService } from '#/services/members.service.ts'
 
 export class MinecraftRolesManager {
     async fetch() {
@@ -15,7 +15,7 @@ export class MinecraftRolesManager {
                 },
             },
         })
-        const members = membersMannager.cache
+        const members = membersService.members.cache
         for (const r of roles) {
             this.#cache.set(
                 r.id,

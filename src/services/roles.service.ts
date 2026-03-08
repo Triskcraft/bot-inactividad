@@ -29,8 +29,8 @@ import { MinecraftRole } from '#/classes/minecraft-role.ts'
 import { MinecraftMember } from '#/classes/minecraft-member.ts'
 import { MinecraftRolesManager } from '#/classes/minecraft-roles-manager.ts'
 import roleBack from '#/interactions/buttons/role/role-back.ts'
-import { membersMannager } from '#/members.cache.ts'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
+import { membersService } from './members.service.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
@@ -202,7 +202,7 @@ class RoleService {
                     ),
                 )
             } else {
-                membersMannager.cache.set(
+                membersService.members.cache.set(
                     user.uuid,
                     new MinecraftMember({
                         discord_user_id: user.discord_user_id,

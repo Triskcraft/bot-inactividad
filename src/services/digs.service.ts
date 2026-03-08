@@ -3,8 +3,8 @@ import { envs } from '#/config.ts'
 import { db } from '#/prisma/database.ts'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { membersMannager } from '#/members.cache.ts'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
+import { membersService } from './members.service.ts'
 
 let interval: NodeJS.Timeout
 
@@ -24,7 +24,7 @@ type MinecraftStatsJson = {
 }
 
 async function updateDigs() {
-    for (const { uuid } of membersMannager.cache.values()) {
+    for (const { uuid } of membersService.members.cache.values()) {
         try {
             const {
                 default: { stats },

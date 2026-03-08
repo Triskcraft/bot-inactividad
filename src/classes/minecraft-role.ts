@@ -4,9 +4,9 @@ import { logger } from '#/logger.ts'
 import { envs } from '#/config.ts'
 import { MinecraftMember } from '#/classes/minecraft-member.ts'
 import { Collection } from 'discord.js'
-import { membersMannager } from '#/members.cache.ts'
 import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
+import { membersService } from '#/services/members.service.ts'
 
 type UUID = string
 export class MinecraftRole {
@@ -68,7 +68,7 @@ export class MinecraftRole {
         )) {
             this.#players.getOrInsert(
                 minecraft_player.uuid,
-                membersMannager.cache.getOrInsertComputed(
+                membersService.members.cache.getOrInsertComputed(
                     minecraft_player.uuid,
                     () => {
                         return new MinecraftMember({
@@ -139,10 +139,12 @@ export class MinecraftRole {
                     },
                 },
             })
-            const newMember = await membersMannager.fetch(uuid, { cache: true })
+            const newMember = await membersService.members.fetch(uuid, {
+                cache: true,
+            })
             if (newMember) {
                 this.#players.set(uuid, newMember)
-                membersMannager.cache.set(uuid, newMember)
+                membersService.members.cache.set(uuid, newMember)
                 logger.info(
                     `[ROLE SERVICE] Rol ${this.#name} agregado a ${nickname}`,
                 )
