@@ -198,7 +198,7 @@ class RoleService {
             if (!user) {
                 container.addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
-                        'Lo lamento, no se encontro ese jugador',
+                        'Lo lamento, no se encontró ese jugador',
                     ),
                 )
             } else {
