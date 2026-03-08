@@ -4,6 +4,7 @@ import { db } from '#/prisma/database.ts'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { membersMannager } from '#/members.cache.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 
 let interval: NodeJS.Timeout
 
@@ -38,11 +39,11 @@ async function updateDigs() {
             )
 
             await db.minecraftPlayer.update({
-                where: { uuid },
+                where: { uuid, status: PLAYER_STATUS.ACTIVE },
                 data: { digs },
             })
         } catch (error) {
-            console.error(error)
+            logger.error(error)
         }
     }
     logger.info(`[DIGS SERVICE] Updated digs`)

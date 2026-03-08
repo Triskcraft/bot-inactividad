@@ -4,6 +4,7 @@ import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prism
 import z from 'zod'
 import { logger } from '#/logger.ts'
 import { BadRequestError } from '#/api/errors.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 
 const router = Router()
 
@@ -65,8 +66,8 @@ setInterval(async () => {
             await db.minecraftPlayer.update({
                 where:
                     kind === 'uuid' ?
-                        { uuid: identifier }
-                    :   { nickname: identifier },
+                        { uuid: identifier, status: PLAYER_STATUS.ACTIVE }
+                    :   { nickname: identifier, status: PLAYER_STATUS.ACTIVE },
                 data: { digs },
             })
         } catch (error) {

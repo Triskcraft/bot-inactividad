@@ -30,6 +30,7 @@ import { MinecraftMember } from '#/classes/minecraft-member.ts'
 import { MinecraftRolesManager } from '#/classes/minecraft-roles-manager.ts'
 import roleBack from '#/interactions/buttons/role/role-back.ts'
 import { membersMannager } from '#/members.cache.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
@@ -65,6 +66,7 @@ class RoleService {
                 linked_roles: {
                     none: {},
                 },
+                status: PLAYER_STATUS.ACTIVE,
             },
             select: {
                 uuid: true,
@@ -190,7 +192,7 @@ class RoleService {
         )
         if (selected) {
             const user = await db.minecraftPlayer.findFirst({
-                where: { uuid: selected },
+                where: { uuid: selected, status: PLAYER_STATUS.ACTIVE },
                 include: { linked_roles: { select: { role: true } } },
             })
             if (!user) {

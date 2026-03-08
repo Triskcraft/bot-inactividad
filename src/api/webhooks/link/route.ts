@@ -9,6 +9,7 @@ import {
     InternalServerError,
     NotFoundError,
 } from '#/api/errors.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 
 const router = Router()
 
@@ -73,6 +74,7 @@ router.post('/', async (req, res) => {
                     },
                     rank: getRank([...discordMember.roles.cache.values()]),
                     nickname,
+                    status: PLAYER_STATUS.ACTIVE,
                 },
                 select: {
                     uuid: true,
