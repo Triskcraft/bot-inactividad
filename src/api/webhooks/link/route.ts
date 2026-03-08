@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
     }
 
     const discordMember = await client.guilds.cache
-        .get(envs.guildId)!
+        .get(envs.DISCORD_GUILD_ID)!
         .members.fetch(codedb.discord_id)
 
     if (!discordMember) {

@@ -110,7 +110,7 @@ export class Scheduler {
      * rol monitoreado, útil para estadísticas y seguimiento histórico.
      */
     async captureSnapshots() {
-        const guild = await client.guilds.fetch(envs.guildId as string)
+        const guild = await client.guilds.fetch(envs.DISCORD_GUILD_ID as string)
         const trackedRoles = await this.roleService.listRoles(guild.id)
         const now = DateTime.utc()
         const inactivityRecords = await this.inactivityService.listInactivities(

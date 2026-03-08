@@ -2,11 +2,11 @@ import { db } from '#/prisma/database.ts'
 import { inspect } from 'node:util'
 import { logger } from '#/logger.ts'
 import { envs } from '#/config.ts'
-import { MinecraftMember } from '#/classes/minecraft-member.ts'
+import { Player } from '#/classes/player.ts'
 import { Collection } from 'discord.js'
 import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
-import { membersService } from '#/services/members.service.ts'
+import { playersService } from '#/services/members.service.ts'
 
 type UUID = string
 export class MinecraftRole {
@@ -22,7 +22,7 @@ export class MinecraftRole {
         return this.#name
     }
 
-    #players: Collection<UUID, MinecraftMember>
+    #players: Collection<UUID, Player>
 
     get players() {
         return this.#players
@@ -35,7 +35,7 @@ export class MinecraftRole {
     }: {
         id: string
         name: string
-        players?: Collection<UUID, MinecraftMember>
+        players?: Collection<UUID, Player>
     }) {
         this.#id = id
         this.#name = name
@@ -68,10 +68,10 @@ export class MinecraftRole {
         )) {
             this.#players.getOrInsert(
                 minecraft_player.uuid,
-                membersService.members.cache.getOrInsertComputed(
+                playersService.players.cache.getOrInsertComputed(
                     minecraft_player.uuid,
                     () => {
-                        return new MinecraftMember({
+                        return new Player({
                             discord_user_id: minecraft_player.discord_user_id,
                             nickname: minecraft_player.nickname,
                             uuid: minecraft_player.uuid,
@@ -139,12 +139,12 @@ export class MinecraftRole {
                     },
                 },
             })
-            const newMember = await membersService.members.fetch(uuid, {
+            const newMember = await playersService.players.fetch(uuid, {
                 cache: true,
             })
             if (newMember) {
                 this.#players.set(uuid, newMember)
-                membersService.members.cache.set(uuid, newMember)
+                playersService.players.cache.set(uuid, newMember)
                 logger.info(
                     `[ROLE SERVICE] Rol ${this.#name} agregado a ${nickname}`,
                 )
@@ -188,7 +188,7 @@ export class MinecraftRole {
             .map(l => l.minecraft_player)
             .filter(p => p.status === PLAYER_STATUS.ACTIVE)) {
             this.#players.getOrInsertComputed(uuid, () => {
-                return new MinecraftMember({
+                return new Player({
                     discord_user_id,
                     nickname,
                     uuid,

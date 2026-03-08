@@ -3,10 +3,10 @@ import { client } from '#/client.ts'
 import { getRank } from '#/utils/roles.ts'
 import { envs } from '#/config.ts'
 import { logger } from '#/logger.ts'
-import type { MinecraftMember } from '#/classes/minecraft-member.ts'
-import { membersService } from './members.service.ts'
+import type { Player } from '#/classes/player.ts'
+import { playersService } from './members.service.ts'
 
-async function checkRanks(member: GuildMember, cached: MinecraftMember) {
+async function checkRanks(member: GuildMember, cached: Player) {
     const currentRank = getRank([...member.roles.cache.values()])
     if (cached.rank !== currentRank) {
         await cached.setRank(currentRank)
@@ -20,7 +20,7 @@ async function handleRankUpdate(
     oldMember: GuildMember | PartialGuildMember,
     newMember: GuildMember,
 ) {
-    const minecraftLinked = membersService.members.cache
+    const minecraftLinked = playersService.players.cache
         .values()
         .find(m => m.discord_user_id === oldMember.id)
     if (minecraftLinked) {
@@ -33,13 +33,16 @@ export async function initializeRankService() {
     // Register event listener
     client.on(Events.GuildMemberUpdate, handleRankUpdate)
     // check all members on startup
-    for (const cached of membersService.members.cache.values()) {
+    for (const cached of playersService.players.cache.values()) {
         const member = await client.guilds.cache
-            .get(envs.guildId)!
+            .get(envs.DISCORD_GUILD_ID)!
             .members.fetch(cached.discord_user_id)
             .catch(() => null)
-        if (!member) continue
-        checkRanks(member, cached)
+        if (member) {
+            await checkRanks(member, cached)
+        } else {
+            await playersService.players.delete(cached.uuid)
+        }
     }
 }
 

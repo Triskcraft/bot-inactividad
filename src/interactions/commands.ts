@@ -78,5 +78,5 @@ export async function registerCommands() {
     ]
 
     // Se registran a nivel de servidor para propagar cambios de inmediato.
-    await client.guilds.cache.get(envs.guildId)!.commands.set(commands)
+    await client.guilds.cache.get(envs.DISCORD_GUILD_ID)!.commands.set(commands)
 }

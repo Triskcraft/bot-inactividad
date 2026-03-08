@@ -3,7 +3,7 @@ import { db } from '#/prisma/database.ts'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 import { inspect } from 'node:util'
 
-export class MinecraftMember {
+export class Player {
     #uuid: string
 
     get uuid() {

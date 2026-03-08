@@ -1,8 +1,9 @@
 import { db } from '#/prisma/database.ts'
 import { Collection } from 'discord.js'
-import { MinecraftMember } from '#/classes/minecraft-member.ts'
+import { Player } from '#/classes/player.ts'
 import { MinecraftRole } from '#/classes/minecraft-role.ts'
-import { membersService } from '#/services/members.service.ts'
+import { playersService } from '#/services/members.service.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 
 export class MinecraftRolesManager {
     async fetch() {
@@ -15,7 +16,7 @@ export class MinecraftRolesManager {
                 },
             },
         })
-        const members = membersService.members.cache
+        const members = playersService.players.cache
         for (const r of roles) {
             this.#cache.set(
                 r.id,
@@ -23,21 +24,31 @@ export class MinecraftRolesManager {
                     id: r.id,
                     name: r.name,
                     players: new Collection(
-                        r.linked_roles.map(l => {
-                            return [
-                                l.mc_user_uuid,
-                                members.getOrInsert(
+                        r.linked_roles
+                            .filter(
+                                l =>
+                                    l.minecraft_player.status ===
+                                    PLAYER_STATUS.ACTIVE,
+                            )
+                            .map(l => {
+                                return [
                                     l.mc_user_uuid,
-                                    new MinecraftMember({
-                                        discord_user_id:
-                                            l.minecraft_player.discord_user_id,
-                                        nickname: l.minecraft_player.nickname,
-                                        uuid: l.mc_user_uuid,
-                                        rank: l.minecraft_player.rank,
-                                    }),
-                                ),
-                            ]
-                        }),
+                                    members.getOrInsertComputed(
+                                        l.mc_user_uuid,
+                                        () => {
+                                            return new Player({
+                                                discord_user_id:
+                                                    l.minecraft_player
+                                                        .discord_user_id,
+                                                nickname:
+                                                    l.minecraft_player.nickname,
+                                                uuid: l.mc_user_uuid,
+                                                rank: l.minecraft_player.rank,
+                                            })
+                                        },
+                                    ),
+                                ]
+                            }),
                     ),
                 }),
             )

@@ -1,4 +1,4 @@
-import { logger } from "#/logger.ts"
+import { logger } from '#/logger.ts'
 
 try {
     process.loadEnvFile()
@@ -90,7 +90,7 @@ export function loadConfig() {
     return {
         token: process.env.DISCORD_TOKEN!,
         clientId: process.env.DISCORD_CLIENT_ID!,
-        guildId: process.env.DISCORD_GUILD_ID!,
+        DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID!,
         inactivityChannelId: process.env.DISCORD_INACTIVITY_CHANNEL_ID!,
         adminLogChannelId: process.env.DISCORD_ADMIN_LOG_CHANNEL_ID!,
         reminderIntervalMinutes: Number.parseInt(
