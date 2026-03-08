@@ -39,7 +39,7 @@ async function updateDigs() {
                 0,
             )
 
-            await db.minecraftPlayer.update({
+            await db.player.update({
                 where: { uuid, status: PLAYER_STATUS.ACTIVE },
                 data: { digs },
             })

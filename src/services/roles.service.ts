@@ -61,7 +61,7 @@ class RoleService {
     }
 
     async #chechDefaultRole() {
-        const usersWithoutRoles = await db.minecraftPlayer.findMany({
+        const usersWithoutRoles = await db.player.findMany({
             where: {
                 linked_roles: {
                     none: {},
@@ -82,7 +82,7 @@ class RoleService {
                                 id: this.#defaultRole.id,
                             },
                         },
-                        minecraft_player: {
+                        player: {
                             connect: {
                                 uuid: uuid,
                             },
@@ -191,7 +191,7 @@ class RoleService {
             ),
         )
         if (selected) {
-            const user = await db.minecraftPlayer.findFirst({
+            const user = await db.player.findFirst({
                 where: { uuid: selected, status: PLAYER_STATUS.ACTIVE },
                 include: { linked_roles: { select: { role: true } } },
             })

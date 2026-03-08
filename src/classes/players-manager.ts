@@ -17,7 +17,7 @@ export class PlayersManager {
         options?: { cache?: boolean },
     ): Promise<Collection<UUID, Player> | Player | null> {
         if (!uuid) {
-            const members = await db.minecraftPlayer.findMany({
+            const members = await db.player.findMany({
                 where: { status: PLAYER_STATUS.ACTIVE },
                 select: {
                     uuid: true,
@@ -44,7 +44,7 @@ export class PlayersManager {
                 member = this.#cache.get(uuid) ?? null
             }
             if (member) return member
-            const memberData = await db.minecraftPlayer.findFirst({
+            const memberData = await db.player.findFirst({
                 where: { status: PLAYER_STATUS.ACTIVE, uuid },
                 select: {
                     uuid: true,
@@ -73,7 +73,7 @@ export class PlayersManager {
     }
 
     async delete(uuid: UUID) {
-        await db.minecraftPlayer.update({
+        await db.player.update({
             where: { uuid },
             data: { status: PLAYER_STATUS.DELETED },
         })

@@ -79,8 +79,8 @@ model LinkedRole {
     mc_user_uuid String
     role_id      String
 
-    role             Role            @relation(fields: [role_id], references: [id])
-    minecraft_player MinecraftPlayer @relation(fields: [mc_user_uuid], references: [uuid])
+    role   Role   @relation(fields: [role_id], references: [id])
+    player Player @relation(fields: [mc_user_uuid], references: [uuid])
 
     @@id([mc_user_uuid, role_id])
     @@map("linked_roles")
@@ -93,7 +93,7 @@ model Media {
     type         String
     url          String
 
-    minecraft_player MinecraftPlayer @relation(fields: [mc_user_uuid], references: [uuid])
+    player Player @relation(fields: [mc_user_uuid], references: [uuid])
 
     @@unique([mc_user_uuid, type])
     @@map("medias")
@@ -105,7 +105,7 @@ enum PLAYER_STATUS {
 }
 
 /// Información de jugador de Minecraft enlazada con su usuario de Discord.
-model MinecraftPlayer {
+model Player {
     uuid            String        @id
     nickname        String        @unique
     digs            Int           @default(0)
@@ -128,7 +128,7 @@ model DiscordUser {
     username String @unique
 
     inactivity_periods InactivityPeriod[]
-    minecraft_player   MinecraftPlayer?
+    player             Player?
     link_code          LinkCode?
     webhook_tokens     WebhookToken[]
     posts              Post[]
@@ -166,18 +166,18 @@ enum POST_STATUS {
 }
 
 model Post {
-    id                    String      @id @default(dbgenerated("snowflake()"))
-    title                 String      @unique
-    discord_user_id       String
-    minecraft_player_uuid String?
-    thread_id             String
-    status                POST_STATUS @default(DRAFT)
-    created_at            DateTime    @default(now())
-    updated_at            DateTime    @updatedAt
+    id              String      @id @default(dbgenerated("snowflake()"))
+    title           String      @unique
+    discord_user_id String
+    player_uuid     String?     @map("minecraft_player_uuid")
+    thread_id       String
+    status          POST_STATUS @default(DRAFT)
+    created_at      DateTime    @default(now())
+    updated_at      DateTime    @updatedAt
 
-    discord_user     DiscordUser      @relation(fields: [discord_user_id], references: [id])
-    minecraft_player MinecraftPlayer? @relation(fields: [minecraft_player_uuid], references: [uuid])
-    post_blocks      PostBlocks[]
+    discord_user DiscordUser  @relation(fields: [discord_user_id], references: [id])
+    player       Player?      @relation(fields: [player_uuid], references: [uuid])
+    post_blocks  PostBlocks[]
 
     @@map("posts")
 }

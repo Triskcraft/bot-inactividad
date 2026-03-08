@@ -29,7 +29,7 @@ El sistema de webhooks permite que servicios externos (por ejemplo, backend web 
 2. Busca `LinkCode` válido.
 3. Obtiene miembro Discord y calcula rango actual.
 4. Convierte nickname a UUID usando Mojang API.
-5. Hace transacción: `upsert` de `minecraft_player` + eliminación del código.
+5. Hace transacción: `upsert` de `player` + eliminación del código.
 
 **Por qué está diseñado así:** garantiza que el código se use una sola vez y que los datos queden consistentes.
 

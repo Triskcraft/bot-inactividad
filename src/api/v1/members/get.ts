@@ -10,7 +10,7 @@ import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
  */
 
 export async function getMembers(req: Request, res: Response) {
-    const members = await db.minecraftPlayer.findMany({
+    const members = await db.player.findMany({
         where: { status: PLAYER_STATUS.ACTIVE },
         include: {
             medias: {

@@ -59,7 +59,7 @@ export class Player {
     }
 
     async setRank(rank: string) {
-        await db.minecraftPlayer.update({
+        await db.player.update({
             where: { uuid: this.#uuid, status: PLAYER_STATUS.ACTIVE },
             data: { rank },
         })
