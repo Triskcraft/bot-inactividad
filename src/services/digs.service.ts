@@ -4,7 +4,7 @@ import { db } from '#/prisma/database.ts'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
-import { playersService } from './members.service.ts'
+import { playersService } from './players.service.ts'
 import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
 
 let interval: NodeJS.Timeout

@@ -4,7 +4,7 @@ import { getRank } from '#/utils/roles.ts'
 import { envs } from '#/config.ts'
 import { logger } from '#/logger.ts'
 import type { Player } from '#/classes/player.ts'
-import { playersService } from './members.service.ts'
+import { playersService } from './players.service.ts'
 
 async function checkRanks(member: GuildMember, cached: Player) {
     const currentRank = getRank([...member.roles.cache.values()])

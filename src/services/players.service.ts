@@ -4,6 +4,10 @@ import { client } from '#/client.ts'
 import { Events } from 'discord.js'
 import { envs } from '#/config.ts'
 
+/**
+ * Servicio para el manejo de jugadores en el gremio.
+ * majena la información de los jugadores y escucha el evento de baneos para removerlos.
+ */
 class PlayersService {
     #players = new PlayersManager()
 
@@ -17,6 +21,9 @@ class PlayersService {
         this.#installEventListener()
     }
 
+    /**
+     * Instala el event listener.
+     */
     #installEventListener() {
         client.on(Events.GuildBanAdd, async ban => {
             if (ban.guild.id !== envs.DISCORD_GUILD_ID) return

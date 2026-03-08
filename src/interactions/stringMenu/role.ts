@@ -5,7 +5,7 @@ import {
 } from 'discord.js'
 import { StringMenuHandler } from '#/services/interactions.service.ts'
 import { roleService } from '#/services/roles.service.ts'
-import { playersService } from '#/services/members.service.ts'
+import { playersService } from '#/services/players.service.ts'
 
 export default class extends StringMenuHandler {
     override regex = /^role:mcu$/

@@ -6,7 +6,7 @@ import { Player } from '#/classes/player.ts'
 import { Collection } from 'discord.js'
 import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
-import { playersService } from '#/services/members.service.ts'
+import { playersService } from '#/services/players.service.ts'
 
 type UUID = string
 export class MinecraftRole {

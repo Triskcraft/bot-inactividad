@@ -30,7 +30,7 @@ import { Player } from '#/classes/player.ts'
 import { MinecraftRolesManager } from '#/classes/minecraft-roles-manager.ts'
 import roleBack from '#/interactions/buttons/role/role-back.ts'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
-import { playersService } from './members.service.ts'
+import { playersService } from './players.service.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
