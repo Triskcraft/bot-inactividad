@@ -34,7 +34,6 @@
 - `src/config.ts`: carga/valida variables de entorno y constantes globales.
 - `src/logger.ts`: logger central (pino).
 - `src/types.d.ts`: extensiones de tipos globales (ej. request user en middleware).
-- `src/members.cache.ts`: cache en memoria de jugadores Minecraft enlazados.
 
 ## API HTTP (`src/api/`)
 
@@ -102,11 +101,12 @@
 - `src/services/rank.service.ts`: sincroniza rango Minecraft según roles Discord.
 - `src/services/roles.service.ts`: panel y operaciones de roles Minecraft.
 - `src/services/blog.service.ts`: panel y flujo de publicaciones/blog.
+- `src/services/players.service.ts`: gestiona los players y su estado.
 
 ## Clases de dominio (`src/classes/`)
 
-- `src/classes/minecraft-member.ts`: entidad de jugador Minecraft enlazado.
-- `src/classes/minecraft-members-manager.ts`: gestor/cache de jugadores.
+- `src/classes/player.ts`: entidad de jugador Minecraft enlazado.
+- `src/classes/players-manager.ts`: gestor/cache de jugadores.
 - `src/classes/minecraft-role.ts`: entidad de rol Minecraft y asignaciones.
 - `src/classes/minecraft-roles-manager.ts`: gestor/cache de roles Minecraft.
 - `src/classes/post.ts`: entidad de publicación y sus transiciones.
@@ -145,3 +145,4 @@
 - `src/prisma/migrations/20260202234919_discord_user_username/migration.sql`: campo username en usuario Discord.
 - `src/prisma/migrations/20260202235832_uq_discord_username/migration.sql`: unicidad para username Discord.
 - `src/prisma/migrations/20260301230127_blog/migration.sql`: estructura para posts/blog.
+- `src/prisma/migrations/20260308062159_player_status/migration.sql`: state en la tabla Players para soft delete.

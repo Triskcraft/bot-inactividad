@@ -26,10 +26,11 @@ import roleEdit from '#/interactions/buttons/role/role-edit.ts'
 import roleDelete from '#/interactions/buttons/role/role-delete.ts'
 import rolePage from '#/interactions/buttons/role/role-page.ts'
 import { MinecraftRole } from '#/classes/minecraft-role.ts'
-import { MinecraftMember } from '#/classes/minecraft-member.ts'
+import { Player } from '#/classes/player.ts'
 import { MinecraftRolesManager } from '#/classes/minecraft-roles-manager.ts'
 import roleBack from '#/interactions/buttons/role/role-back.ts'
-import { membersMannager } from '#/members.cache.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
+import { playersService } from './players.service.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
@@ -60,11 +61,12 @@ class RoleService {
     }
 
     async #chechDefaultRole() {
-        const usersWithoutRoles = await db.minecraftPlayer.findMany({
+        const usersWithoutRoles = await db.player.findMany({
             where: {
                 linked_roles: {
                     none: {},
                 },
+                status: PLAYER_STATUS.ACTIVE,
             },
             select: {
                 uuid: true,
@@ -80,7 +82,7 @@ class RoleService {
                                 id: this.#defaultRole.id,
                             },
                         },
-                        minecraft_player: {
+                        player: {
                             connect: {
                                 uuid: uuid,
                             },
@@ -189,20 +191,20 @@ class RoleService {
             ),
         )
         if (selected) {
-            const user = await db.minecraftPlayer.findFirst({
-                where: { uuid: selected },
+            const user = await db.player.findFirst({
+                where: { uuid: selected, status: PLAYER_STATUS.ACTIVE },
                 include: { linked_roles: { select: { role: true } } },
             })
             if (!user) {
                 container.addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
-                        'Lo lamento, no se encontro ese jugador',
+                        'Lo lamento, no se encontró ese jugador',
                     ),
                 )
             } else {
-                membersMannager.cache.set(
+                playersService.players.cache.set(
                     user.uuid,
-                    new MinecraftMember({
+                    new Player({
                         discord_user_id: user.discord_user_id,
                         nickname: user.nickname,
                         rank: user.rank,

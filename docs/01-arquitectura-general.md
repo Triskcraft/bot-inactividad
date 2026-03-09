@@ -36,10 +36,10 @@ Este bot unifica tres necesidades operativas de la comunidad:
 ## 4) Tareas recurrentes
 
 - **`src/services/scheduler.ts`**:
-  - recordatorios por inactividad vencida,
-  - snapshots de actividad por rol.
+    - recordatorios por inactividad vencida,
+    - snapshots de actividad por rol.
 - **`src/services/digs.service.ts`**:
-  - lectura periódica de archivos de estadísticas Minecraft.
+    - lectura periódica de archivos de estadísticas Minecraft.
 
 **Por qué existe:** no todo depende de interacción humana; parte del sistema necesita mantenimiento automático.
 
@@ -69,8 +69,7 @@ src/
 ├── utils/                # Utilidades compartidas
 ├── client.ts             # Cliente Discord
 ├── config.ts             # Entorno y constantes globales
-├── index.ts              # Punto de entrada
-└── members.cache.ts      # Cache de jugadores Minecraft
+└── index.ts              # Punto de entrada
 ```
 
 ## Decisiones de diseño (resumen)

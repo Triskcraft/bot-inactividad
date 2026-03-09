@@ -9,6 +9,7 @@ import {
     InternalServerError,
     NotFoundError,
 } from '#/api/errors.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 
 const router = Router()
 
@@ -44,7 +45,7 @@ router.post('/', async (req, res) => {
     }
 
     const discordMember = await client.guilds.cache
-        .get(envs.guildId)!
+        .get(envs.DISCORD_GUILD_ID)!
         .members.fetch(codedb.discord_id)
 
     if (!discordMember) {
@@ -57,7 +58,7 @@ router.post('/', async (req, res) => {
 
     try {
         const [user] = await db.$transaction([
-            db.minecraftPlayer.upsert({
+            db.player.upsert({
                 where: { uuid: codedb.id },
                 create: {
                     nickname,
@@ -73,6 +74,7 @@ router.post('/', async (req, res) => {
                     },
                     rank: getRank([...discordMember.roles.cache.values()]),
                     nickname,
+                    status: PLAYER_STATUS.ACTIVE,
                 },
                 select: {
                     uuid: true,
