@@ -51,8 +51,6 @@ export async function getPosts(req: Request, res: Response) {
     })
     const post_mapped = posts.map(p => ({
         ...p,
-        created_at: p.created_at.getTime(),
-        updated_at: p.updated_at.getTime(),
         player:
             p.player ?
                 {

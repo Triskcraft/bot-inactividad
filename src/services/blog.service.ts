@@ -60,7 +60,7 @@ class BlogService {
     async #checkRole() {
         this.#role =
             (await client.guilds.cache
-                .get(envs.guildId)
+                .get(envs.DISCORD_GUILD_ID)
                 ?.roles.fetch(envs.BLOG_ROLE_ID)
                 .catch(() => null)) ?? null
         if (!this.#role) {

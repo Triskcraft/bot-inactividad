@@ -5,7 +5,7 @@ import {
 } from 'discord.js'
 import { StringMenuHandler } from '#/services/interactions.service.ts'
 import { roleService } from '#/services/roles.service.ts'
-import { membersMannager } from '#/members.cache.ts'
+import { playersService } from '#/services/players.service.ts'
 
 export default class extends StringMenuHandler {
     override regex = /^role:mcu$/
@@ -17,7 +17,10 @@ export default class extends StringMenuHandler {
             .setMaxValues(1)
             .setPlaceholder('Selecciona un usuario')
 
-        for (const { nickname, uuid } of membersMannager.cache.values()) {
+        for (const {
+            nickname,
+            uuid,
+        } of playersService.players.cache.values()) {
             selectUserMenu.addOptions(
                 new StringSelectMenuOptionBuilder()
                     .setLabel(nickname)

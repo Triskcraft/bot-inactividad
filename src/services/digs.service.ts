@@ -3,7 +3,9 @@ import { envs } from '#/config.ts'
 import { db } from '#/prisma/database.ts'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { membersMannager } from '#/members.cache.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
+import { playersService } from './players.service.ts'
+import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
 
 let interval: NodeJS.Timeout
 
@@ -23,7 +25,7 @@ type MinecraftStatsJson = {
 }
 
 async function updateDigs() {
-    for (const { uuid } of membersMannager.cache.values()) {
+    for (const { uuid } of playersService.players.cache.values()) {
         try {
             const {
                 default: { stats },
@@ -37,12 +39,17 @@ async function updateDigs() {
                 0,
             )
 
-            await db.minecraftPlayer.update({
-                where: { uuid },
+            await db.player.update({
+                where: { uuid, status: PLAYER_STATUS.ACTIVE },
                 data: { digs },
             })
         } catch (error) {
-            console.error(error)
+            if (
+                error instanceof PrismaClientKnownRequestError &&
+                error.code !== 'P2025'
+            ) {
+                logger.error(error)
+            }
         }
     }
     logger.info(`[DIGS SERVICE] Updated digs`)

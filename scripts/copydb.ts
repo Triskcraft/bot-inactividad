@@ -35,8 +35,8 @@ await local.discordUser.createMany({
 })
 
 // minecraft users
-await local.minecraftPlayer.createMany({
-    data: await prod.minecraftPlayer.findMany(),
+await local.player.createMany({
+    data: await prod.player.findMany(),
 })
 
 // roles

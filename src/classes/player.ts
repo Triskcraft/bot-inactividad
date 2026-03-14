@@ -1,8 +1,9 @@
 import { envs } from '#/config.ts'
 import { db } from '#/prisma/database.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 import { inspect } from 'node:util'
 
-export class MinecraftMember {
+export class Player {
     #uuid: string
 
     get uuid() {
@@ -58,8 +59,8 @@ export class MinecraftMember {
     }
 
     async setRank(rank: string) {
-        await db.minecraftPlayer.update({
-            where: { uuid: this.#uuid },
+        await db.player.update({
+            where: { uuid: this.#uuid, status: PLAYER_STATUS.ACTIVE },
             data: { rank },
         })
         this.#rank = rank

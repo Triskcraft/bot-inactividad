@@ -2,10 +2,11 @@ import { db } from '#/prisma/database.ts'
 import { inspect } from 'node:util'
 import { logger } from '#/logger.ts'
 import { envs } from '#/config.ts'
-import { MinecraftMember } from '#/classes/minecraft-member.ts'
+import { Player } from '#/classes/player.ts'
 import { Collection } from 'discord.js'
-import { membersMannager } from '#/members.cache.ts'
 import { PrismaClientKnownRequestError } from '#/prisma/generated/internal/prismaNamespace.ts'
+import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
+import { playersService } from '#/services/players.service.ts'
 
 type UUID = string
 export class MinecraftRole {
@@ -21,7 +22,7 @@ export class MinecraftRole {
         return this.#name
     }
 
-    #players: Collection<UUID, MinecraftMember>
+    #players: Collection<UUID, Player>
 
     get players() {
         return this.#players
@@ -34,7 +35,7 @@ export class MinecraftRole {
     }: {
         id: string
         name: string
-        players?: Collection<UUID, MinecraftMember>
+        players?: Collection<UUID, Player>
     }) {
         this.#id = id
         this.#name = name
@@ -56,23 +57,27 @@ export class MinecraftRole {
             select: {
                 linked_roles: {
                     select: {
-                        minecraft_player: true,
+                        player: true,
                     },
                 },
             },
         })
         logger.info(`[ROLE SERVICE] Rol ${this.#name} renombrado a ${name}`)
-        for (const { minecraft_player } of linked_roles) {
+        for (const { player } of linked_roles.filter(
+            l => l.player.status === PLAYER_STATUS.ACTIVE,
+        )) {
             this.#players.getOrInsert(
-                minecraft_player.uuid,
-                membersMannager.cache.getOrInsert(
-                    minecraft_player.uuid,
-                    new MinecraftMember({
-                        discord_user_id: minecraft_player.discord_user_id,
-                        nickname: minecraft_player.nickname,
-                        uuid: minecraft_player.uuid,
-                        rank: minecraft_player.rank,
-                    }),
+                player.uuid,
+                playersService.players.cache.getOrInsertComputed(
+                    player.uuid,
+                    () => {
+                        return new Player({
+                            discord_user_id: player.discord_user_id,
+                            nickname: player.nickname,
+                            uuid: player.uuid,
+                            rank: player.rank,
+                        })
+                    },
                 ),
             )
         }
@@ -93,7 +98,7 @@ export class MinecraftRole {
                     },
                 },
                 select: {
-                    minecraft_player: {
+                    player: {
                         select: {
                             nickname: true,
                         },
@@ -102,7 +107,7 @@ export class MinecraftRole {
             })
             this.#players.delete(uuid)
             logger.info(
-                `[ROLE SERVICE] Rol ${this.#name} desvinculado de ${response.minecraft_player.nickname}`,
+                `[ROLE SERVICE] Rol ${this.#name} desvinculado de ${response.player.nickname}`,
             )
         } catch (error) {
             logger.error(error, '[ROLE SERVICE] Error desvinculando un rol')
@@ -112,7 +117,7 @@ export class MinecraftRole {
     async addPlayer(uuid: string) {
         try {
             const {
-                minecraft_player: { discord_user_id, nickname, rank },
+                player: { nickname },
             } = await db.linkedRole.create({
                 data: {
                     role: {
@@ -120,27 +125,30 @@ export class MinecraftRole {
                             id: this.#id,
                         },
                     },
-                    minecraft_player: {
+                    player: {
                         connect: {
                             uuid: uuid,
                         },
                     },
                 },
                 select: {
-                    minecraft_player: true,
+                    player: {
+                        select: {
+                            nickname: true,
+                        },
+                    },
                 },
             })
-            const newMember = new MinecraftMember({
-                discord_user_id,
-                nickname,
-                uuid,
-                rank,
+            const newMember = await playersService.players.fetch(uuid, {
+                cache: true,
             })
-            this.#players.set(uuid, newMember)
-            membersMannager.cache.set(uuid, newMember)
-            logger.info(
-                `[ROLE SERVICE] Rol ${this.#name} agregado a ${nickname}`,
-            )
+            if (newMember) {
+                this.#players.set(uuid, newMember)
+                playersService.players.cache.set(uuid, newMember)
+                logger.info(
+                    `[ROLE SERVICE] Rol ${this.#name} agregado a ${nickname}`,
+                )
+            }
         } catch (e) {
             if (
                 e instanceof PrismaClientKnownRequestError &&
@@ -162,7 +170,7 @@ export class MinecraftRole {
             include: {
                 linked_roles: {
                     include: {
-                        minecraft_player: true,
+                        player: true,
                     },
                 },
             },
@@ -176,9 +184,11 @@ export class MinecraftRole {
             nickname,
             uuid,
             rank,
-        } of role.linked_roles.map(l => l.minecraft_player)) {
+        } of role.linked_roles
+            .map(l => l.player)
+            .filter(p => p.status === PLAYER_STATUS.ACTIVE)) {
             this.#players.getOrInsertComputed(uuid, () => {
-                return new MinecraftMember({
+                return new Player({
                     discord_user_id,
                     nickname,
                     uuid,
