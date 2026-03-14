@@ -33,6 +33,17 @@ El sistema de webhooks permite que servicios externos (por ejemplo, backend web 
 
 **Por qué está diseñado así:** garantiza que el código se use una sola vez y que los datos queden consistentes.
 
+## `POST /webhooks/join`
+
+**Para qué existe:** registrar los logins de los jugadores y visualizar su actividad.
+
+**Cómo funciona:**
+
+1. Valida `nickname`
+2. Actualiza el `last_seen` del jugador.
+
+**Por qué está diseñado así:** registrar los logins de un sistema externo al bot.
+
 ## Capa de seguridad: `webhookAuth`
 
 Cada webhook pasa por middleware de autenticación y firma.
