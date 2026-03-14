@@ -18,7 +18,7 @@ export async function getPosts(req: Request, res: Response) {
         omit: {
             thread_id: true,
             discord_user_id: true,
-            minecraft_player_uuid: true,
+            player_uuid: true,
             status: true,
         },
         include: {
@@ -30,7 +30,7 @@ export async function getPosts(req: Request, res: Response) {
                 },
             },
             discord_user: true,
-            minecraft_player: {
+            player: {
                 select: {
                     digs: true,
                     rank: true,
@@ -51,17 +51,17 @@ export async function getPosts(req: Request, res: Response) {
     })
     const post_mapped = posts.map(p => ({
         ...p,
-        minecraft_player:
-            p.minecraft_player ?
+        created_at: p.created_at.getTime(),
+        updated_at: p.updated_at.getTime(),
+        player:
+            p.player ?
                 {
-                    ...p.minecraft_player,
-                    uuid: p.minecraft_player.uuid,
-                    nickname: p.minecraft_player?.nickname,
-                    digs: p.minecraft_player?.digs,
-                    rank: p.minecraft_player.rank,
-                    linked_roles: p.minecraft_player.linked_roles.map(
-                        l => l.role.name,
-                    ),
+                    ...p.player,
+                    uuid: p.player.uuid,
+                    nickname: p.player?.nickname,
+                    digs: p.player?.digs,
+                    rank: p.player.rank,
+                    linked_roles: p.player.linked_roles.map(l => l.role.name),
                 }
             :   null,
     }))
