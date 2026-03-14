@@ -132,6 +132,7 @@ export const RANK_ROLES: Readonly<string[]> = [
 export const WEBHOOK_PERMISSIONS = {
     DIGS: 'digs',
     LINK: 'link',
+    JOIN: 'join',
 } as const
 
 export type WebhookPermission =

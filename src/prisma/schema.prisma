@@ -106,6 +106,7 @@ enum PLAYER_STATUS {
 
 /// Información de jugador de Minecraft enlazada con su usuario de Discord.
 model Player {
+    /// El uuid del jugador en formato UUID
     uuid            String        @id
     nickname        String        @unique
     digs            Int           @default(0)
@@ -113,6 +114,8 @@ model Player {
     discord_user_id String        @unique
     rank            String        @default("Miembro")
     status          PLAYER_STATUS @default(ACTIVE)
+    /// La ultima vez que entró
+    last_seen       DateTime?
 
     discord_user DiscordUser  @relation(fields: [discord_user_id], references: [id])
     linked_roles LinkedRole[]

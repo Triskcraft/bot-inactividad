@@ -1,4 +1,9 @@
-import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js'
+import {
+    MessageFlags,
+    SlashCommandBuilder,
+    type ApplicationCommandDataResolvable,
+    type ChatInputCommandInteraction,
+} from 'discord.js'
 import { db } from '#/prisma/database.ts'
 import { logger } from '#/logger.ts'
 import type { CommandInteractionHandler } from '#/services/interactions.service.ts'
@@ -77,5 +82,24 @@ export default class implements CommandInteractionHandler {
             content: `Tu código es: **${code}**`,
             flags: MessageFlags.Ephemeral,
         })
+    }
+    static async build(
+        _params?: Record<string, unknown>,
+    ): Promise<ApplicationCommandDataResolvable> {
+        return new SlashCommandBuilder()
+            .setName('dis-session')
+            .setNameLocalizations({
+                'en-US': 'dis-session',
+                'es-ES': 'dis-sesion',
+            })
+            .setDescription(
+                'Genera un código para vincular tu cuenta de Discord con la de Minecraft',
+            )
+            .setDescriptionLocalizations({
+                'en-US':
+                    'Generate a code to link your Discord account to your Minecraft account',
+                'es-ES':
+                    'Genera un código para vincular tu cuenta de Discord con la de Minecraft',
+            })
     }
 }

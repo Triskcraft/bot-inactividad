@@ -8,13 +8,16 @@ import {
     MessageFlags,
     ModalBuilder,
     ModalSubmitInteraction,
+    SlashCommandBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuInteraction,
+    type ApplicationCommandDataResolvable,
 } from 'discord.js'
 import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { CustomIdParser } from '#/utils/format.ts'
+import { envs } from '#/config.ts'
 
 export abstract class ButtonInteractionHandler<K extends string = ''> {
     regex: RegExp = /\\/
@@ -65,8 +68,7 @@ export abstract class ModalInteractionHandler<K extends string = ''> {
         })
     }
     static async build(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        params: Record<string, unknown> = {},
+        _params: Record<string, unknown> = {},
     ): Promise<ModalBuilder> {
         return new ModalBuilder()
     }
@@ -75,9 +77,16 @@ export abstract class ModalInteractionHandler<K extends string = ''> {
     }
 }
 
-export interface CommandInteractionHandler {
-    name: string
-    run(interaction: ChatInputCommandInteraction<'cached'>): Promise<unknown>
+export abstract class CommandInteractionHandler {
+    abstract name: string
+    abstract run(
+        interaction: ChatInputCommandInteraction<'cached'>,
+    ): Promise<unknown>
+    static async build(
+        _params: Record<string, unknown> = {},
+    ): Promise<ApplicationCommandDataResolvable> {
+        return new SlashCommandBuilder()
+    }
 }
 
 class InteractionService {
@@ -129,6 +138,23 @@ class InteractionService {
                 }
             }
         })
+    }
+
+    async registerCommands() {
+        const commands: Array<ApplicationCommandDataResolvable> = []
+        const dir = join(process.cwd(), 'src', 'interactions', 'commands')
+
+        for (const filename of await readdir(dir)) {
+            const filePath = pathToFileURL(join(dir, filename)).href
+
+            const { default: command } = (await import(filePath)) as {
+                default: typeof CommandInteractionHandler
+            }
+
+            commands.push(await command.build())
+        }
+        const guild = client.guilds.cache.get(envs.DISCORD_GUILD_ID)!
+        await guild.commands.set(commands)
     }
 
     async loadButtons() {
