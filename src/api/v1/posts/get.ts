@@ -49,26 +49,38 @@ export async function getPosts(req: Request, res: Response) {
             },
         },
     })
-    const post_mapped = posts.map(p => ({
-        ...p,
-        created_at: p.created_at.getTime(),
-        updated_at: p.updated_at.getTime(),
-        player:
-            p.player ?
-                {
-                    ...p.player,
-                    uuid: p.player.uuid,
-                    nickname: p.player?.nickname,
-                    digs: p.player?.digs,
-                    rank: p.player.rank,
-                    roles: p.player.linked_roles.map(l => l.role.name),
-                }
-            :   null,
-        post_blocks: p.post_blocks.map(p => ({
-            ...p,
-            timestamp: p.timestamp.getTime(),
-        })),
-    }))
+    const post_mapped = posts.map(
+        ({
+            created_at,
+            discord_user,
+            id,
+            title,
+            player,
+            post_blocks,
+            updated_at,
+        }) => ({
+            id,
+            title,
+            user: discord_user,
+            created_at: created_at.getTime(),
+            updated_at: updated_at.getTime(),
+            player:
+                player ?
+                    {
+                        ...player,
+                        uuid: player.uuid,
+                        nickname: player.nickname,
+                        digs: player.digs,
+                        rank: player.rank,
+                        roles: player.linked_roles.map(l => l.role.name),
+                    }
+                :   null,
+            post_blocks: post_blocks.map(p => ({
+                ...p,
+                timestamp: p.timestamp.getTime(),
+            })),
+        }),
+    )
     res.set('Cache-Control', 'public, max-age=86400')
     res.json(post_mapped)
 }
