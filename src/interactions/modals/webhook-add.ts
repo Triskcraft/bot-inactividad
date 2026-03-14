@@ -26,6 +26,7 @@ const alg = 'HS256'
 const Permissions = {
     [WEBHOOK_PERMISSIONS.DIGS]: 'Webhook de digs',
     [WEBHOOK_PERMISSIONS.LINK]: 'Linkear cuentas de discord y minecraft',
+    [WEBHOOK_PERMISSIONS.JOIN]: 'Registra los inicios de sesión',
 }
 
 export default class extends ModalInteractionHandler {
