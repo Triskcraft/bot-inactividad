@@ -1,6 +1,5 @@
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js'
 import { envs } from '#/config.ts'
-import { registerCommands } from '#/interactions/commands.ts'
 import { logger } from '#/logger.ts'
 /**
  * Configuración del cliente de Discord. Se habilitan los intents y partials
@@ -26,17 +25,6 @@ const bot = new Client<true>({
 
 bot.on(Events.Error, error => logger.error({ err: error }, 'Discord.js error'))
 bot.on(Events.ShardError, error => logger.error({ err: error }, 'Shard error'))
-
-/**
- * El despliegue de comandos solo se ejecuta cuando la variable de entorno
- * correspondiente lo indica, evitando registrar comandos en cada arranque
- * durante entornos de desarrollo.
- */
-if (envs.DEPLOY_COMMAND) {
-    await registerCommands()
-} else {
-    logger.info('Saltando el despliegue de comandos')
-}
 
 /**
  * Promesa que se resuelve cuando Discord notifica que el bot está listo.

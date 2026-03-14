@@ -63,3 +63,14 @@ scheduler.start()
 startDigsService()
 roleService.start()
 blogService.start()
+
+/**
+ * El despliegue de comandos solo se ejecuta cuando la variable de entorno
+ * correspondiente lo indica, evitando registrar comandos en cada arranque
+ * durante entornos de desarrollo.
+ */
+if (envs.DEPLOY_COMMAND) {
+    await interactionService.registerCommands()
+} else {
+    logger.info('Saltando el despliegue de comandos')
+}

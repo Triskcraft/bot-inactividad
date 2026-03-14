@@ -4,14 +4,24 @@ import {
     PermissionsBitField,
     Role,
     type CommandInteraction,
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    type ApplicationCommandDataResolvable,
+    MessageFlags,
+    ContainerBuilder,
+    TextDisplayBuilder,
 } from 'discord.js'
 import { logger } from '#/logger.ts'
 import { inactivityService } from '#/services/inactivity.service.ts'
 import { formatForUser } from '#/utils/time.ts'
 import { envs } from '#/config.ts'
-import type { RoleStatistic } from '#/prisma/generated/browser.ts'
+import {
+    PLAYER_STATUS,
+    type RoleStatistic,
+} from '#/prisma/generated/browser.ts'
 import type { CommandInteractionHandler } from '#/services/interactions.service.ts'
 import { monitoredService } from '#/services/monitored.service.ts'
+import { db } from '#/prisma/database.ts'
 
 /**
  * Genera un código de vinculación de sesión y lo persiste en la base de datos.
@@ -20,7 +30,6 @@ import { monitoredService } from '#/services/monitored.service.ts'
 export default class implements CommandInteractionHandler {
     name = 'inactividad'
     async run(interaction: ChatInputCommandInteraction<'cached'>) {
-        if (interaction.commandName !== 'inactividad') return
         if (
             !interaction.memberPermissions?.has(
                 PermissionsBitField.Flags.Administrator,
@@ -38,6 +47,8 @@ export default class implements CommandInteractionHandler {
                     return await handleList(interaction)
                 case 'estadisticas':
                     return await handleStats(interaction)
+                case 'logins':
+                    return await handleLogins(interaction)
                 default:
                     return await interaction.reply({
                         content: 'Comando desconocido.',
@@ -62,6 +73,199 @@ export default class implements CommandInteractionHandler {
 
         await interaction.reply({ content: 'Comando desconocido.' })
     }
+    static async build(
+        _params?: Record<string, unknown>,
+    ): Promise<ApplicationCommandDataResolvable> {
+        return new SlashCommandBuilder()
+            .setName('inactividad')
+            .setNameLocalizations({
+                'en-US': 'inactivity',
+                'es-ES': 'inactividad',
+            })
+            .setDescription(
+                'Herramientas administrativas para gestionar inactividad',
+            )
+            .setDescriptionLocalizations({
+                'en-US': 'Administrative tools for managing inactivity',
+                'es-ES':
+                    'Herramientas administrativas para gestionar inactividad',
+            })
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .addSubcommand(logins =>
+                logins
+                    .setName('logins')
+                    .setNameLocalizations({
+                        'en-US': 'logins',
+                        'es-ES': 'logins',
+                    })
+                    .setDescription(
+                        'Lista los inicios de sesiones en el servidor',
+                    )
+                    .setDescriptionLocalizations({
+                        'en-US': 'Lists logins on the server',
+                        'es-ES': 'Lista los inicios de sesiones en el servidor',
+                    }),
+            )
+            .addSubcommand(listar =>
+                listar
+                    .setName('listar')
+                    .setNameLocalizations({
+                        'en-US': 'list',
+                        'es-ES': 'listar',
+                    })
+                    .setDescription('Muestra las inactividades registradas')
+                    .setDescriptionLocalizations({
+                        'en-US': 'Displays recorded inactivity',
+                        'es-ES': 'Muestra las inactividades registradas',
+                    }),
+            )
+            .addSubcommand(estadisticas =>
+                estadisticas
+                    .setName('estadisticas')
+                    .setNameLocalizations({
+                        'en-US': 'statistics',
+                        'es-ES': 'estadisticas',
+                    })
+                    .setDescription(
+                        'Muestra estadísticas de inactividad por rol',
+                    )
+                    .setDescriptionLocalizations({
+                        'es-ES': 'Muestra estadísticas de inactividad por rol',
+                        'en-US': 'Displays inactivity statistics by role',
+                    }),
+            )
+            .addSubcommandGroup(roles =>
+                roles
+                    .setName('roles')
+                    .setNameLocalizations({
+                        'en-US': 'roles',
+                        'es-ES': 'roles',
+                    })
+                    .setDescription('Gestiona los roles monitoreados')
+                    .setDescriptionLocalizations({
+                        'es-ES': 'Gestiona los roles monitoreados',
+                        'en-US': 'Manage monitored roles',
+                    })
+                    .addSubcommand(sub =>
+                        sub
+                            .setName('agregar')
+                            .setNameLocalizations({
+                                'en-US': 'add',
+                                'es-ES': 'agregar',
+                            })
+                            .setDescription(
+                                'Agrega un rol a la lista de seguimiento',
+                            )
+                            .setDescriptionLocalizations({
+                                'es-ES':
+                                    'Agrega un rol a la lista de seguimiento',
+                                'en-US': 'Add a role to the watchlist',
+                            })
+                            .addRoleOption(op =>
+                                op
+                                    .setName('rol')
+                                    .setNameLocalizations({
+                                        'en-US': 'role',
+                                        'es-ES': 'rol',
+                                    })
+                                    .setDescription('Rol a seguir')
+                                    .setDescriptionLocalizations({
+                                        'es-ES': 'Rol a seguir',
+                                        'en-US': 'Role to follow',
+                                    }),
+                            ),
+                    )
+                    .addSubcommand(sub =>
+                        sub
+                            .setName('eliminar')
+                            .setNameLocalizations({
+                                'en-US': 'remove',
+                                'es-ES': 'eliminar',
+                            })
+                            .setDescription(
+                                'Elimina un rol a la lista de seguimiento',
+                            )
+                            .setDescriptionLocalizations({
+                                'es-ES':
+                                    'Elimina un rol a la lista de seguimiento',
+                                'en-US': 'Remove a role to the watchlist',
+                            })
+                            .addRoleOption(op =>
+                                op
+                                    .setName('rol')
+                                    .setNameLocalizations({
+                                        'en-US': 'role',
+                                        'es-ES': 'rol',
+                                    })
+                                    .setDescription('Rol a dejar de seguir')
+                                    .setDescriptionLocalizations({
+                                        'es-ES': 'Rol a dejar de seguir',
+                                        'en-US': 'Role to stop following',
+                                    }),
+                            ),
+                    )
+                    .addSubcommand(sub =>
+                        sub
+                            .setName('listar')
+                            .setNameLocalizations({
+                                'en-US': 'list',
+                                'es-ES': 'listar',
+                            })
+                            .setDescription(
+                                'Muestra los roles actualmente monitoreados',
+                            )
+                            .setDescriptionLocalizations({
+                                'es-ES':
+                                    'Muestra los roles actualmente monitoreados',
+                                'en-US':
+                                    'Displays the roles currently being monitored',
+                            }),
+                    ),
+            )
+    }
+}
+
+/**
+ * Genera un embed listando la última conexion de los jugadores
+ * activos y registrados en el servidor
+ * @param interaction
+ */
+async function handleLogins(
+    interaction: ChatInputCommandInteraction<'cached'>,
+) {
+    await interaction.deferReply()
+
+    const players = await db.player.findMany({
+        where: { status: PLAYER_STATUS.ACTIVE },
+        select: {
+            nickname: true,
+            last_seen: true,
+            discord_user_id: true,
+        },
+    })
+
+    const list = players.map(p => {
+        const base = `- <@${p.discord_user_id}> **${p.nickname}**`
+        if (p.last_seen) {
+            const unix = Math.floor(p.last_seen.getTime() / 1000)
+            return `${base} <t:${unix}:s> <t:${unix}:R>`
+        }
+        return `${base} Sin registros`
+    })
+
+    return await interaction.editReply({
+        flags: MessageFlags.IsComponentsV2,
+        allowedMentions: {
+            parse: [],
+        },
+        components: [
+            new ContainerBuilder().addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `# Últimas conexiones de los jugadores\n${list.join('\n')}`,
+                ),
+            ),
+        ],
+    })
 }
 
 /**
