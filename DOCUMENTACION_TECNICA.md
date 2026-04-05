@@ -46,10 +46,10 @@ solo lectura. La arquitectura separa:
 
 - **Estrategia**: SemVer (por ejemplo `1.0.0` en `package.json`).
 - **Interpretación**:
-  - **MAJOR**: cambios de comportamiento o contratos que rompen compatibilidad
-    (por ejemplo, un cambio de schema o de payload en API v1).
-  - **MINOR**: nuevas funcionalidades compatibles.
-  - **PATCH**: correcciones sin cambios de contrato.
+    - **MAJOR**: cambios de comportamiento o contratos que rompen compatibilidad
+      (por ejemplo, un cambio de schema o de payload en API v1).
+    - **MINOR**: nuevas funcionalidades compatibles.
+    - **PATCH**: correcciones sin cambios de contrato.
 
 ### Versionado de base de datos
 
@@ -72,29 +72,32 @@ solo lectura. La arquitectura separa:
 Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 
 **Origen de datos**
+
 - Tabla `MinecraftUser` con relaciones a `DiscordUser`, `Media` y `Role`.
 
 **Respuesta**
+
 - Formato JSON, con caché pública de 24 horas:
-  - Header: `Cache-Control: public, max-age=86400`
+    - Header: `Cache-Control: public, max-age=86400`
 
 **Modelo de respuesta**
 
 ```json
 [
-  {
-    "description": "Texto libre",
-    "digs": 123,
-    "mc_name": "nombre-en-mc",
-    "mc_uuid": "uuid",
-    "medias": [{ "type": "youtube", "url": "https://..." }],
-    "rank": "Miembro",
-    "roles": ["Builder", "Streamer"]
-  }
+    {
+        "description": "Texto libre",
+        "digs": 123,
+        "mc_name": "nombre-en-mc",
+        "mc_uuid": "uuid",
+        "medias": [{ "type": "youtube", "url": "https://..." }],
+        "rank": "Miembro",
+        "roles": ["Builder", "Streamer"]
+    }
 ]
 ```
 
 **Notas técnicas**
+
 - El endpoint utiliza Prisma para cargar relaciones con `include`.
 - La lista de roles se deriva de la relación N:M `LinkedRole`.
 - La whitelist file-based está comentada en el código y **no** se utiliza en
@@ -107,17 +110,17 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/index.ts`
 
 1. **Inicialización de la API HTTP**
-   - Levanta el servidor Express en `API_PORT`.
+    - Levanta el servidor Express en `API_PORT`.
 2. **Registro de handlers de Discord**
-   - Conecta botones, modales y slash commands.
+    - Conecta botones, modales y slash commands.
 3. **Instancias de servicios**
-   - `InactivityService`, `RoleService` y `Scheduler`.
+    - `InactivityService`, `RoleService` y `Scheduler`.
 4. **Despliegue opcional del panel**
-   - Controlado por `DEPLOY_INACTIVITY_PANEL`.
+    - Controlado por `DEPLOY_INACTIVITY_PANEL`.
 5. **Inicio del scheduler**
-   - Activa jobs periódicos.
+    - Activa jobs periódicos.
 6. **Apagado ordenado**
-   - Detiene jobs, cierra Discord y desconecta Prisma en SIGINT/SIGTERM.
+    - Detiene jobs, cierra Discord y desconecta Prisma en SIGINT/SIGTERM.
 
 ---
 
@@ -126,6 +129,7 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/config.ts`
 
 **Bloques clave**
+
 - **Carga de `.env`**: usa `process.loadEnvFile()`. Si no existe, loguea error.
 - **`loadConfig()`**: valida variables obligatorias y advierte faltantes
   recomendadas.
@@ -133,9 +137,9 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 - **`RANK_ROLES`**: orden de prioridad para determinar el rango del usuario.
 
 **Variables críticas**
+
 - `DISCORD_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`,
   `DISCORD_INACTIVITY_CHANNEL_ID`, `DISCORD_ADMIN_LOG_CHANNEL_ID`,
-  `WHITELIST_ROUTE`, `DATABASE_PATH`.
 
 ### `src/logger.ts`
 
@@ -154,6 +158,7 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/client.ts`
 
 **Bloques clave**
+
 - **Instancia del cliente**: configura intents y partials necesarios para
   miembros, mensajes y reacciones.
 - **Promise `ready`**: asegura que el bot esté listo antes de seguir.
@@ -163,26 +168,30 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/interactions/commands.ts`
 
 **Bloques clave**
+
 - **`registerCommands()`**: registra slash commands usando REST API v10.
 - **Comandos definidos**:
-  - `/inactividad listar`
-  - `/inactividad estadisticas`
-  - `/inactividad roles agregar|eliminar|listar`
-  - `/dis-session`
+    - `/inactividad listar`
+    - `/inactividad estadisticas`
+    - `/inactividad roles agregar|eliminar|listar`
+    - `/dis-session`
 
 ### `src/interactions/inactivityPanel.ts`
 
 **Bloques clave**
+
 - **`buildInactivityPanel()`**: crea embed y botones del panel.
 - **`buildInactivityModal()`**: modal con campos `duration` y `until`.
 
 **Flujo de UI**
+
 - Botones → modal o acciones directas (limpiar/mostrar).
 - Modal → validación y persistencia de inactividad.
 
 ### `src/handlers/interactionHandler.ts`
 
 **Bloques clave**
+
 - **`registerInteractionHandlers()`**: enruta eventos a handlers específicos.
 - **`handleButton()`**: gestiona `set/edit/clear/show` de inactividad.
 - **`handleModal()`**: parsea y valida fecha o duración.
@@ -197,6 +206,7 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/commands/dis-session.command.ts`
 
 **Bloques clave**
+
 - **Generación de código**: random 6 dígitos.
 - **Determinación de rango**: usando `RANK_ROLES` y jerarquía por posición.
 - **Persistencia**: crea/actualiza `LinkCode` y `DiscordUser`.
@@ -209,6 +219,7 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/services/inactivityService.ts`
 
 **Bloques clave**
+
 - **`markInactivity()`**: crea o actualiza periodo en DB con `upsert`.
 - **`clearInactivity()`**: elimina registro por `user_id`.
 - **`getInactivity()`**: consulta simple por usuario.
@@ -221,6 +232,7 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/services/roleService.ts`
 
 **Bloques clave**
+
 - **`addRole()`**: inserta rol monitoreado.
 - **`removeRole()`**: borra rol monitoreado.
 - **`listRoles()`**: devuelve lista de IDs de roles monitoreados.
@@ -234,18 +246,19 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/services/scheduler.ts`
 
 **Bloques clave**
+
 - **`start()`**: registra intervalos:
-  - `reminders`: cada `REMINDER_INTERVAL_MINUTES`.
-  - `snapshots`: cada 12 horas.
+    - `reminders`: cada `REMINDER_INTERVAL_MINUTES`.
+    - `snapshots`: cada 12 horas.
 - **`stop()`**: limpia timers activos.
 - **`runReminders()`**:
-  - Busca inactividades vencidas.
-  - Notifica en canal y DM.
-  - Limpia el registro en DB.
+    - Busca inactividades vencidas.
+    - Notifica en canal y DM.
+    - Limpia el registro en DB.
 - **`captureSnapshots()`**:
-  - Recorre roles monitoreados.
-  - Calcula activos/inactivos.
-  - Persiste estadísticas en DB.
+    - Recorre roles monitoreados.
+    - Calcula activos/inactivos.
+    - Persiste estadísticas en DB.
 
 ---
 
@@ -254,6 +267,7 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/prisma/database.ts`
 
 **Bloques clave**
+
 - **Adapter `PrismaPg`**: conecta a PostgreSQL.
 - **Exporta `db`**: instancia única para reutilizar conexión.
 
@@ -262,15 +276,15 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 **Modelos esenciales**
 
 - **`InactivityPeriod`**
-  - Registra inactividades con `user_id`, `guild_id`, fechas y snapshot de roles.
+    - Registra inactividades con `user_id`, `guild_id`, fechas y snapshot de roles.
 - **`TrackedRole`**
-  - Roles seleccionados por administradores para monitoreo.
+    - Roles seleccionados por administradores para monitoreo.
 - **`RoleStatistic`**
-  - Snapshot de conteos activos/inactivos por rol.
+    - Snapshot de conteos activos/inactivos por rol.
 - **`LinkCode`**
-  - Código temporal de vinculación de sesiones.
+    - Código temporal de vinculación de sesiones.
 - **`Role`, `LinkedRole`, `Media`, `MinecraftUser`, `DiscordUser`**
-  - Representan datos de usuarios y su vínculo entre Discord/Minecraft.
+    - Representan datos de usuarios y su vínculo entre Discord/Minecraft.
 
 ---
 
@@ -279,6 +293,7 @@ Entrega la lista de miembros de Minecraft enriquecida con datos de Discord.
 ### `src/utils/time.ts`
 
 **Bloques clave**
+
 - **`parseUserTime()`**: interpreta duración o fecha absoluta.
 - **`parseDuration()`**: soporta `d/h/m/s`.
 - **`parseAbsolute()`**: formatos `yyyy-MM-dd`, `dd/MM/yyyy`, ISO, etc.
@@ -310,9 +325,9 @@ npm start
 - **Marcar inactividad**: botón "Marcar inactividad" → modal → `3d 6h`.
 - **Fecha absoluta**: modal → `2024-12-31 18:00`.
 - **Administrador**:
-  - `/inactividad listar`
-  - `/inactividad estadisticas`
-  - `/inactividad roles agregar rol:@Moderadores`
+    - `/inactividad listar`
+    - `/inactividad estadisticas`
+    - `/inactividad roles agregar rol:@Moderadores`
 
 ### 4) Consumo de API v1
 
@@ -329,5 +344,4 @@ DISCORD_GUILD_ID=...
 DISCORD_INACTIVITY_CHANNEL_ID=...
 DISCORD_ADMIN_LOG_CHANNEL_ID=...
 DATABASE_PATH=postgresql://user:pass@host:5432/db
-WHITELIST_ROUTE=/path/whitelist.json
 ```
