@@ -13,7 +13,6 @@ import {
 } from '#/services/rank.service.ts'
 import { monitoredService } from '#/services/monitored.service.ts'
 import { Scheduler } from '#/services/scheduler.ts'
-import { startDigsService, stopDigsService } from '#/services/digs.service.ts'
 import { roleService } from '#/services/roles.service.ts'
 import { blogService } from '#/services/blog.service.ts'
 
@@ -25,7 +24,6 @@ async function shutdown(signal: string) {
     logger.info({ signal }, 'Cerrando bot')
     scheduler.stop()
     unregisterRankService()
-    stopDigsService()
     await client.destroy()
     await db.$disconnect()
     process.exit(0)
@@ -60,7 +58,6 @@ await deployWebhookPanel()
 initializeRankService()
 // Activa los jobs programados que mantienen el sistema actualizado.
 scheduler.start()
-startDigsService()
 roleService.start()
 blogService.start()
 
