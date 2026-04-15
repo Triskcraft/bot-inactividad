@@ -16,6 +16,7 @@ import { Scheduler } from '#/services/scheduler.ts'
 import { startDigsService, stopDigsService } from '#/services/digs.service.ts'
 import { roleService } from '#/services/roles.service.ts'
 import { blogService } from '#/services/blog.service.ts'
+import { welcomeService } from './services/welcome.service.ts'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente
@@ -26,6 +27,7 @@ async function shutdown(signal: string) {
     scheduler.stop()
     unregisterRankService()
     stopDigsService()
+    welcomeService.stop()
     await client.destroy()
     await db.$disconnect()
     process.exit(0)
@@ -62,6 +64,7 @@ initializeRankService()
 scheduler.start()
 startDigsService()
 blogService.start()
+welcomeService.start()
 if (envs.ROLE_SERVICE) {
     roleService.start()
 }
