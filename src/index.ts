@@ -61,8 +61,10 @@ initializeRankService()
 // Activa los jobs programados que mantienen el sistema actualizado.
 scheduler.start()
 startDigsService()
-roleService.start()
 blogService.start()
+if (envs.ROLE_SERVICE) {
+    roleService.start()
+}
 
 /**
  * El despliegue de comandos solo se ejecuta cuando la variable de entorno
