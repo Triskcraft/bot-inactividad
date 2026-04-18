@@ -21,7 +21,6 @@ de Prisma y expone una pequeña API HTTP para datos del servidor.
 - **Configuración con toggles**: variables para decidir si se publican comandos
   o el panel en cada arranque, útil para entornos CI/CD.
 
-
 ## Documentación detallada
 
 Además de esta guía rápida, la documentación funcional y de arquitectura está en `docs/`:
@@ -49,26 +48,25 @@ npm install
 
 Crea un archivo `.env` en la raíz con al menos estas claves obligatorias:
 
-| Variable | Descripción |
-| --- | --- |
-| `DISCORD_TOKEN` | Token del bot de Discord. |
-| `DISCORD_CLIENT_ID` | ID de cliente de la aplicación. |
-| `DISCORD_GUILD_ID` | ID del servidor donde se registrarán comandos. |
-| `DISCORD_INACTIVITY_CHANNEL_ID` | Canal donde se publica el panel y se envían recordatorios. |
-| `DISCORD_ADMIN_LOG_CHANNEL_ID` | Canal opcional para registrar acciones administrativas. |
-| `WHITELIST_ROUTE` | Ruta al archivo JSON de whitelist (lista de usuarios de Minecraft). |
-| `DATABASE_PATH` | Cadena de conexión PostgreSQL para Prisma (ej. `postgresql://user:pass@host:5432/db`). |
+| Variable                        | Descripción                                                                            |
+| ------------------------------- | -------------------------------------------------------------------------------------- |
+| `DISCORD_TOKEN`                 | Token del bot de Discord.                                                              |
+| `DISCORD_CLIENT_ID`             | ID de cliente de la aplicación.                                                        |
+| `DISCORD_GUILD_ID`              | ID del servidor donde se registrarán comandos.                                         |
+| `DISCORD_INACTIVITY_CHANNEL_ID` | Canal donde se publica el panel y se envían recordatorios.                             |
+| `DISCORD_ADMIN_LOG_CHANNEL_ID`  | Canal opcional para registrar acciones administrativas.                                |
+| `DATABASE_PATH`                 | Cadena de conexión PostgreSQL para Prisma (ej. `postgresql://user:pass@host:5432/db`). |
 
 Claves recomendadas y su valor por defecto:
 
-| Variable | Descripción | Predeterminado |
-| --- | --- | --- |
-| `DEPLOY_COMMAND` | Si es `true`, registra/actualiza los slash commands en el arranque. | `false` |
-| `DEPLOY_INACTIVITY_PANEL` | Si es `true`, publica/actualiza el panel de inactividad al iniciar. | `false` |
-| `REMINDER_INTERVAL_MINUTES` | Frecuencia con la que se revisan inactividades vencidas. | `5` |
-| `API_PORT` | Puerto para la API HTTP. | `3000` |
-| `FRONT_ORIGIN` | Origen permitido por CORS para la API. | sin restricción |
-| `NODE_ENV` | Entorno (`development`, `production`, etc.). | `development` |
+| Variable                    | Descripción                                                         | Predeterminado  |
+| --------------------------- | ------------------------------------------------------------------- | --------------- |
+| `DEPLOY_COMMAND`            | Si es `true`, registra/actualiza los slash commands en el arranque. | `false`         |
+| `DEPLOY_INACTIVITY_PANEL`   | Si es `true`, publica/actualiza el panel de inactividad al iniciar. | `false`         |
+| `REMINDER_INTERVAL_MINUTES` | Frecuencia con la que se revisan inactividades vencidas.            | `5`             |
+| `API_PORT`                  | Puerto para la API HTTP.                                            | `3000`          |
+| `FRONT_ORIGIN`              | Origen permitido por CORS para la API.                              | sin restricción |
+| `NODE_ENV`                  | Entorno (`development`, `production`, etc.).                        | `development`   |
 
 Ejemplo de `.env`:
 
@@ -79,7 +77,6 @@ DISCORD_GUILD_ID=123456789012345678
 DISCORD_INACTIVITY_CHANNEL_ID=123456789012345678
 DISCORD_ADMIN_LOG_CHANNEL_ID=123456789012345678
 DATABASE_PATH=postgresql://user:pass@localhost:5432/bot_inactividad
-WHITELIST_ROUTE=/ruta/whitelist.json
 DEPLOY_COMMAND=true
 DEPLOY_INACTIVITY_PANEL=true
 REMINDER_INTERVAL_MINUTES=5
@@ -92,20 +89,20 @@ API_PORT=3000
 2. Genera el cliente de Prisma y aplica las migraciones (hay SQL inicial en
    `src/prisma/migrations`):
 
-   ```bash
-   npx prisma migrate deploy
-   npx prisma generate
-   ```
+    ```bash
+    npx prisma migrate deploy
+    npx prisma generate
+    ```
 
 3. Arranca el bot (usa las variables `DEPLOY_COMMAND` y `DEPLOY_INACTIVITY_PANEL`
    según necesites desplegar comandos/panel):
 
-   ```bash
-   npm start
-   ```
+    ```bash
+    npm start
+    ```
 
-   La API HTTP quedará escuchando en `API_PORT` y el bot se conectará al
-   servidor de Discord definido por `DISCORD_GUILD_ID`.
+    La API HTTP quedará escuchando en `API_PORT` y el bot se conectará al
+    servidor de Discord definido por `DISCORD_GUILD_ID`.
 
 ## Operación del bot
 
@@ -133,7 +130,7 @@ Minecraft, enviándolo por DM y respondiendo de forma efímera.
 
 ### API HTTP
 
-- `GET /members`: lee la whitelist definida en `WHITELIST_ROUTE`, cruza los
+- `GET /members`: cruza los
   usuarios con la base de datos (rango, roles vinculados, medios, descripción) y
   devuelve la lista enriquecida. Incluye CORS con el origen configurado en
   `FRONT_ORIGIN`.

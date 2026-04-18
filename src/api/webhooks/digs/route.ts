@@ -16,7 +16,7 @@ const reqSchema = z.array(
                 .string()
                 .min(1, 'El id de usuario es obligatorio')
                 .optional(),
-            digs: z.number().min(1, 'La cantidad de digs debe ser al menos 1'),
+            digs: z.number().min(0, 'La cantidad de digs debe ser positiva'),
         }),
         z.object({
             nickname: z
@@ -24,7 +24,7 @@ const reqSchema = z.array(
                 .min(1, 'El nombre de usuario es obligatorio')
                 .optional(),
             uuid: z.string().min(1, 'El id de usuario es obligatorio'),
-            digs: z.number().min(1, 'La cantidad de digs debe ser al menos 1'),
+            digs: z.number().min(0, 'La cantidad de digs debe ser positiva'),
         }),
     ]),
 )
