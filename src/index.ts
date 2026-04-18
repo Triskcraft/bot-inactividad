@@ -15,6 +15,7 @@ import { monitoredService } from '#/services/monitored.service.ts'
 import { Scheduler } from '#/services/scheduler.ts'
 import { roleService } from '#/services/roles.service.ts'
 import { blogService } from '#/services/blog.service.ts'
+import { welcomeService } from './services/welcome.service.ts'
 
 /**
  * Maneja el apagado ordenado del proceso, garantizando que cada componente
@@ -24,6 +25,7 @@ async function shutdown(signal: string) {
     logger.info({ signal }, 'Cerrando bot')
     scheduler.stop()
     unregisterRankService()
+    welcomeService.stop()
     await client.destroy()
     await db.$disconnect()
     process.exit(0)
@@ -60,6 +62,10 @@ initializeRankService()
 scheduler.start()
 roleService.start()
 blogService.start()
+welcomeService.start()
+if (envs.ROLE_SERVICE) {
+    roleService.start()
+}
 
 /**
  * El despliegue de comandos solo se ejecuta cuando la variable de entorno

@@ -41,6 +41,7 @@ export function loadConfig() {
         'DEFAULT_ROLE_NAME',
         'DEFAULT_ROLE_ID',
         'DEFAULT_RANK',
+        'ROLE_SERVICE',
     ]
 
     const {
@@ -56,6 +57,7 @@ export function loadConfig() {
         DEFAULT_RANK = 'Miembro',
         BLOG_CHANNEL_ID = '',
         BLOG_ROLE_ID = '',
+        ROLE_SERVICE = false,
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
@@ -105,6 +107,7 @@ export function loadConfig() {
         DEFAULT_RANK,
         BLOG_CHANNEL_ID,
         BLOG_ROLE_ID,
+        ROLE_SERVICE: ROLE_SERVICE === 'true',
     }
 }
 
