@@ -1,0 +1,38 @@
+name: Deploy Web
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Deploy via SSH
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.VPS_HOST }}
+                  username: deploy
+                  key: ${{ secrets.VPS_SSH_KEY }}
+                  script: |
+                      set -euxo pipefail
+
+                      echo "Deploy iniciado..."
+                      cd /opt/bot/triskbot
+
+                      echo "Actualizando código..."
+                      sudo -u bot git fetch origin
+                      sudo -u bot git reset --hard origin/main
+
+                      echo "Instalando dependencias..."
+                      sudo -u bot npm ci
+
+                      echo "Generando build..."
+                      sudo -u bot npm run build
+
+                      echo "Reiniciando servicio..."
+                      sudo systemctl restart triskbot
+
+                      echo "Deploy completado."
