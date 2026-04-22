@@ -31,6 +31,11 @@ import { MinecraftRolesManager } from '#/classes/minecraft-roles-manager.ts'
 import roleBack from '#/interactions/buttons/role/role-back.ts'
 import { PLAYER_STATUS } from '#/prisma/generated/enums.ts'
 import { playersService } from './players.service.ts'
+import {
+    blog_panel_message_id,
+    roles_panel_message_id,
+    roles_panel_selected_user,
+} from '#/prisma/status-key.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 
@@ -122,7 +127,7 @@ class RoleService {
             })
         } else {
             const whpmid = await db.state.findUnique({
-                where: { key: 'roles_panel_message_id' },
+                where: { key: roles_panel_message_id },
                 select: { value: true },
             })
             if (whpmid) {
@@ -334,16 +339,16 @@ class RoleService {
             await this.#message.pin()
         }
         await db.state.upsert({
-            where: { key: 'roles_panel_message_id' },
+            where: { key: blog_panel_message_id },
             update: { value: nid },
-            create: { key: 'roles_panel_message_id', value: nid },
+            create: { key: blog_panel_message_id, value: nid },
         })
     }
 
     async #getSelectedUser() {
         if (this.#selectedUser) return this.#selectedUser
         const sdb = await db.state.findUnique({
-            where: { key: 'roles_panel_selected_user' },
+            where: { key: roles_panel_selected_user },
         })
         return sdb?.value ?? null
     }
@@ -352,9 +357,9 @@ class RoleService {
         this.#selectedUser = uuid
         await this.renderPannel()
         await db.state.upsert({
-            where: { key: 'roles_panel_selected_user' },
+            where: { key: roles_panel_selected_user },
             update: { value: uuid },
-            create: { key: 'roles_panel_selected_user', value: uuid },
+            create: { key: roles_panel_selected_user, value: uuid },
         })
     }
 

@@ -16,6 +16,7 @@ import {
 } from 'discord.js'
 import { logger } from '#/logger.ts'
 import { db } from '#/prisma/database.ts'
+import { wh_panel_message_id } from '#/prisma/status-key.ts'
 
 const PANNEL_NAME = '# 🔐 **Panel de Webhooks**'
 
@@ -69,7 +70,7 @@ export async function deployWebhookPanel() {
         ),
     )
     const whpmid = await db.state.findUnique({
-        where: { key: 'wh_panel_message_id' },
+        where: { key: wh_panel_message_id },
         select: { value: true },
     })
     if (whpmid) {
@@ -120,8 +121,8 @@ async function checkPinned(
         await nmsg.pin()
     }
     await db.state.upsert({
-        where: { key: 'wh_panel_message_id' },
+        where: { key: wh_panel_message_id },
         update: { value: nid },
-        create: { key: 'wh_panel_message_id', value: nid },
+        create: { key: wh_panel_message_id, value: nid },
     })
 }

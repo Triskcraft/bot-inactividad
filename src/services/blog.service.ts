@@ -24,6 +24,7 @@ import { POST_STATUS } from '#/prisma/generated/enums.ts'
 import type { Post } from '#/classes/post.ts'
 import blogState from '#/interactions/buttons/blog/blog-post.ts'
 import blogTitle from '#/interactions/buttons/blog/blog-title.ts'
+import { blog_panel_message_id } from '#/prisma/status-key.ts'
 
 const PANNEL_NAME = '# 📰 **Panel de Publicaciones**'
 
@@ -179,7 +180,7 @@ class BlogService {
             })
         } else {
             const whpmid = await db.state.findUnique({
-                where: { key: 'blog_panel_message_id' },
+                where: { key: blog_panel_message_id },
                 select: { value: true },
             })
             if (whpmid) {
@@ -249,9 +250,9 @@ class BlogService {
             await this.#message.pin()
         }
         await db.state.upsert({
-            where: { key: 'blog_panel_message_id' },
+            where: { key: blog_panel_message_id },
             update: { value: nid },
-            create: { key: 'blog_panel_message_id', value: nid },
+            create: { key: blog_panel_message_id, value: nid },
         })
     }
 
