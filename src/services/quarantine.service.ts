@@ -3,13 +3,19 @@ import { envs } from '#/config.ts'
 import { logger } from '#/logger.ts'
 import { Events, Message, Role, type SendableChannels } from 'discord.js'
 import imghash from 'imghash'
-import { readdir } from 'node:fs/promises'
+import { readdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { fileTypeFromBuffer } from 'file-type'
+import leven from 'leven'
 
+export type ScamImageRoute = string
+export type ScamImageHash = string
 class QuarentineService {
     #role: Role | null = null
     #channel: SendableChannels | null = null
-    #scamImgHash = new Set<string>()
+    #scamImgHash = new Map<ScamImageRoute, ScamImageHash>()
+    #tmpRoute = ''
 
     get role() {
         return this.#role
@@ -25,7 +31,14 @@ class QuarentineService {
         if (!this.#role) return
         await this.#checkChannel()
         if (!this.#channel) return
+        await this.#createTmpDir()
         this.#installEventListener()
+    }
+
+    async #createTmpDir() {
+        this.#tmpRoute = await mkdtemp(
+            join(tmpdir(), 'triskbot-quarentine-service'),
+        )
     }
 
     async #checkRole() {
@@ -49,8 +62,9 @@ class QuarentineService {
             join(process.cwd(), 'src', 'img', 'scam'),
         )
         for (const imgRoute of scamImgDir) {
-            this.#scamImgHash.add(await imghash.hash(imgRoute))
+            this.#scamImgHash.set(imgRoute, await imghash.hash(imgRoute))
         }
+        return this.#scamImgHash
     }
 
     async #checkChannel() {
@@ -84,9 +98,30 @@ class QuarentineService {
             return
         }
         if (!message.attachments.size) return
-        const scamImgHashes = this.getScamImageHash()
-        message.attachments.forEach(att => {
+        const scamImgHashesPromise = this.getScamImageHash()
+        const { abort, signal } = new AbortController()
+        message.attachments.forEach(async att => {
             // check
+            if (!att.contentType?.includes('image')) {
+                return
+            }
+            const req = await fetch(att.url, { signal })
+            const res = await req.arrayBuffer()
+            const buffer = Buffer.from(res)
+            const type = await fileTypeFromBuffer(buffer)
+            const route = join(
+                this.#tmpRoute,
+                `${message.channelId}-${message.id}-${att.id}.${type?.ext ?? 'jpg'}`,
+            )
+            if (signal.aborted) return
+            await writeFile(route, buffer)
+            const hash = await imghash.hash(route)
+            const scamImgHashes = await scamImgHashesPromise
+            scamImgHashes.forEach(async toCompare => {
+                const distance = leven(hash, toCompare)
+                if (distance > 12) return
+                abort()
+            })
         })
     }
 }
