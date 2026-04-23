@@ -1,9 +1,15 @@
 import { client } from '#/client.ts'
 import { envs } from '#/config.ts'
 import { logger } from '#/logger.ts'
-import { Events, Message, Role, type SendableChannels } from 'discord.js'
+import {
+    Collection,
+    Events,
+    Message,
+    Role,
+    type SendableChannels,
+} from 'discord.js'
 import imghash from 'imghash'
-import { readdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { readdir, mkdtemp, writeFile, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileTypeFromBuffer } from 'file-type'
@@ -14,7 +20,7 @@ export type ScamImageHash = string
 class QuarentineService {
     #role: Role | null = null
     #channel: SendableChannels | null = null
-    #scamImgHash = new Map<ScamImageRoute, ScamImageHash>()
+    #scamImgHash = new Collection<ScamImageRoute, ScamImageHash>()
     #tmpRoute = ''
 
     get role() {
@@ -93,36 +99,70 @@ class QuarentineService {
         })
     }
 
-    async #imgScamCheck(message: Message) {
+    async #imgScamCheck(message: Message): Promise<void> {
         if (message.inGuild()) {
             return
         }
         if (!message.attachments.size) return
+
+        // Promise for async paralelism
         const scamImgHashesPromise = this.getScamImageHash()
         const { abort, signal } = new AbortController()
+
         message.attachments.forEach(async att => {
             // check
             if (!att.contentType?.includes('image')) {
                 return
             }
+
             const req = await fetch(att.url, { signal })
             const res = await req.arrayBuffer()
+
             const buffer = Buffer.from(res)
+
             const type = await fileTypeFromBuffer(buffer)
             const route = join(
                 this.#tmpRoute,
                 `${message.channelId}-${message.id}-${att.id}.${type?.ext ?? 'jpg'}`,
             )
+
+            signal.addEventListener('abort', async () => {
+                // when abort the request
+                // try to delete file
+                // if the process
+                // not finish
+                this.#deleteFile(route)
+            })
+
             if (signal.aborted) return
             await writeFile(route, buffer)
+            if (signal.aborted) return
+
             const hash = await imghash.hash(route)
             const scamImgHashes = await scamImgHashesPromise
-            scamImgHashes.forEach(async toCompare => {
-                const distance = leven(hash, toCompare)
-                if (distance > 12) return
-                abort()
-            })
+
+            const coincidence = scamImgHashes.find(
+                async toCompare => leven(hash, toCompare) < 13,
+            )
+
+            if (!coincidence) {
+                // explicit delete
+                return void this.#deleteFile(route)
+            }
+            // if exist coincidence
+            // abort others request
+            // implicit delete
+            abort()
         })
+    }
+
+    async #deleteFile(path: string) {
+        try {
+            // try to delete if exist
+            await unlink(path)
+        } catch {
+            /* empty */
+        }
     }
 }
 
