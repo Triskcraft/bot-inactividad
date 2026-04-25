@@ -136,6 +136,7 @@ model DiscordUser {
     webhook_tokens     WebhookToken[]
     posts              Post[]
     post_blocks        PostBlocks[]
+    isolatedUsers      IsolatedUsers[]
 
     @@map("discord_users")
 }
@@ -199,4 +200,12 @@ model PostBlocks {
     post   Post        @relation(fields: [post_id], references: [id])
 
     @@map("post_blocks")
+}
+
+model IsolatedUsers {
+    id      String   @id @default(dbgenerated("snowflake()"))
+    roles   String[]
+    user_id String
+
+    user DiscordUser @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }

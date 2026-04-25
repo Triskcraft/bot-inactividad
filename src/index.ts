@@ -13,7 +13,7 @@ import {
 } from '#/services/rank.service.ts'
 import { monitoredService } from '#/services/monitored.service.ts'
 import { Scheduler } from '#/services/scheduler.ts'
-import { roleService } from '#/services/roles.service.ts'
+// import { roleService } from '#/services/roles.service.ts'
 import { blogService } from '#/services/blog.service.ts'
 import { welcomeService } from './services/welcome.service.ts'
 
@@ -60,13 +60,21 @@ await deployWebhookPanel()
 initializeRankService()
 // Activa los jobs programados que mantienen el sistema actualizado.
 scheduler.start()
-roleService.start()
+// roleService.start()
 blogService.start()
 welcomeService.start()
 if (envs.ROLE_SERVICE) {
-    roleService.start()
+    // roleService.start()
 }
-
+const channel = client.guilds.cache
+    .get(envs.DISCORD_GUILD_ID)
+    ?.channels.cache.get('1202732116543152211')
+if (channel?.isTextBased()) {
+    channel.messages.fetch('1497539579350093927').then(m => {
+        console.log(m)
+        console.log(m.content)
+    })
+}
 /**
  * El despliegue de comandos solo se ejecuta cuando la variable de entorno
  * correspondiente lo indica, evitando registrar comandos en cada arranque

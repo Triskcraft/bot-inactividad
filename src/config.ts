@@ -42,6 +42,8 @@ export function loadConfig() {
         'DEFAULT_ROLE_ID',
         'DEFAULT_RANK',
         'ROLE_SERVICE',
+        'QUARENTINE_ROLE_ID',
+        'QUARENTINE_CHANNEL_ID',
     ]
 
     const {
@@ -58,6 +60,8 @@ export function loadConfig() {
         BLOG_CHANNEL_ID = '',
         BLOG_ROLE_ID = '',
         ROLE_SERVICE = false,
+        QUARENTINE_ROLE_ID = '',
+        QUARENTINE_CHANNEL_ID = '',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
@@ -108,6 +112,8 @@ export function loadConfig() {
         BLOG_CHANNEL_ID,
         BLOG_ROLE_ID,
         ROLE_SERVICE: ROLE_SERVICE === 'true',
+        QUARENTINE_ROLE_ID,
+        QUARENTINE_CHANNEL_ID,
     }
 }
 
