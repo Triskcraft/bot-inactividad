@@ -35,7 +35,7 @@ import {
     blog_panel_message_id,
     roles_panel_message_id,
     roles_panel_selected_user,
-} from '#/prisma/status-key.ts'
+} from '#/db/status-key.ts'
 
 const PANNEL_NAME = '# 🎭 **Panel de Roles**'
 

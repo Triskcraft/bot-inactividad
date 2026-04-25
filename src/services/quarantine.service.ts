@@ -19,7 +19,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileTypeFromBuffer } from 'file-type'
 import leven from 'leven'
-import { db } from '#/prisma/database.ts'
+import { db } from '#/db/prisma.ts'
 
 export type ScamImageRoute = string
 export type ScamImageHash = string

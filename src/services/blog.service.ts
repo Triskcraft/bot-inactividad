@@ -24,7 +24,7 @@ import { POST_STATUS } from '#/db/generated/enums.ts'
 import type { Post } from '#/classes/post.ts'
 import blogState from '#/interactions/buttons/blog/blog-post.ts'
 import blogTitle from '#/interactions/buttons/blog/blog-title.ts'
-import { blog_panel_message_id } from '#/prisma/status-key.ts'
+import { blog_panel_message_id } from '#/db/status-key.ts'
 
 const PANNEL_NAME = '# 📰 **Panel de Publicaciones**'
 
