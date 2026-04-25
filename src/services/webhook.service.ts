@@ -15,8 +15,8 @@ import {
     type SendableChannels,
 } from 'discord.js'
 import { logger } from '#/logger.ts'
-import { db } from '#/prisma/database.ts'
-import { wh_panel_message_id } from '#/prisma/status-key.ts'
+import { db } from '#/db/prisma.ts'
+import { wh_panel_message_id } from '#/db/status-key.ts'
 
 const PANNEL_NAME = '# 🔐 **Panel de Webhooks**'
 
