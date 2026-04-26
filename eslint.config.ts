@@ -67,4 +67,10 @@ export default defineConfig([
             ],
         },
     },
+    {
+        files: ['src/api/console/**/*.ts'],
+        rules: {
+            'no-restricted-syntax': 'off',
+        },
+    },
 ])
