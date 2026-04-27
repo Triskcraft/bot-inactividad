@@ -3,23 +3,11 @@ import { Router } from 'express'
 import { Layout } from '#/api/console/components/layout.ts'
 import { BUCKETS, s3 } from '#/db/s3.ts'
 import { Upload } from '@aws-sdk/lib-storage'
-import EventListener from 'node:events'
-import { createSession } from 'better-sse'
 import Busboy from 'busboy'
 import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3'
 
 const router = Router()
-const uploadListener = new EventListener()
 
-router.get('/progress/:id', async (req, res) => {
-    const session = await createSession(req, res)
-
-    uploadListener.on('progress', (id, progress) => {
-        if (id === req.params.id) {
-            session.push(progress)
-        }
-    })
-})
 router.get('/', (_req, res) => {
     res.send(
         Layout({
