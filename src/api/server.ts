@@ -3,6 +3,7 @@ import cors from 'cors'
 import v1 from '#/api/v1/route.ts'
 import webhooks from '#/api/webhooks/route.ts'
 import console from '#/api/console/route.ts'
+import files from '#/api/files/route.ts'
 import { AppError } from '#/api/errors.ts'
 import { logger } from '#/logger.ts'
 
@@ -40,5 +41,6 @@ app.use(errorHandler)
 app.use('/v1', Express.json({ type: 'application/json' }), v1)
 app.use('/webhooks', Express.raw({ type: 'application/json' }), webhooks)
 app.use('/console', console)
+app.use('/files', files)
 
 export { app }
