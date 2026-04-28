@@ -29,9 +29,9 @@ const clientCount = await db.client.count()
 if (!clientCount) {
     await db.client.create({
         data: {
-            key: 'api-panel',
+            id: 'api-panel',
             redirect_uris: [
-                'http://localhost:3000/auth/callback',
+                'http://localhost:8080/auth/callback',
                 'https://api.triskcraft.com/auth/callback',
             ],
         },

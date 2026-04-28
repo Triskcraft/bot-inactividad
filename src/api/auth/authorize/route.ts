@@ -1,4 +1,4 @@
-import { envs } from '#/config.ts'
+import { envs, PRIVATE_KEY } from '#/config.ts'
 import { db } from '#/db/prisma.ts'
 import { getSession } from '#/utils/api.ts'
 import { render } from '#/utils/html.ts'
@@ -7,6 +7,8 @@ import { Layout } from '#/web/components/layout.ts'
 import { Router } from 'express'
 import cookieParser from 'cookie-parser'
 import type { APIUser } from 'discord.js'
+import { SignJWT } from 'jose'
+import { randomBytes } from 'node:crypto'
 
 const router = Router()
 
@@ -92,6 +94,18 @@ router.get('/', cookieParser(), async (req, res) => {
             }),
         )
     }
+    if (typeof code_challenge !== 'string') {
+        return render(
+            res,
+            Layout({
+                children: ErrorCard({
+                    code: 400,
+                    title: 'Bad Request',
+                    message: 'Invalid code_challenge.',
+                }),
+            }),
+        )
+    }
     if (code_challenge_method !== 'S256') {
         return render(
             res,
@@ -107,7 +121,7 @@ router.get('/', cookieParser(), async (req, res) => {
     }
 
     const client = await db.client.findUnique({
-        where: { key: client_id },
+        where: { id: client_id },
     })
 
     if (!client) {
@@ -138,7 +152,7 @@ router.get('/', cookieParser(), async (req, res) => {
         )
     }
 
-    const session = getSession(req)
+    const session = await getSession(req)
     if (!session.discord) {
         // login
         res.cookie(
@@ -153,8 +167,9 @@ router.get('/', cookieParser(), async (req, res) => {
             }),
             {
                 httpOnly: true,
-                secure: true,
+                secure: envs.NODE_ENV === 'production',
                 sameSite: 'lax',
+                path: '/',
             },
         )
         return res.redirect(
@@ -193,9 +208,56 @@ router.get('/', cookieParser(), async (req, res) => {
         },
     })
 
-    console.log(user)
+    const session_db = await db.session.create({
+        data: {
+            expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 dias
+            client_id: client.id,
+            user_id: user.id,
+        },
+    })
 
-    res.json(user)
+    const jwt = await new SignJWT({
+        sub: user.id,
+        session_id: session_db.id,
+        client_id: client.id,
+    })
+        .setProtectedHeader({ alg: 'RS256' })
+        .setIssuedAt()
+        .setIssuer('https://api.triskcraft.com')
+        .setAudience(client.id)
+        .setExpirationTime('7d')
+        .sign(PRIVATE_KEY)
+
+    res.cookie('session', jwt, {
+        httpOnly: true,
+        secure: envs.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+    })
+
+    const code = randomBytes(32).toString('hex')
+
+    await db.authorizationCode.create({
+        data: {
+            code,
+            user_id: user.id,
+            redirect_uri,
+            code_challenge,
+            expires_at: new Date(Date.now() + 5 * 60 * 1000), // 5 min
+            client_id: client.id,
+        },
+    })
+
+    const url = new URL(redirect_uri)
+
+    url.searchParams.set('code', code)
+
+    if (typeof state === 'string') {
+        url.searchParams.set('state', state)
+    }
+
+    res.redirect(`${url}`)
+
     // render(
     //     res,
     //     Layout({

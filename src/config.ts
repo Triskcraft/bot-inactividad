@@ -1,4 +1,6 @@
 import { logger } from '#/logger.ts'
+import { importPKCS8, importSPKI } from 'jose'
+import { readFile } from 'node:fs/promises'
 
 try {
     process.loadEnvFile()
@@ -127,7 +129,32 @@ export function loadConfig() {
     }
 }
 
+async function getPrivateKey() {
+    try {
+        const pem = await readFile('./private.pem', 'utf-8')
+        return await importPKCS8(pem, 'RS256')
+    } catch {
+        logger.error(
+            'No se pudo cargar la clave privada para JWT de private.pem. Puede generar una clave RSA con el comando `openssl genrsa -out private.pem 2048`.',
+        )
+        process.exit(1)
+    }
+}
+async function getPublicKey() {
+    try {
+        const pem = await readFile('./public.pem', 'utf-8')
+        return await importSPKI(pem, 'RS256')
+    } catch {
+        logger.error(
+            'No se pudo cargar la clave publica para JWT de public.pem. Puede generar una clave RSA con el comando `openssl rsa -in private.pem -pubout -out public.pem`.',
+        )
+        process.exit(1)
+    }
+}
+
 export const envs = loadConfig()
+export const PRIVATE_KEY = await getPrivateKey()
+export const PUBLIC_KEY = await getPublicKey()
 
 /**
  * Lista ordenada de roles de rango. El orden determina prioridad cuando se

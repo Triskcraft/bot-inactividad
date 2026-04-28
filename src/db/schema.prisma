@@ -221,8 +221,7 @@ model User {
 }
 
 model Client {
-    id            String   @id @default(dbgenerated("snowflake()"))
-    key           String   @unique
+    id            String   @id
     client_secret String?
     redirect_uris String[]
     created_at    DateTime @default(now())
@@ -236,6 +235,7 @@ model Client {
 
 model AuthorizationCode {
     id             String   @id @default(dbgenerated("snowflake()"))
+    code           String   @unique
     user_id        String
     client_id      String
     redirect_uri   String
