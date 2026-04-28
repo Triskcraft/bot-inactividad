@@ -31,6 +31,9 @@ export function loadConfig() {
         'JWT_SECRERT',
         'BLOG_CHANNEL_ID',
         'BLOG_ROLE_ID',
+        'S3_URL',
+        'S3_ACCESS_KEY_ID',
+        'S3_SECRET_ACCESS_KEY',
     ]
 
     const recomended = [
@@ -58,6 +61,9 @@ export function loadConfig() {
         BLOG_CHANNEL_ID = '',
         BLOG_ROLE_ID = '',
         ROLE_SERVICE = false,
+        S3_URL = '',
+        S3_ACCESS_KEY_ID = '',
+        S3_SECRET_ACCESS_KEY = '',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
@@ -108,6 +114,9 @@ export function loadConfig() {
         BLOG_CHANNEL_ID,
         BLOG_ROLE_ID,
         ROLE_SERVICE: ROLE_SERVICE === 'true',
+        S3_URL,
+        S3_ACCESS_KEY_ID,
+        S3_SECRET_ACCESS_KEY,
     }
 }
 
