@@ -34,6 +34,8 @@ export function loadConfig() {
         'S3_URL',
         'S3_ACCESS_KEY_ID',
         'S3_SECRET_ACCESS_KEY',
+        'DISCORD_CLIENT_SECRET',
+        'DISCORD_REDIRECT_URI',
     ]
 
     const recomended = [
@@ -64,6 +66,9 @@ export function loadConfig() {
         S3_URL = '',
         S3_ACCESS_KEY_ID = '',
         S3_SECRET_ACCESS_KEY = '',
+        DISCORD_CLIENT_SECRET = '',
+        DISCORD_REDIRECT_URI = '',
+        DISCORD_CLIENT_ID = '',
     } = process.env
 
     const recommendedMissing = recomended.filter(key => !process.env[key])
@@ -93,7 +98,7 @@ export function loadConfig() {
 
     return {
         token: process.env.DISCORD_TOKEN!,
-        clientId: process.env.DISCORD_CLIENT_ID!,
+        DISCORD_CLIENT_ID: DISCORD_CLIENT_ID,
         DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID!,
         inactivityChannelId: process.env.DISCORD_INACTIVITY_CHANNEL_ID!,
         adminLogChannelId: process.env.DISCORD_ADMIN_LOG_CHANNEL_ID!,
@@ -117,6 +122,8 @@ export function loadConfig() {
         S3_URL,
         S3_ACCESS_KEY_ID,
         S3_SECRET_ACCESS_KEY,
+        DISCORD_CLIENT_SECRET,
+        DISCORD_REDIRECT_URI,
     }
 }
 

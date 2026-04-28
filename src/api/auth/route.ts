@@ -1,8 +1,10 @@
 import { Router } from 'express'
-import members from '#/api/auth/authorize/route.ts'
+import authorize from '#/api/auth/authorize/route.ts'
+import discord from '#/api/auth/discord/route.ts'
 
 const router = Router()
 
-router.use('/members', members)
+router.use('/authorize', authorize)
+router.use('/discord', discord)
 
 export default router
