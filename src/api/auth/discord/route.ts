@@ -4,7 +4,10 @@ import { ErrorCard } from '#/web/components/error-card.ts'
 import { Layout } from '#/web/components/layout.ts'
 import { Router } from 'express'
 import cookieParser from 'cookie-parser'
-import { getOauthCtxCookie } from '#/utils/api.ts'
+import {
+    getOauthCtxCookie,
+    type DiscordAccessTokenResponse,
+} from '#/utils/api.ts'
 
 const router = Router()
 
@@ -26,11 +29,12 @@ router.get('/', cookieParser(), async (req, res) => {
         },
         body: params,
     })
-    const response = (await request.json()) as Record<string, unknown>
+    const response = (await request.json()) as DiscordAccessTokenResponse
     res.cookie('discord_access', JSON.stringify(response), {
         httpOnly: true,
         secure: true,
         sameSite: 'lax',
+        maxAge: response.expires_in * 1000,
     })
     const oauthCtx = getOauthCtxCookie(req)
     if (!oauthCtx) {

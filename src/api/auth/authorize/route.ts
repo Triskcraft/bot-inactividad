@@ -1,10 +1,10 @@
 import { envs, PRIVATE_KEY } from '#/config.ts'
 import { db } from '#/db/prisma.ts'
-import { getSession } from '#/utils/api.ts'
+import { getSession, refreshToken } from '#/utils/api.ts'
 import { render } from '#/utils/html.ts'
 import { ErrorCard } from '#/web/components/error-card.ts'
 import { Layout } from '#/web/components/layout.ts'
-import { Router } from 'express'
+import { Router, type Response, type Request } from 'express'
 import cookieParser from 'cookie-parser'
 import type { APIUser } from 'discord.js'
 import { SignJWT } from 'jose'
@@ -153,30 +153,23 @@ router.get('/', cookieParser(), async (req, res) => {
     }
 
     const session = await getSession(req)
+
     if (!session.discord) {
         // login
-        res.cookie(
-            'oauth_ctx',
-            JSON.stringify({
-                response_type,
-                client_id,
-                redirect_uri,
-                code_challenge,
-                code_challenge_method,
-                state,
-            }),
-            {
-                httpOnly: true,
-                secure: envs.NODE_ENV === 'production',
-                sameSite: 'lax',
-                path: '/',
-            },
-        )
-        return res.redirect(
-            `https://discord.com/oauth2/authorize?client_id=${envs.DISCORD_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(envs.DISCORD_REDIRECT_URI)}&scope=identify`,
-        )
+        return discordLogin(req, res)
     }
 
+    const buffer = 1000 * 60 * 60 * 24 // 1 dia
+
+    const expires_at = Date.now() + session.discord.expires_in * 1000
+
+    if (Date.now() > expires_at - buffer) {
+        const newDiscord = await refreshToken(session.discord.refresh_token)
+        if (!newDiscord) {
+            return discordLogin(req, res)
+        }
+        session.discord = newDiscord
+    }
     const request = await fetch('https://discord.com/api/v10/users/@me', {
         headers: {
             Authorization: `Bearer ${session.discord.access_token}`,
@@ -208,18 +201,8 @@ router.get('/', cookieParser(), async (req, res) => {
         },
     })
 
-    const session_db = await db.session.create({
-        data: {
-            expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 dias
-            client_id: client.id,
-            user_id: user.id,
-        },
-    })
-
     const jwt = await new SignJWT({
         sub: user.id,
-        session_id: session_db.id,
-        client_id: client.id,
     })
         .setProtectedHeader({ alg: 'RS256' })
         .setIssuedAt()
@@ -272,3 +255,15 @@ router.get('/', cookieParser(), async (req, res) => {
 export default router
 
 // test http://localhost:8080/auth/authorize?response_type=code&client_id=api-panel&code_challenge=eIVsW83uLPZmbiKwsR7J86HuUoMqpAWFuoLyo36gpaU&code_challenge_method=S256&redirect_uri=http://localhost:8080/auth/callback
+
+function discordLogin(req: Request, res: Response) {
+    res.cookie('oauth_ctx', JSON.stringify(req.query), {
+        httpOnly: true,
+        secure: envs.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+    })
+    return res.redirect(
+        `https://discord.com/oauth2/authorize?client_id=${envs.DISCORD_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(envs.DISCORD_REDIRECT_URI)}&scope=identify`,
+    )
+}

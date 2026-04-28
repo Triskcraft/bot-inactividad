@@ -1,4 +1,4 @@
-import { PUBLIC_KEY } from '#/config.ts'
+import { envs, PUBLIC_KEY } from '#/config.ts'
 import type { Request } from 'express'
 import { jwtVerify } from 'jose'
 
@@ -16,7 +16,7 @@ export function getOauthCtxCookie(req: Request) {
     }
 }
 
-interface DiscordAccessTokenResponse {
+export interface DiscordAccessTokenResponse {
     token_type: 'Bearer'
     access_token: string
     expires_in: number
@@ -46,4 +46,28 @@ export async function getSessionCookie(req: Request) {
     } catch {
         return null
     }
+}
+
+export async function refreshToken(refresh_token: string) {
+    const params = new URLSearchParams({
+        client_id: envs.DISCORD_CLIENT_ID,
+        client_secret: envs.DISCORD_CLIENT_SECRET,
+        grant_type: 'refresh_token',
+        refresh_token,
+    })
+
+    const request = await fetch('https://discord.com', {
+        method: 'POST',
+        body: params,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+    })
+
+    if (!request.ok) {
+        return null
+    }
+
+    const response = await request.json()
+    return response as DiscordAccessTokenResponse
 }
