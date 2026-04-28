@@ -24,8 +24,7 @@ CREATE TABLE "users" (
 
 -- CreateTable
 CREATE TABLE "clients" (
-    "id" TEXT NOT NULL DEFAULT snowflake(),
-    "key" TEXT NOT NULL,
+    "id" TEXT NOT NULL,
     "client_secret" TEXT,
     "redirect_uris" TEXT[],
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -37,6 +36,7 @@ CREATE TABLE "clients" (
 -- CreateTable
 CREATE TABLE "authorization_codes" (
     "id" TEXT NOT NULL DEFAULT snowflake(),
+    "code" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "client_id" TEXT NOT NULL,
     "redirect_uri" TEXT NOT NULL,
@@ -65,7 +65,7 @@ CREATE UNIQUE INDEX "users_mc_player_uuid_key" ON "users"("mc_player_uuid");
 CREATE UNIQUE INDEX "users_discord_user_id_key" ON "users"("discord_user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "clients_key_key" ON "clients"("key");
+CREATE UNIQUE INDEX "authorization_codes_code_key" ON "authorization_codes"("code");
 
 -- AddForeignKey
 ALTER TABLE "posts" ADD CONSTRAINT "posts_discord_user_id_fkey" FOREIGN KEY ("discord_user_id") REFERENCES "discord_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

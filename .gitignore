@@ -13,3 +13,4 @@ dist
 whitelist.json
 # tests
 stats
+*.pem
