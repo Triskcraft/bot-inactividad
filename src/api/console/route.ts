@@ -1,13 +1,31 @@
-import { html } from '#/utils/html.ts'
+import { html, render } from '#/utils/html.ts'
 import { Router } from 'express'
 import mods from './mods/route.ts'
+import login from './login/route.ts'
 import { Layout } from './components/layout.ts'
+import { getConsoleSession } from '#/utils/api.ts'
 
 const router = Router()
 
 router.use('/mods', mods)
-router.get('/', (req, res) => {
-    res.send(
+router.use('/login', login)
+
+router.get('/', async (req, res) => {
+    const session = await getConsoleSession(req)
+    if (!session) {
+        return res.redirect(
+            `/auth/authorize?${new URLSearchParams({
+                response_type: 'code',
+                client_id: 'api-panel',
+                code_challenge: 'eIVsW83uLPZmbiKwsR7J86HuUoMqpAWFuoLyo36gpaU',
+                code_challenge_method: 'S256',
+                redirect_uri: 'http://localhost:8080/console/login',
+            })}`,
+        )
+    }
+
+    render(
+        res,
         Layout({
             children: html`
                 <div class="container">

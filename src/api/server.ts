@@ -7,6 +7,7 @@ import console from '#/api/console/route.ts'
 import files from '#/api/files/route.ts'
 import { AppError } from '#/api/errors.ts'
 import { logger } from '#/logger.ts'
+import cookieParser from 'cookie-parser'
 
 /**
  * Servidor HTTP mínimo que expone endpoints de lectura para integraciones
@@ -20,6 +21,7 @@ app.use(
         origin: process.env.FRONT_ORIGIN,
     }),
 )
+app.use(cookieParser())
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     if (err instanceof AppError) {

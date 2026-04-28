@@ -71,3 +71,12 @@ export async function refreshToken(refresh_token: string) {
     const response = await request.json()
     return response as DiscordAccessTokenResponse
 }
+
+export async function getConsoleSession(req: Request) {
+    try {
+        const cookie = req.cookies['console_session'] ?? ''
+        return await jwtVerify(cookie, PUBLIC_KEY)
+    } catch {
+        return null
+    }
+}

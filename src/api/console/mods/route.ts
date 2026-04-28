@@ -1,4 +1,4 @@
-import { html } from '#/utils/html.ts'
+import { html, render } from '#/utils/html.ts'
 import { Router } from 'express'
 import { Layout } from '#/api/console/components/layout.ts'
 import { BUCKETS, s3 } from '#/db/s3.ts'
@@ -9,7 +9,8 @@ import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3'
 const router = Router()
 
 router.get('/', (_req, res) => {
-    res.send(
+    render(
+        res,
         Layout({
             children: Form(),
         }),
@@ -42,7 +43,7 @@ router.post('/', async (req, res) => {
 
     busboy.on('finish', async () => {
         await uploadPromise
-        res.send('ok')
+        res.json({ ok: true })
     })
 
     req.pipe(busboy)
