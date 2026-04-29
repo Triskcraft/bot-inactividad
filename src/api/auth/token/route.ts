@@ -1,7 +1,7 @@
 import { BadRequestError } from '#/api/errors.ts'
 import { envs, PRIVATE_KEY } from '#/config.ts'
 import { db } from '#/db/prisma.ts'
-import { verifyPKCE } from '#/utils/encript.ts'
+import { hash, verifyPKCE } from '#/utils/encript.ts'
 import { Router } from 'express'
 import { SignJWT } from 'jose'
 
@@ -95,6 +95,13 @@ router.post('/', async (req, res) => {
         .setAudience(client_id)
         .setExpirationTime('7d')
         .sign(PRIVATE_KEY)
+
+    await db.session.update({
+        where: { id: session.id },
+        data: {
+            refresh_token: await hash(refresh_token),
+        },
+    })
 
     return res.json({
         access_token,

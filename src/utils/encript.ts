@@ -5,6 +5,7 @@ import {
     createHash,
     randomBytes,
 } from 'node:crypto'
+import { hash as argonHash, argon2id } from 'argon2'
 
 const ALGO = 'aes-256-gcm'
 
@@ -53,4 +54,13 @@ export function verifyPKCE(verifier: string, challenge: string) {
     const hashed = createHash('sha256').update(verifier).digest('base64url')
 
     return hashed === challenge
+}
+
+export async function hash(content: string) {
+    return await argonHash(content, {
+        type: argon2id,
+        memoryCost: 2 ** 16, // 64 MB
+        timeCost: 3,
+        parallelism: 1,
+    })
 }
