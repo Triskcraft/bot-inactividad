@@ -1,11 +1,13 @@
-import { render } from '#/utils/html.ts'
-import { Layout } from '#/web/components/layout.ts'
+import { envs } from '#/config.ts'
+import type { DiscordAccessTokenResponse } from '#/utils/api.ts'
 import { Router } from 'express'
 
 const router = Router()
 
-router.get('/', (req, res) => {
-    if (req.query.code) {
+router.get('/', async (req, res) => {
+    const { code } = req.query
+
+    if (!code) {
         return res.redirect(
             `/auth/authorize?${new URLSearchParams({
                 response_type: 'code',
@@ -17,12 +19,28 @@ router.get('/', (req, res) => {
         )
     }
 
-    render(
-        res,
-        Layout({
-            children: 'ok',
+    const request = await fetch('/auth/token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: JSON.stringify({
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: envs.CONSOLE_LOGIN_REDIRECT,
+            client_id: 'api-console',
+            code_verifier: '',
         }),
-    )
+    })
+
+    const response = (await request.json()) as Omit<
+        DiscordAccessTokenResponse,
+        'scope'
+    >
+
+    res.cookie('console-session', JSON.stringify(response))
+
+    res.redirect('/console')
 })
 
 export default router
