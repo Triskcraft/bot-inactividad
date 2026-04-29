@@ -1,5 +1,11 @@
 import { envs } from '#/config.ts'
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
+import {
+    createCipheriv,
+    createDecipheriv,
+    createHash,
+    randomBytes,
+} from 'node:crypto'
+import { hash as argonHash, argon2id } from 'argon2'
 
 const ALGO = 'aes-256-gcm'
 
@@ -42,4 +48,19 @@ export function decrypt(encrypted: string) {
     ])
 
     return decrypted.toString('utf8')
+}
+
+export function verifyPKCE(verifier: string, challenge: string) {
+    const hashed = createHash('sha256').update(verifier).digest('base64url')
+
+    return hashed === challenge
+}
+
+export async function hash(content: string) {
+    return await argonHash(content, {
+        type: argon2id,
+        memoryCost: 2 ** 16, // 64 MB
+        timeCost: 3,
+        parallelism: 1,
+    })
 }
