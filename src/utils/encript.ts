@@ -1,5 +1,10 @@
 import { envs } from '#/config.ts'
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
+import {
+    createCipheriv,
+    createDecipheriv,
+    createHash,
+    randomBytes,
+} from 'node:crypto'
 
 const ALGO = 'aes-256-gcm'
 
@@ -42,4 +47,10 @@ export function decrypt(encrypted: string) {
     ])
 
     return decrypted.toString('utf8')
+}
+
+export function verifyPKCE(verifier: string, challenge: string) {
+    const hashed = createHash('sha256').update(verifier).digest('base64url')
+
+    return hashed === challenge
 }

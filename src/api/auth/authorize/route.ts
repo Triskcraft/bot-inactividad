@@ -206,8 +206,8 @@ router.get('/', cookieParser(), async (req, res) => {
     })
         .setProtectedHeader({ alg: 'RS256' })
         .setIssuedAt()
-        .setIssuer('https://api.triskcraft.com')
-        .setAudience(client.id)
+        .setIssuer(envs.API_URL)
+        .setAudience(client_id)
         .setExpirationTime('7d')
         .sign(PRIVATE_KEY)
 
