@@ -5,7 +5,7 @@ import auth from '#/api/auth/route.ts'
 import webhooks from '#/api/webhooks/route.ts'
 import console from '#/api/console/route.ts'
 import files from '#/api/files/route.ts'
-import { AppError } from '#/api/errors.ts'
+import { ApiError } from '#/api/errors.ts'
 import { logger } from '#/logger.ts'
 import cookieParser from 'cookie-parser'
 
@@ -24,7 +24,7 @@ app.use(
 app.use(cookieParser())
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
-    if (err instanceof AppError) {
+    if (err instanceof ApiError) {
         const details = err.cause ?? {}
         return res.status(err.statusCode).json({
             ...details,

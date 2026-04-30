@@ -1,6 +1,7 @@
-import { envs, PUBLIC_KEY } from '#/config.ts'
+import { envs, PRIVATE_KEY, PUBLIC_KEY } from '#/config.ts'
 import type { Request } from 'express'
-import { jwtVerify } from 'jose'
+import { SignJWT } from 'jose'
+import { jwtVerify, type JWTPayload as JoseJWTPayload } from 'jose'
 
 export async function getSession(req: Request) {
     const discord = getDiscordAccessCookie(req)
@@ -70,4 +71,19 @@ export async function refreshDiscordToken(refresh_token: string) {
 
     const response = await request.json()
     return response as DiscordAccessTokenResponse
+}
+
+export interface JWTPayload extends JoseJWTPayload {
+    aud: string
+    client_id: string
+    sub: string
+    session_id: string
+}
+export async function createJWT(payload: JWTPayload) {
+    return await new SignJWT(payload)
+        .setProtectedHeader({ alg: 'RS256' })
+        .setIssuedAt()
+        .setIssuer(envs.API_URL)
+        .setExpirationTime('1h')
+        .sign(PRIVATE_KEY)
 }

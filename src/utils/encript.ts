@@ -1,11 +1,13 @@
-import { envs } from '#/config.ts'
+import { envs, PUBLIC_KEY } from '#/config.ts'
 import {
     createCipheriv,
     createDecipheriv,
     createHash,
     randomBytes,
 } from 'node:crypto'
-import { hash as argonHash, argon2id } from 'argon2'
+import { hash as argonHash, argon2id, verify } from 'argon2'
+import { jwtVerify } from 'jose'
+import type { JWTVerifyResult, JWTPayload } from 'jose'
 
 const ALGO = 'aes-256-gcm'
 
@@ -63,6 +65,25 @@ export async function hash(content: string) {
         timeCost: 3,
         parallelism: 1,
     })
+}
+
+export function weakHash(raw: string) {
+    return createHash('sha256').update(raw).digest('hex')
+}
+
+export async function verifyHash(hash: string, str: string) {
+    return await verify(hash, str)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export async function verifyToken<T extends Record<string, unknown> = {}>(
+    token: string,
+): Promise<JWTVerifyResult<JWTPayload & T> | null> {
+    try {
+        return await jwtVerify(token, PUBLIC_KEY)
+    } catch {
+        return null
+    }
 }
 
 export function generateCodeChallenge(verifier: string) {
