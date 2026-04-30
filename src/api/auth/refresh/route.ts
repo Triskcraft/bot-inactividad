@@ -1,9 +1,8 @@
 import { BadRequestError, UnauthorizedError } from '#/api/errors.ts'
-import { envs, PRIVATE_KEY } from '#/config.ts'
 import { db } from '#/db/prisma.ts'
+import { createJWT } from '#/utils/api.ts'
 import { generateCodeVerifier, hash, weakHash } from '#/utils/encript.ts'
 import { Router } from 'express'
-import { SignJWT } from 'jose'
 
 const router = Router()
 
@@ -46,17 +45,12 @@ router.post('/', async (req, res) => {
         }).epochMilliseconds,
     )
 
-    const access_token = await new SignJWT({
+    const access_token = await createJWT({
         session_id: session.id,
         sub: session.user_id,
         client_id,
+        aud: client_id,
     })
-        .setProtectedHeader({ alg: 'RS256' })
-        .setIssuedAt()
-        .setIssuer(envs.API_URL)
-        .setAudience(client_id)
-        .setExpirationTime('1d')
-        .sign(PRIVATE_KEY)
 
     const new_refresh_token = generateCodeVerifier()
 
