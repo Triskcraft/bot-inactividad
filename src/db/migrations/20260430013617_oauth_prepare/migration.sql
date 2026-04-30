@@ -51,6 +51,7 @@ CREATE TABLE "authorization_codes" (
 CREATE TABLE "sessions" (
     "id" TEXT NOT NULL DEFAULT snowflake(),
     "user_id" TEXT NOT NULL,
+    "refresh_token" TEXT NOT NULL,
     "client_id" TEXT NOT NULL,
     "expires_at" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -66,6 +67,9 @@ CREATE UNIQUE INDEX "users_discord_user_id_key" ON "users"("discord_user_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "authorization_codes_code_key" ON "authorization_codes"("code");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "sessions_refresh_token_key" ON "sessions"("refresh_token");
 
 -- AddForeignKey
 ALTER TABLE "posts" ADD CONSTRAINT "posts_discord_user_id_fkey" FOREIGN KEY ("discord_user_id") REFERENCES "discord_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

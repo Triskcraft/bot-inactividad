@@ -122,6 +122,10 @@ router.get('/', cookieParser(), async (req, res) => {
 
     const client = await db.client.findUnique({
         where: { id: client_id },
+        select: {
+            id: true,
+            redirect_uris: true,
+        },
     })
 
     if (!client) {
