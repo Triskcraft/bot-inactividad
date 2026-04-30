@@ -220,7 +220,7 @@ router.get('/', cookieParser(), async (req, res) => {
     res.cookie('session', jwt, {
         httpOnly: true,
         secure: envs.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         path: '/',
     })
 
@@ -266,7 +266,7 @@ function discordLogin(req: Request, res: Response) {
     res.cookie('oauth_ctx', JSON.stringify(req.query), {
         httpOnly: true,
         secure: envs.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         path: '/',
     })
     return res.redirect(
