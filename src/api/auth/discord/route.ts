@@ -33,7 +33,7 @@ router.get('/', cookieParser(), async (req, res) => {
     res.cookie('discord_access', JSON.stringify(response), {
         httpOnly: true,
         secure: true,
-        sameSite: 'lax',
+        sameSite: 'strict',
         maxAge: response.expires_in * 1000,
     })
     const oauthCtx = getOauthCtxCookie(req)
