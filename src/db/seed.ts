@@ -31,8 +31,8 @@ if (!clientCount) {
         data: {
             id: 'api-panel',
             redirect_uris: [
-                'http://localhost:8080/auth/callback',
-                'https://api.triskcraft.com/auth/callback',
+                'http://localhost:8080/oauth/callback',
+                'https://api.triskcraft.com/oauth/callback',
             ],
         },
     })

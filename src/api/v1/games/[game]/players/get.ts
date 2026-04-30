@@ -2,7 +2,7 @@ import { PLAYER_STATUS } from '#/db/generated/enums.ts'
 import { db } from '#/db/prisma.ts'
 import type { RequestHandler } from 'express'
 
-type includesQuery = 'roles' | 'medias' | (string & {})
+type includesQuery = 'roles' | 'medias' | 'rank' | 'description' | (string & {})
 export const getPlayers: RequestHandler<
     { game: string },
     Member[],
@@ -21,6 +21,11 @@ export const getPlayers: RequestHandler<
             includes === 'medias'
         :   includes.includes('medias')
 
+    const includeRank =
+        typeof includes === 'string' ?
+            includes === 'rank'
+        :   includes.includes('rank')
+
     const roleIncludeJoin = {
         select: {
             role: {
@@ -32,8 +37,14 @@ export const getPlayers: RequestHandler<
     } as const
 
     const members = await db.player.findMany({
-        where: { status: PLAYER_STATUS.ACTIVE },
+        where: { status: PLAYER_STATUS.ACTIVE, user: { is: {} } },
         include: {
+            user: {
+                select: {
+                    id: true,
+                    rank: includeRank,
+                },
+            },
             medias:
                 includeMedias ?
                     {
@@ -48,27 +59,22 @@ export const getPlayers: RequestHandler<
         },
     })
     const pobled = members.map(
-        ({
-            description,
-            digs,
-            rank,
-            linked_roles,
-            medias,
-            nickname: mc_name,
-            uuid: mc_uuid,
-        }) => {
+        ({ digs, rank, linked_roles, medias, nickname, uuid, user }) => {
             const member: Member = {
-                description,
                 digs,
-                mc_name,
-                mc_uuid,
+                nickname,
+                uuid,
                 rank,
+                user_id: user!.id,
             }
             if (includeMedias) {
                 member.medias = medias
             }
             if (includeRoles) {
                 member.roles = linked_roles.map(lr => lr.role.name)
+            }
+            if (includeRank) {
+                member.rank = rank
             }
             return member
         },
@@ -77,11 +83,11 @@ export const getPlayers: RequestHandler<
 }
 
 interface Member {
-    mc_uuid: string
-    mc_name: string
-    rank: string
-    description: string
+    uuid: string
+    nickname: string
     digs: number
+    user_id: string
+    rank?: string
     roles?: string[]
     medias?: {
         type: string
