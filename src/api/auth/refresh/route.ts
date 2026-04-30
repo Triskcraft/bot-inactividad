@@ -1,7 +1,7 @@
-import { BadRequestError } from '#/api/errors.ts'
+import { BadRequestError, UnauthorizedError } from '#/api/errors.ts'
 import { envs, PRIVATE_KEY } from '#/config.ts'
 import { db } from '#/db/prisma.ts'
-import { hash } from '#/utils/encript.ts'
+import { generateCodeVerifier, hash, weakHash } from '#/utils/encript.ts'
 import { Router } from 'express'
 import { SignJWT } from 'jose'
 
@@ -28,56 +28,51 @@ router.post('/', async (req, res) => {
         )
     }
 
-    // const expires_at = new Date(
-    //     Temporal.Now.instant().add({
-    //         days: 7,
-    //     }).epochMilliseconds,
-    // )
+    const session = await db.session.findUnique({
+        where: { refresh_token: weakHash(refresh_token) },
+        select: {
+            id: true,
+            user_id: true,
+        },
+    })
 
-    // const session = await db.session.create({
-    //     data: {
-    //         expires_at,
-    //         client_id,
-    //         user_id,
-    //     },
-    // })
+    if (!session) {
+        throw new UnauthorizedError()
+    }
 
-    // const access_token = await new SignJWT({
-    //     session_id: session.id,
-    //     sub: authCode.user_id,
-    //     client_id,
-    // })
-    //     .setProtectedHeader({ alg: 'RS256' })
-    //     .setIssuedAt()
-    //     .setIssuer(envs.API_URL)
-    //     .setAudience(client_id)
-    //     .setExpirationTime('1d')
-    //     .sign(PRIVATE_KEY)
+    const expires_at = new Date(
+        Temporal.Now.instant().add({
+            days: 7,
+        }).epochMilliseconds,
+    )
 
-    // const new_refresh_token = await new SignJWT({
-    //     session_id: session.id,
-    //     sub: authCode.user_id,
-    //     client_id,
-    // })
-    //     .setProtectedHeader({ alg: 'RS256' })
-    //     .setIssuedAt()
-    //     .setIssuer(envs.API_URL)
-    //     .setAudience(client_id)
-    //     .setExpirationTime('7d')
-    //     .sign(PRIVATE_KEY)
+    const access_token = await new SignJWT({
+        session_id: session.id,
+        sub: session.user_id,
+        client_id,
+    })
+        .setProtectedHeader({ alg: 'RS256' })
+        .setIssuedAt()
+        .setIssuer(envs.API_URL)
+        .setAudience(client_id)
+        .setExpirationTime('1d')
+        .sign(PRIVATE_KEY)
 
-    // await db.session.update({
-    //     where: { id: session.id },
-    //     data: {
-    //         refresh_token: await hash(refresh_token),
-    //     },
-    // })
+    const new_refresh_token = generateCodeVerifier()
+
+    await db.session.update({
+        where: { id: session.id },
+        data: {
+            expires_at,
+            refresh_token: await hash(new_refresh_token),
+        },
+    })
 
     return res.json({
         access_token,
         token_type: 'Bearer',
         expires_in: 60 * 60 * 24,
-        refresh_token,
+        refresh_token: new_refresh_token,
     })
 })
 
